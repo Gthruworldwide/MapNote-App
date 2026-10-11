@@ -12,6 +12,7 @@ import 'src/features/home/home_screen.dart';
 import 'src/providers/app_providers.dart';
 import 'src/services/app_health_logger.dart';
 import 'src/services/app_logger.dart';
+import 'src/services/dynamic_icon_service.dart';
 import 'src/services/home_shortcut_service.dart';
 import 'src/services/location_parser.dart';
 import 'src/services/lock_gate.dart';
@@ -43,6 +44,7 @@ class _RouteNoteAppState extends ConsumerState<RouteNoteApp>
     ref.read(appHealthLoggerProvider).log(HealthEventType.appLaunch);
     _listenForSharedLocations();
     _listenForShortcuts();
+    _listenForThemeIconChanges();
   }
 
   @override
@@ -67,6 +69,35 @@ class _RouteNoteAppState extends ConsumerState<RouteNoteApp>
     } else if (state == AppLifecycleState.paused) {
       health.log(HealthEventType.appPause);
     }
+  }
+
+  @override
+  void didChangePlatformBrightness() {
+    // Fires when the OS flips dark mode; only matters while ThemeMode.system is
+    // active, but recomputing in every mode is harmless (apply() no-ops when the
+    // active icon already matches).
+    _syncLauncherIcon();
+  }
+
+  /// Keeps the launcher icon variant in step with the effective theme: manual
+  /// light/dark/system changes from Settings (listenManual) plus OS dark-mode
+  /// flips while in system mode (didChangePlatformBrightness).
+  void _listenForThemeIconChanges() {
+    ref.listenManual<ThemeMode>(
+      themeModeProvider,
+      (ThemeMode? previous, ThemeMode next) => _syncLauncherIcon(),
+    );
+    // Sync once after the first frame so the icon matches on cold start.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _syncLauncherIcon());
+  }
+
+  Future<void> _syncLauncherIcon() async {
+    final ThemeMode mode = ref.read(themeModeProvider);
+    final Brightness brightness =
+        WidgetsBinding.instance.platformDispatcher.platformBrightness;
+    await ref
+        .read(dynamicIconServiceProvider)
+        .apply(DynamicIconService.isDark(mode, brightness));
   }
 
   /// Handles text/links shared into RouteNote from other apps (share target).

@@ -22,6 +22,7 @@ import '../services/app_logger.dart';
 import '../services/app_observer_service.dart';
 import '../services/background_sync_scheduler.dart';
 import '../services/biometric_service.dart';
+import '../services/dynamic_icon_service.dart';
 import '../services/gemini_client.dart';
 import '../services/home_shortcut_service.dart';
 import '../services/local_insight_engine.dart';
@@ -83,6 +84,10 @@ final Provider<HomeShortcutService> homeShortcutServiceProvider =
       ref.onDispose(service.dispose);
       return service;
     });
+
+/// Keeps the launcher icon's light/dark variant in sync with the theme.
+final Provider<DynamicIconService> dynamicIconServiceProvider =
+    Provider<DynamicIconService>((Ref ref) => const DynamicIconService());
 
 final Provider<AuthService> authServiceProvider = Provider<AuthService>(
   (Ref ref) => GoogleAuthService(),
