@@ -692,6 +692,72 @@ abstract class AppLocalizations {
   /// **'Manage location'**
   String get manageLocation;
 
+  /// No description provided for @dailyGpsSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily GPS tracking'**
+  String get dailyGpsSection;
+
+  /// No description provided for @dailyGpsToggle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable daily GPS tracking'**
+  String get dailyGpsToggle;
+
+  /// No description provided for @dailyGpsToggleSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Records distance and max speed while the app is open'**
+  String get dailyGpsToggleSubtitle;
+
+  /// No description provided for @dailyGpsPermissionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Location access is needed for tracking. Turn on GPS and allow location access, then re-enable tracking.'**
+  String get dailyGpsPermissionHint;
+
+  /// No description provided for @dailyDistance.
+  ///
+  /// In en, this message translates to:
+  /// **'Distance today'**
+  String get dailyDistance;
+
+  /// No description provided for @dailyMaxSpeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Max speed'**
+  String get dailyMaxSpeed;
+
+  /// No description provided for @dailyTrackingActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Tracking'**
+  String get dailyTrackingActive;
+
+  /// No description provided for @dailyTrackingPaused.
+  ///
+  /// In en, this message translates to:
+  /// **'Paused'**
+  String get dailyTrackingPaused;
+
+  /// No description provided for @dailyGpsUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'GPS unavailable — check location settings'**
+  String get dailyGpsUnavailable;
+
+  /// No description provided for @kmUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'km'**
+  String get kmUnit;
+
+  /// No description provided for @kmhUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'km/h'**
+  String get kmhUnit;
+
   /// No description provided for @locationChipServiceOff.
   ///
   /// In en, this message translates to:

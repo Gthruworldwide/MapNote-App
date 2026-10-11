@@ -4,6 +4,13 @@
     <!-- GPS capture when saving a new place. -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <!-- Daily GPS tracking (Phase 1) reads locations while the app is open. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION"/>
+    <!-- Declared for the future background-tracking phase (today's tracker only
+         runs while the app is in the foreground; the permission is never
+         requested at runtime yet). -->
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"/>
     <!-- Re-register the periodic backup task after a device reboot. -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <!-- Biometric / device-credential verification for locked locations. -->

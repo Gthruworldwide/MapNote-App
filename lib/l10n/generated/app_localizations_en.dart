@@ -326,6 +326,41 @@ class AppLocalizationsEn extends AppLocalizations {
   String get manageLocation => 'Manage location';
 
   @override
+  String get dailyGpsSection => 'Daily GPS tracking';
+
+  @override
+  String get dailyGpsToggle => 'Enable daily GPS tracking';
+
+  @override
+  String get dailyGpsToggleSubtitle =>
+      'Records distance and max speed while the app is open';
+
+  @override
+  String get dailyGpsPermissionHint =>
+      'Location access is needed for tracking. Turn on GPS and allow location access, then re-enable tracking.';
+
+  @override
+  String get dailyDistance => 'Distance today';
+
+  @override
+  String get dailyMaxSpeed => 'Max speed';
+
+  @override
+  String get dailyTrackingActive => 'Tracking';
+
+  @override
+  String get dailyTrackingPaused => 'Paused';
+
+  @override
+  String get dailyGpsUnavailable => 'GPS unavailable — check location settings';
+
+  @override
+  String get kmUnit => 'km';
+
+  @override
+  String get kmhUnit => 'km/h';
+
+  @override
   String get locationChipServiceOff => 'Location off — tap to enable';
 
   @override

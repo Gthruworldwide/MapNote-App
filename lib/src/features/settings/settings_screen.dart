@@ -76,6 +76,10 @@ class SettingsScreen extends ConsumerWidget {
             child: _buildLocationCard(context, ref, l10n, location),
           ),
           _SettingsSection(
+            title: l10n.dailyGpsSection,
+            child: _buildGpsCard(context, ref, l10n),
+          ),
+          _SettingsSection(
             title: l10n.sectionSync,
             child: _buildSyncCard(context, ref, l10n, sync),
           ),
@@ -246,6 +250,61 @@ class SettingsScreen extends ConsumerWidget {
       LocationPermission.denied => l10n.locationPermissionDenied,
       _ => l10n.locationPermissionUnknown,
     };
+  }
+
+  // --- Daily GPS tracking ---------------------------------------------------
+
+  Widget _buildGpsCard(
+    BuildContext context,
+    WidgetRef ref,
+    AppLocalizations l10n,
+  ) {
+    final ThemeData theme = Theme.of(context);
+    final bool enabled = ref.watch(gpsTrackingEnabledProvider);
+    final GpsTrackingState tracking = ref.watch(gpsTrackingControllerProvider);
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            secondary: Icon(Icons.route, color: theme.colorScheme.primary),
+            title: Text(l10n.dailyGpsToggle),
+            subtitle: Text(l10n.dailyGpsToggleSubtitle),
+            value: enabled,
+            onChanged: (bool value) => _toggleGps(context, ref, l10n, value),
+          ),
+          if (enabled) ...<Widget>[
+            const SizedBox(height: 12),
+            const Divider(height: 1),
+            const SizedBox(height: 12),
+            _DailyGpsSummaryTile(state: tracking, l10n: l10n),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Future<void> _toggleGps(
+    BuildContext context,
+    WidgetRef ref,
+    AppLocalizations l10n,
+    bool value,
+  ) async {
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    await ref.read(gpsTrackingEnabledProvider.notifier).setEnabled(value);
+    if (value) {
+      // After enabling, surface a hint when GPS or the permission is missing;
+      // the tracker itself stays off until the user grants access.
+      await ref.read(locationStatusProvider.notifier).refresh();
+      final LocationStatus? status = ref.read(locationStatusProvider).value;
+      if (status != null && status.needsAction) {
+        messenger.showSnackBar(
+          SnackBar(content: Text(l10n.dailyGpsPermissionHint)),
+        );
+      }
+    }
   }
 
   // --- Sync & backup ---------------------------------------------------------
@@ -735,6 +794,126 @@ class _ThemeChoice extends StatelessWidget {
       label: Text(label),
       selected: value == selected,
       onSelected: (_) => onSelected(value),
+    );
+  }
+}
+
+/// Today's distance / max-speed report shown under the GPS tracking toggle.
+class _DailyGpsSummaryTile extends StatelessWidget {
+  const _DailyGpsSummaryTile({required this.state, required this.l10n});
+
+  final GpsTrackingState state;
+  final AppLocalizations l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        if (state.unavailable)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Row(
+              children: <Widget>[
+                Icon(
+                  Icons.gps_off,
+                  size: 16,
+                  color: theme.colorScheme.error,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    l10n.dailyGpsUnavailable,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.error,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        Row(
+          children: <Widget>[
+            Expanded(
+              child: _DailyGpsMetric(
+                icon: Icons.straighten,
+                label: l10n.dailyDistance,
+                value: '${state.totalKm.toStringAsFixed(2)} ${l10n.kmUnit}',
+              ),
+            ),
+            Expanded(
+              child: _DailyGpsMetric(
+                icon: Icons.speed,
+                label: l10n.dailyMaxSpeed,
+                value: '${state.maxSpeedKmh.toStringAsFixed(1)} '
+                    '${l10n.kmhUnit}',
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: <Widget>[
+            Icon(
+              state.active ? Icons.gps_fixed : Icons.pause_circle_outline,
+              size: 16,
+              color: state.active
+                  ? theme.colorScheme.primary
+                  : theme.colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              state.active ? l10n.dailyTrackingActive : l10n.dailyTrackingPaused,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+/// A single labelled number in the daily GPS summary (distance / max speed).
+class _DailyGpsMetric extends StatelessWidget {
+  const _DailyGpsMetric({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Row(
+          children: <Widget>[
+            Icon(icon, size: 16, color: theme.colorScheme.primary),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
     );
   }
 }

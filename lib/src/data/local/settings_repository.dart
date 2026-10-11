@@ -17,6 +17,7 @@ class SettingsRepository {
   static const String _dismissedInsightsKey = 'dismissed_insights';
   static const String _preferredNavAppKey = 'preferred_nav_app';
   static const String _smartInsightsEnabledKey = 'smart_insights_enabled';
+  static const String _gpsTrackingEnabledKey = 'gps_tracking_enabled';
 
   /// BCP-47 language code of the selected locale, or null for system default.
   String? get localeCode => _box.get(_localeKey) as String?;
@@ -105,6 +106,16 @@ class SettingsRepository {
 
   Future<void> setSmartInsightsEnabled(bool enabled) async {
     await _box.put(_smartInsightsEnabledKey, enabled);
+  }
+
+  /// Whether daily GPS tracking is switched on (Settings → GPS tracking).
+  ///
+  /// Defaults to off; the feature only runs while the app is open and only
+  /// while a location permission is granted.
+  bool get isGpsTrackingEnabled => _box.get(_gpsTrackingEnabledKey) == true;
+
+  Future<void> setGpsTrackingEnabled(bool enabled) async {
+    await _box.put(_gpsTrackingEnabledKey, enabled);
   }
 
   /// Stable ids of insights the user has dismissed, so the agent stops

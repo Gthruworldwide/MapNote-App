@@ -51,6 +51,7 @@ class AppConfig {
   /// Hive box names.
   static const String placesBoxName = 'places';
   static const String settingsBoxName = 'settings';
+  static const String gpsDailyBoxName = 'gps_daily';
 
   /// How often the periodic background backup runs.
   static const Duration backgroundSyncFrequency = Duration(hours: 24);

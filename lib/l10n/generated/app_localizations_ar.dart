@@ -325,6 +325,41 @@ class AppLocalizationsAr extends AppLocalizations {
   String get manageLocation => 'إدارة الموقع';
 
   @override
+  String get dailyGpsSection => 'تتبع GPS اليومي';
+
+  @override
+  String get dailyGpsToggle => 'تفعيل تتبع GPS اليومي';
+
+  @override
+  String get dailyGpsToggleSubtitle =>
+      'يسجّل المسافة والسرعة القصوى أثناء فتح التطبيق';
+
+  @override
+  String get dailyGpsPermissionHint =>
+      'يلزم إذن الموقع للتتبع. شغّل GPS واسمح بتحديد الموقع ثم أعد تفعيل التتبع.';
+
+  @override
+  String get dailyDistance => 'المسافة اليوم';
+
+  @override
+  String get dailyMaxSpeed => 'السرعة القصوى';
+
+  @override
+  String get dailyTrackingActive => 'التتبع نشط';
+
+  @override
+  String get dailyTrackingPaused => 'متوقف مؤقتًا';
+
+  @override
+  String get dailyGpsUnavailable => 'GPS غير متاح — تحقق من إعدادات الموقع';
+
+  @override
+  String get kmUnit => 'كم';
+
+  @override
+  String get kmhUnit => 'كم/س';
+
+  @override
   String get locationChipServiceOff => 'الموقع متوقف — اضغط للتفعيل';
 
   @override

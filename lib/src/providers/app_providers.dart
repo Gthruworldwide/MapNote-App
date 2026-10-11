@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 
 import '../data/local/hive_database.dart';
+import '../data/local/gps_daily_data_source.dart';
 import '../data/local/place_local_data_source.dart';
 import '../data/local/settings_repository.dart';
 import '../data/models/agent_insight.dart';
@@ -24,6 +25,7 @@ import '../services/background_sync_scheduler.dart';
 import '../services/biometric_service.dart';
 import '../services/dynamic_icon_service.dart';
 import '../services/gemini_client.dart';
+import '../services/gps_tracker_service.dart';
 import '../services/home_shortcut_service.dart';
 import '../services/local_insight_engine.dart';
 import '../services/location_service.dart';
@@ -56,12 +58,26 @@ final Provider<PlaceRepository> placeRepositoryProvider =
       return PlaceRepository(ref.watch(placeLocalDataSourceProvider));
     });
 
+/// Per-day GPS tracking summaries (dates → km / max speed), stored in Hive.
+final Provider<GpsDailyDataSource> gpsDailyDataSourceProvider =
+    Provider<GpsDailyDataSource>((Ref ref) {
+      return GpsDailyDataSource(ref.watch(hiveDatabaseProvider).gpsDailyBox);
+    });
+
 // ---------------------------------------------------------------------------
 // Services
 // ---------------------------------------------------------------------------
 
 final Provider<LocationService> locationServiceProvider =
     Provider<LocationService>((Ref ref) => const LocationService());
+
+/// Phase-1 daily GPS tracker (distance + max speed while the app is open).
+final Provider<GpsTrackerService> gpsTrackerProvider =
+    Provider<GpsTrackerService>((Ref ref) {
+      return GpsTrackerService(
+        dailyStore: ref.watch(gpsDailyDataSourceProvider),
+      );
+    });
 
 final Provider<NavigationService> navigationServiceProvider =
     Provider<NavigationService>((Ref ref) {
@@ -209,6 +225,20 @@ final NotifierProvider<SmartInsightsController, bool>
 smartInsightsEnabledProvider = NotifierProvider<SmartInsightsController, bool>(
   SmartInsightsController.new,
 );
+
+/// Whether daily GPS tracking is enabled (Settings → GPS tracking).
+final NotifierProvider<GpsTrackingEnabledController, bool>
+gpsTrackingEnabledProvider =
+    NotifierProvider<GpsTrackingEnabledController, bool>(
+      GpsTrackingEnabledController.new,
+    );
+
+/// Live daily distance/speed summary surfaced by the Settings tile.
+final NotifierProvider<GpsTrackingController, GpsTrackingState>
+gpsTrackingControllerProvider =
+    NotifierProvider<GpsTrackingController, GpsTrackingState>(
+      GpsTrackingController.new,
+    );
 
 // ---------------------------------------------------------------------------
 // Notifiers
@@ -742,5 +772,129 @@ class LocationStatusNotifier extends AsyncNotifier<LocationStatus> {
       }
     }
     await refresh();
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Daily GPS tracking
+// ---------------------------------------------------------------------------
+
+/// Persists the Settings toggle for daily GPS tracking.
+class GpsTrackingEnabledController extends Notifier<bool> {
+  @override
+  bool build() => ref.watch(settingsRepositoryProvider).isGpsTrackingEnabled;
+
+  Future<void> setEnabled(bool value) async {
+    await ref.read(settingsRepositoryProvider).setGpsTrackingEnabled(value);
+    state = value;
+  }
+}
+
+/// Immutable snapshot shown by the daily GPS summary tile.
+class GpsTrackingState {
+  const GpsTrackingState({
+    required this.enabled,
+    required this.active,
+    required this.totalKm,
+    required this.maxSpeedKmh,
+    required this.currentSpeedKmh,
+    required this.unavailable,
+  });
+
+  /// Whether the daily GPS toggle is currently on.
+  final bool enabled;
+
+  /// Whether the position stream is live right now.
+  final bool active;
+
+  /// Distance covered today, in kilometres.
+  final double totalKm;
+
+  /// Highest speed measured today, in km/h.
+  final double maxSpeedKmh;
+
+  /// Speed of the most recent fix, in km/h.
+  final double currentSpeedKmh;
+
+  /// True when tracking could not start (GPS off / permission denied).
+  final bool unavailable;
+
+  GpsTrackingState copyWith({
+    bool? enabled,
+    bool? active,
+    double? totalKm,
+    double? maxSpeedKmh,
+    double? currentSpeedKmh,
+    bool? unavailable,
+  }) {
+    return GpsTrackingState(
+      enabled: enabled ?? this.enabled,
+      active: active ?? this.active,
+      totalKm: totalKm ?? this.totalKm,
+      maxSpeedKmh: maxSpeedKmh ?? this.maxSpeedKmh,
+      currentSpeedKmh: currentSpeedKmh ?? this.currentSpeedKmh,
+      unavailable: unavailable ?? this.unavailable,
+    );
+  }
+}
+
+/// Bridges the [GpsTrackerService] stream into a widget-friendly state.
+///
+/// [build] watches the enabled toggle: flipping it starts or stops the tracker
+/// automatically, and the snapshot refreshes as positions accumulate.
+class GpsTrackingController extends Notifier<GpsTrackingState> {
+  @override
+  GpsTrackingState build() {
+    final bool enabled = ref.watch(gpsTrackingEnabledProvider);
+    final GpsTrackerService tracker = ref.read(gpsTrackerProvider);
+    // Capture the tracker before disposa: Ref cannot be read inside lifecycle
+    // callbacks. `stop()` persists the day's summary when anything was tracked.
+    ref.onDispose(() {
+      try {
+        unawaited(tracker.stop());
+      } catch (_) {
+        // Best-effort persistence on disposal.
+      }
+    });
+    if (enabled) {
+      scheduleMicrotask(start);
+    } else {
+      scheduleMicrotask(stop);
+    }
+    return _snapshot(tracker, enabled: enabled);
+  }
+
+  /// Starts the tracker (called when the toggle turns on or the app opens).
+  Future<void> start() async {
+    final GpsTrackerService tracker = ref.read(gpsTrackerProvider);
+    final bool started = await tracker.start(
+      locations: ref.read(locationServiceProvider),
+    );
+    if (!ref.mounted) return;
+    state = _snapshot(tracker, enabled: true, active: started)
+        .copyWith(unavailable: !started);
+  }
+
+  /// Stops the tracker and persists today's summary (toggle turned off).
+  Future<void> stop() async {
+    final GpsTrackerService tracker = ref.read(gpsTrackerProvider);
+    await tracker.stop();
+    if (!ref.mounted) return;
+    state = _snapshot(tracker, enabled: false);
+  }
+
+  GpsTrackingState _snapshot(
+    GpsTrackerService tracker, {
+    required bool enabled,
+    bool active = false,
+  }) {
+    return GpsTrackingState(
+      enabled: enabled,
+      active: active,
+      totalKm: tracker.totalDistanceKm,
+      maxSpeedKmh: tracker.maxSpeedKmh,
+      currentSpeedKmh: tracker.currentSpeedKmh,
+      unavailable: false,
+    );
   }
 }
