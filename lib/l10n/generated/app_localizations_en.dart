@@ -445,6 +445,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Biometric authentication isn\'t available on this device';
 
   @override
+  String get noDeviceSecurityWarning =>
+      'No lock screen or biometrics on this device, so verification was skipped.';
+
+  @override
   String get sectionPrivacy => 'Privacy & security';
 
   @override

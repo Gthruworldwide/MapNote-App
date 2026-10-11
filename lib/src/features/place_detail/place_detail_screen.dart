@@ -167,6 +167,7 @@ class PlaceDetailScreen extends ConsumerWidget {
         l10n: AppLocalizations.of(context),
         reason: AppLocalizations.of(context).unlockToEdit,
         messenger: ScaffoldMessenger.of(context),
+        allowWhenUnavailable: true,
       );
       if (!allowed || !context.mounted) return;
     }
@@ -198,6 +199,7 @@ class PlaceDetailScreen extends ConsumerWidget {
         l10n: l10n,
         reason: l10n.unlockToNavigate,
         messenger: messenger,
+        allowWhenUnavailable: true,
       );
       if (!allowed) return;
     }
@@ -221,6 +223,7 @@ class PlaceDetailScreen extends ConsumerWidget {
         l10n: l10n,
         reason: l10n.unlockToNavigate,
         messenger: ScaffoldMessenger.of(context),
+        allowWhenUnavailable: true,
       );
       if (!allowed) return;
     }
@@ -241,6 +244,7 @@ class PlaceDetailScreen extends ConsumerWidget {
         l10n: l10n,
         reason: l10n.unlockToNavigate,
         messenger: ScaffoldMessenger.of(context),
+        allowWhenUnavailable: true,
       );
       if (!allowed) return;
     }

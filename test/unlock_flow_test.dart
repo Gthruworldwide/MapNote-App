@@ -114,6 +114,7 @@ void main() {
   Future<void> pumpApp(
     WidgetTester tester, {
     required bool biometricVerdict,
+    bool biometricAvailable = true,
   }) async {
     await tester.pumpWidget(
       ProviderScope(
@@ -122,7 +123,10 @@ void main() {
           authServiceProvider.overrideWithValue(_FakeAuthService()),
           appHealthLoggerProvider.overrideWithValue(AppHealthLogger(null)),
           biometricServiceProvider.overrideWithValue(
-            _FakeBiometrics(available: true, verdict: biometricVerdict),
+            _FakeBiometrics(
+              available: biometricAvailable,
+              verdict: biometricVerdict,
+            ),
           ),
           // Keep PlacesNotifier's persistence chain out of Hive so it can
           // complete inside the FakeAsync zone.
@@ -192,5 +196,36 @@ void main() {
     // The failure snackbar is shown and the row stays masked.
     expect(find.text('Authentication failed'), findsOneWidget);
     expect(find.text('Cairo Tower'), findsNothing);
+  });
+
+  testWidgets('device without any security unlocks with a warning', (
+    WidgetTester tester,
+  ) async {
+    await tester.runAsync(() => dataSource.put(lockedPlace()));
+    await pumpApp(
+      tester,
+      biometricVerdict: false,
+      biometricAvailable: false,
+    );
+
+    await tester.longPress(find.byType(PlaceCard));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Unlock location'));
+    await tester.pumpAndSettle();
+
+    // No screen lock and no biometrics: the gate falls back instead of
+    // deadlocking the user out of their own place.
+    final Place? stored = await dataSource.getById('place-1');
+    expect(stored!.isLocked, isFalse);
+
+    // The warning explains that verification was skipped...
+    expect(
+      find.text(
+        'No lock screen or biometrics on this device, so verification was skipped.',
+      ),
+      findsOneWidget,
+    );
+    // ...and the row is unmasked again.
+    expect(find.text('Cairo Tower'), findsOneWidget);
   });
 }

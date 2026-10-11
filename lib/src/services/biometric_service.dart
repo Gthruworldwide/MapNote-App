@@ -26,6 +26,14 @@ class BiometricService {
 
   /// Prompts for biometric/device-credential verification. Returns `true` only
   /// when the user authenticated successfully.
+  ///
+  /// Uses adaptive device authentication: `biometricOnly` is false, so when
+  /// biometrics are missing (or the user fails them at least once on Android)
+  /// the system automatically offers the device credential (PIN / pattern /
+  /// password) as a fallback. `persistAcrossBackgrounding` keeps the auth
+  /// session alive across a background/foreground cycle. (local_auth 3.x maps
+  /// these to `AuthenticationOptions(biometricOnly: false, stickyAuth: true)`
+  /// internally — the options class itself is not exported to consumers.)
   Future<bool> authenticate({required String reason}) async {
     if (!_isSupported) return false;
     try {

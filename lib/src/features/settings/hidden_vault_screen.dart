@@ -153,6 +153,7 @@ class _VaultCard extends ConsumerWidget {
         l10n: l10n,
         reason: l10n.unlockToNavigate,
         messenger: messenger,
+        allowWhenUnavailable: true,
       );
       if (!allowed) return;
     }

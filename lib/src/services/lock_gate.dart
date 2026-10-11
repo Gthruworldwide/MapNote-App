@@ -31,9 +31,11 @@ Future<UnlockOutcome> requestUnlock(
 /// Gates a sensitive action behind verification and reports the result via a
 /// snackbar. Returns whether the caller may proceed.
 ///
-/// When the device cannot verify the user at all, the action is denied unless
-/// [allowWhenUnavailable] is set (used by surfaces that must stay reachable,
-/// such as the Hidden Vault).
+/// When the device cannot verify the user at all (no biometrics *and* no
+/// device credential), the action is denied unless [allowWhenUnavailable] is
+/// set — which every locked-location action uses so users are never trapped
+/// on devices without a screen lock (emulators, low-security devices). In
+/// that fallback case a warning is shown instead of an error.
 Future<bool> ensureUnlocked(
   WidgetRef ref, {
   required AppLocalizations l10n,
@@ -49,7 +51,12 @@ Future<bool> ensureUnlocked(
       messenger.showSnackBar(SnackBar(content: Text(l10n.authenticationFailed)));
       return false;
     case UnlockOutcome.unavailable:
-      if (allowWhenUnavailable) return true;
+      if (allowWhenUnavailable) {
+        messenger.showSnackBar(
+          SnackBar(content: Text(l10n.noDeviceSecurityWarning)),
+        );
+        return true;
+      }
       messenger.showSnackBar(
         SnackBar(content: Text(l10n.biometricsUnavailable)),
       );

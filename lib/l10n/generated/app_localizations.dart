@@ -920,6 +920,12 @@ abstract class AppLocalizations {
   /// **'Biometric authentication isn\'t available on this device'**
   String get biometricsUnavailable;
 
+  /// No description provided for @noDeviceSecurityWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'No lock screen or biometrics on this device, so verification was skipped.'**
+  String get noDeviceSecurityWarning;
+
   /// No description provided for @sectionPrivacy.
   ///
   /// In en, this message translates to:

@@ -110,6 +110,7 @@ class _PlaceActionsSheet extends ConsumerWidget {
         l10n: l10n,
         reason: l10n.unlockToNavigate,
         messenger: messenger,
+        allowWhenUnavailable: true,
       );
       if (!allowed) return;
     }
@@ -196,6 +197,7 @@ class _PlaceActionsSheet extends ConsumerWidget {
         l10n: l10n,
         reason: l10n.unlockToUnlock,
         messenger: messenger,
+        allowWhenUnavailable: true,
       );
       if (!allowed) return;
     }

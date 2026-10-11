@@ -440,6 +440,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get biometricsUnavailable => 'التحقق الحيوي غير متاح على هذا الجهاز';
 
   @override
+  String get noDeviceSecurityWarning =>
+      'لا توجد شاشة قفل أو تحقق حيوي على هذا الجهاز، لذلك تم تخطي التحقق';
+
+  @override
   String get sectionPrivacy => 'الخصوصية والأمان';
 
   @override

@@ -191,10 +191,19 @@ output. OAuth *client IDs* are public identifiers (fine in source); the client
 
 **Constraint.** `BiometricService` (`lib/src/services/biometric_service.dart`)
 is the **only** file touching `local_auth`. `isAvailable()` and
-`authenticate(reason:)` degrade to `false` (never throw). Locked places
-(`Place.isLocked`) are excluded from the Home list and their coordinates/notes
-are revealed only after a successful biometric / device-credential prompt
-(hidden vault, place detail, actions sheet).
+`authenticate(reason:)` degrade to `false` (never throw). Auth is adaptive
+(`biometricOnly: false`), so the system may fall back to the device PIN /
+pattern / password. Locked places (`Place.isLocked`) stay in the Home list
+but **masked** (title / notes / coordinates replaced by placeholder bars);
+their real content is revealed only after a successful biometric /
+device-credential prompt (hidden vault, place detail, actions sheet).
+
+**Fallback.** When the device cannot verify identity at all (no biometrics
+**and** no screen lock — e.g. an emulator), every locked-location gate is
+allowed through with a warning (`noDeviceSecurityWarning`,
+`allowWhenUnavailable: true` in `ensureUnlocked`). This prevents deadlocks
+where the user can lock a place but never unlock it. There is exactly one
+escape hatch; do not silently reveal locked content on any other path.
 
 **Eval.**
 
@@ -202,6 +211,8 @@ are revealed only after a successful biometric / device-credential prompt
 - No locked place content is rendered or navigable without a successful
   `authenticate()` in the same flow.
 - Every auth failure falls back to "still hidden", not to "revealed".
+- The only exception is the no-security fallback above, which must show the
+  warning string and must not be added on rows that are *not* locked.
 
 ---
 

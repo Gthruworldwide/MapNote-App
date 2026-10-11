@@ -189,6 +189,7 @@
   "unlockToOpenVault": "Verify your identity to open the Hidden Vault",
   "authenticationFailed": "Authentication failed",
   "biometricsUnavailable": "Biometric authentication isn't available on this device",
+  "noDeviceSecurityWarning": "No lock screen or biometrics on this device, so verification was skipped.",
 
   "sectionPrivacy": "Privacy & security",
   "hiddenVault": "Hidden Vault",

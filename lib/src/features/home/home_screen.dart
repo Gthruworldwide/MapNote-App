@@ -182,6 +182,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         l10n: AppLocalizations.of(context),
         reason: AppLocalizations.of(context).unlockToContinue,
         messenger: ScaffoldMessenger.of(context),
+        allowWhenUnavailable: true,
       );
       if (!allowed || !context.mounted) return;
     }
@@ -199,6 +200,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         l10n: AppLocalizations.of(context),
         reason: AppLocalizations.of(context).unlockToNavigate,
         messenger: ScaffoldMessenger.of(context),
+        allowWhenUnavailable: true,
       );
       if (!allowed) return;
     }
@@ -231,6 +233,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         l10n: AppLocalizations.of(context),
         reason: AppLocalizations.of(context).unlockToShareQr,
         messenger: ScaffoldMessenger.of(context),
+        allowWhenUnavailable: true,
       );
       if (!allowed || !mounted) return;
     }

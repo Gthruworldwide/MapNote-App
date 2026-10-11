@@ -223,6 +223,7 @@ class _RouteNoteAppState extends ConsumerState<RouteNoteApp>
             l10n: l10n,
             reason: l10n.unlockToNavigate,
             messenger: messenger,
+            allowWhenUnavailable: true,
           );
           if (!allowed) return;
         }

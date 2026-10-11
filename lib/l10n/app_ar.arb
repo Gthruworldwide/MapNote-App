@@ -154,6 +154,7 @@
   "unlockToOpenVault": "أكّد هويتك لفتح الخزنة المخفية",
   "authenticationFailed": "فشل التحقق",
   "biometricsUnavailable": "التحقق الحيوي غير متاح على هذا الجهاز",
+  "noDeviceSecurityWarning": "لا توجد شاشة قفل أو تحقق حيوي على هذا الجهاز، لذلك تم تخطي التحقق",
 
   "sectionPrivacy": "الخصوصية والأمان",
   "hiddenVault": "الخزنة المخفية",
