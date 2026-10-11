@@ -401,7 +401,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get locationLocked => 'تم قفل الموقع';
 
   @override
-  String get locationUnlocked => 'تم إلغاء قفل الموقع';
+  String get locationUnlocked => 'تم إلغاء قفل الموقع بنجاح';
 
   @override
   String get hideLocation => 'إخفاء الموقع';

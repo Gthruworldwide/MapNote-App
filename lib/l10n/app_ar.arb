@@ -140,7 +140,7 @@
   "lockLocation": "قفل الموقع",
   "unlockLocation": "إلغاء قفل الموقع",
   "locationLocked": "تم قفل الموقع",
-  "locationUnlocked": "تم إلغاء قفل الموقع",
+  "locationUnlocked": "تم إلغاء قفل الموقع بنجاح",
   "hideLocation": "إخفاء الموقع",
   "unhideLocation": "إظهار الموقع",
   "locationHidden": "تم إخفاء الموقع",

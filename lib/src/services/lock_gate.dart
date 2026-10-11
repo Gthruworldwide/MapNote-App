@@ -18,11 +18,29 @@ enum UnlockOutcome {
 }
 
 /// Prompts the user to verify their identity, without any UI feedback.
+///
+/// Uses adaptive device authentication (`biometricOnly: false`, see
+/// [BiometricService.authenticate]): when no biometrics are enrolled, the
+/// system falls back to the device PIN / pattern / password.
 Future<UnlockOutcome> requestUnlock(
   WidgetRef ref, {
   required String reason,
 }) async {
-  final BiometricService biometrics = ref.read(biometricServiceProvider);
+  return requestUnlockWith(
+    ref.read(biometricServiceProvider),
+    reason: reason,
+  );
+}
+
+/// Same as [requestUnlock] but with an already-resolved [BiometricService].
+///
+/// Use this from handlers that close their widget first (a bottom-sheet
+/// action that pops, then prompts the user for several seconds): it never
+/// touches `ref`, so it is safe to call after the widget was disposed.
+Future<UnlockOutcome> requestUnlockWith(
+  BiometricService biometrics, {
+  required String reason,
+}) async {
   if (!await biometrics.isAvailable()) return UnlockOutcome.unavailable;
   final bool verified = await biometrics.authenticate(reason: reason);
   return verified ? UnlockOutcome.verified : UnlockOutcome.failed;
@@ -42,8 +60,29 @@ Future<bool> ensureUnlocked(
   required String reason,
   required ScaffoldMessengerState messenger,
   bool allowWhenUnavailable = false,
+}) {
+  return ensureUnlockedWith(
+    ref.read(biometricServiceProvider),
+    l10n: l10n,
+    reason: reason,
+    messenger: messenger,
+    allowWhenUnavailable: allowWhenUnavailable,
+  );
+}
+
+/// Same as [ensureUnlocked] but with a pre-resolved [BiometricService], safe
+/// to call after the calling widget (e.g. a popped bottom sheet) is disposed.
+Future<bool> ensureUnlockedWith(
+  BiometricService biometrics, {
+  required AppLocalizations l10n,
+  required String reason,
+  required ScaffoldMessengerState messenger,
+  bool allowWhenUnavailable = false,
 }) async {
-  final UnlockOutcome outcome = await requestUnlock(ref, reason: reason);
+  final UnlockOutcome outcome = await requestUnlockWith(
+    biometrics,
+    reason: reason,
+  );
   switch (outcome) {
     case UnlockOutcome.verified:
       return true;

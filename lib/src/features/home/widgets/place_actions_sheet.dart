@@ -102,11 +102,19 @@ class _PlaceActionsSheet extends ConsumerWidget {
     AppLocalizations l10n,
   ) async {
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+
+    // Resolve services while the sheet is still mounted. After `pop()` the
+    // widget is disposed, so touching `ref` again once the auth prompt has
+    // run (seconds later) would be unsafe.
+    final navigation = ref.read(navigationServiceProvider);
+    final biometrics = ref.read(biometricServiceProvider);
+    final bool locked = place.isLocked;
+
     Navigator.of(context).pop();
 
-    if (place.isLocked) {
-      final bool allowed = await ensureUnlocked(
-        ref,
+    if (locked) {
+      final bool allowed = await ensureUnlockedWith(
+        biometrics,
         l10n: l10n,
         reason: l10n.unlockToNavigate,
         messenger: messenger,
@@ -115,9 +123,12 @@ class _PlaceActionsSheet extends ConsumerWidget {
       if (!allowed) return;
     }
 
-    final bool launched = await ref
-        .read(navigationServiceProvider)
-        .navigate(place.latitude, place.longitude);
+    // Verification only gates the action; when it passes, the navigation app
+    // is always launched.
+    final bool launched = await navigation.navigate(
+      place.latitude,
+      place.longitude,
+    );
     if (!launched) {
       messenger.showSnackBar(SnackBar(content: Text(l10n.locationUnavailable)));
     }
@@ -129,9 +140,10 @@ class _PlaceActionsSheet extends ConsumerWidget {
     AppLocalizations l10n,
   ) async {
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    final notifier = ref.read(placesProvider.notifier);
     final bool pinned = !place.isPinned;
     Navigator.of(context).pop();
-    await ref.read(placesProvider.notifier).setPinned(place.id, pinned);
+    await notifier.setPinned(place.id, pinned);
     messenger.showSnackBar(
       SnackBar(content: Text(pinned ? l10n.pinnedToTop : l10n.unpinnedFromTop)),
     );
@@ -147,6 +159,7 @@ class _PlaceActionsSheet extends ConsumerWidget {
     AppLocalizations l10n,
   ) async {
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    final shortcut = ref.read(homeShortcutServiceProvider);
     Navigator.of(context).pop();
 
     if (defaultTargetPlatform == TargetPlatform.iOS) {
@@ -154,9 +167,7 @@ class _PlaceActionsSheet extends ConsumerWidget {
       return;
     }
 
-    final bool requested = await ref
-        .read(homeShortcutServiceProvider)
-        .pinToHomeScreen(place);
+    final bool requested = await shortcut.pinToHomeScreen(place);
     messenger.showSnackBar(
       SnackBar(
         content: Text(
@@ -173,13 +184,19 @@ class _PlaceActionsSheet extends ConsumerWidget {
   ) async {
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
 
-    // Resolve the latest state through Riverpod (which mirrors Hive) instead of
-    // trusting the snapshot the sheet was built with, so toggling always
+    // Capture everything we need before the sheet closes: `ref` is unsafe
+    // once this widget is disposed, and the auth prompt outlives the pop.
+    final notifier = ref.read(placesProvider.notifier);
+    final repository = ref.read(placeRepositoryProvider);
+    final biometrics = ref.read(biometricServiceProvider);
+
+    // Resolve the latest state through Riverpod (which mirrors Hive) instead
+    // of trusting the snapshot the sheet was built with, so toggling always
     // reflects what is actually persisted.
     bool isLocked = place.isLocked;
-    final List<Place>? places = ref.read(placesProvider).value;
-    if (places != null) {
-      for (final Place candidate in places) {
+    final List<Place>? current = ref.read(placesProvider).value;
+    if (current != null) {
+      for (final Place candidate in current) {
         if (candidate.id == place.id) {
           isLocked = candidate.isLocked;
           break;
@@ -192,8 +209,8 @@ class _PlaceActionsSheet extends ConsumerWidget {
 
     // Turning the lock *on* is free; turning it *off* must be verified.
     if (!locked) {
-      final bool allowed = await ensureUnlocked(
-        ref,
+      final bool allowed = await ensureUnlockedWith(
+        biometrics,
         l10n: l10n,
         reason: l10n.unlockToUnlock,
         messenger: messenger,
@@ -202,9 +219,14 @@ class _PlaceActionsSheet extends ConsumerWidget {
       if (!allowed) return;
     }
 
-    // Persists isLocked via Hive and refreshes the provider so every listener
-    // (home list, detail screen, mask) rebuilds with the new state.
-    await ref.read(placesProvider.notifier).setLocked(place.id, locked);
+    // Explicit model update + write straight to Hive + provider refresh, so
+    // storage and every listener (home list, detail screen, mask) agree
+    // immediately once the action completes.
+    final Place? latest = await repository.getById(place.id);
+    final Place updated = (latest ?? place).copyWith(isLocked: locked);
+    await repository.save(updated);
+    await notifier.reload();
+
     messenger.showSnackBar(
       SnackBar(
         content: Text(locked ? l10n.locationLocked : l10n.locationUnlocked),
@@ -218,8 +240,9 @@ class _PlaceActionsSheet extends ConsumerWidget {
     AppLocalizations l10n,
   ) async {
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    final notifier = ref.read(placesProvider.notifier);
     Navigator.of(context).pop();
-    await ref.read(placesProvider.notifier).setHidden(place.id, true);
+    await notifier.setHidden(place.id, true);
     messenger.showSnackBar(SnackBar(content: Text(l10n.locationHidden)));
   }
 }

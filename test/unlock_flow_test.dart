@@ -14,6 +14,7 @@ import 'package:routenote/src/features/home/widgets/place_card.dart';
 import 'package:routenote/src/providers/app_providers.dart';
 import 'package:routenote/src/services/app_health_logger.dart';
 import 'package:routenote/src/services/biometric_service.dart';
+import 'package:routenote/src/services/navigation_service.dart';
 
 /// In-memory [PlaceLocalDataSource] so PlacesNotifier's save/getById/getAll
 /// chain runs on pure Dart futures (safe inside a widget test's FakeAsync
@@ -89,6 +90,22 @@ class _FakeBiometrics extends BiometricService {
   Future<bool> authenticate({required String reason}) async => verdict;
 }
 
+/// Records navigation launches so a test can assert that a locked place's
+/// "Navigate" action really runs once verification passed.
+class _FakeNavigationService extends NavigationService {
+  int navigateCalls = 0;
+  double? lastLatitude;
+  double? lastLongitude;
+
+  @override
+  Future<bool> navigate(double lat, double lng) async {
+    navigateCalls++;
+    lastLatitude = lat;
+    lastLongitude = lng;
+    return true;
+  }
+}
+
 void main() {
   late Directory tempDir;
   late Box<dynamic> placesBox;
@@ -115,6 +132,7 @@ void main() {
     WidgetTester tester, {
     required bool biometricVerdict,
     bool biometricAvailable = true,
+    NavigationService? navigationService,
   }) async {
     await tester.pumpWidget(
       ProviderScope(
@@ -128,6 +146,8 @@ void main() {
               verdict: biometricVerdict,
             ),
           ),
+          if (navigationService != null)
+            navigationServiceProvider.overrideWithValue(navigationService),
           // Keep PlacesNotifier's persistence chain out of Hive so it can
           // complete inside the FakeAsync zone.
           placeRepositoryProvider.overrideWithValue(
@@ -227,5 +247,78 @@ void main() {
     );
     // ...and the row is unmasked again.
     expect(find.text('Cairo Tower'), findsOneWidget);
+  });
+
+  testWidgets('navigate from a locked place only opens the maps app after '
+      'successful verification', (
+    WidgetTester tester,
+  ) async {
+    final _FakeNavigationService navigation = _FakeNavigationService();
+    await tester.runAsync(() => dataSource.put(lockedPlace()));
+    await pumpApp(
+      tester,
+      biometricVerdict: false,
+      navigationService: navigation,
+    );
+
+    await tester.longPress(find.byType(PlaceCard));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Navigate'));
+    await tester.pumpAndSettle();
+
+    // Verification failed -> the guard denies the action: no navigation, no
+    // state change, and the failure snackbar is shown.
+    expect(navigation.navigateCalls, 0);
+    expect(find.text('Authentication failed'), findsOneWidget);
+    final Place? stored = await dataSource.getById('place-1');
+    expect(stored!.isLocked, isTrue);
+  });
+
+  testWidgets('navigate from a locked place opens the maps app after '
+      'successful verification', (
+    WidgetTester tester,
+  ) async {
+    final _FakeNavigationService navigation = _FakeNavigationService();
+    await tester.runAsync(() => dataSource.put(lockedPlace()));
+    await pumpApp(tester, biometricVerdict: true, navigationService: navigation);
+
+    await tester.longPress(find.byType(PlaceCard));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Navigate'));
+    await tester.pumpAndSettle();
+
+    // Verification passed -> the intended action runs: the navigation app is
+    // launched with exactly the locked place's coordinates.
+    expect(navigation.navigateCalls, 1);
+    expect(navigation.lastLatitude, 30.0444);
+    expect(navigation.lastLongitude, 31.2357);
+  });
+
+  testWidgets('navigate from a locked place falls back on a no-security device',
+    (
+    WidgetTester tester,
+  ) async {
+    final _FakeNavigationService navigation = _FakeNavigationService();
+    await tester.runAsync(() => dataSource.put(lockedPlace()));
+    await pumpApp(
+      tester,
+      biometricVerdict: false,
+      biometricAvailable: false,
+      navigationService: navigation,
+    );
+
+    await tester.longPress(find.byType(PlaceCard));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Navigate'));
+    await tester.pumpAndSettle();
+
+    // No lock screen and no biometrics: the action proceeds with a warning.
+    expect(navigation.navigateCalls, 1);
+    expect(
+      find.text(
+        'No lock screen or biometrics on this device, so verification was skipped.',
+      ),
+      findsOneWidget,
+    );
   });
 }
