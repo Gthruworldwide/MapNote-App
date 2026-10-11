@@ -1,5 +1,7 @@
 import 'package:hive_ce/hive.dart';
 
+import '../../core/config/preferred_nav_app.dart';
+
 /// Small key/value store for app preferences backed by a Hive box.
 class SettingsRepository {
   SettingsRepository(this._box);
@@ -13,6 +15,8 @@ class SettingsRepository {
   static const String _authUserKey = 'auth_user';
   static const String _cloudAiKey = 'cloud_ai_enabled';
   static const String _dismissedInsightsKey = 'dismissed_insights';
+  static const String _preferredNavAppKey = 'preferred_nav_app';
+  static const String _smartInsightsEnabledKey = 'smart_insights_enabled';
 
   /// BCP-47 language code of the selected locale, or null for system default.
   String? get localeCode => _box.get(_localeKey) as String?;
@@ -73,6 +77,34 @@ class SettingsRepository {
 
   Future<void> setCloudAiEnabled(bool enabled) async {
     await _box.put(_cloudAiKey, enabled);
+  }
+
+  /// Which app should open for turn-by-turn navigation.
+  ///
+  /// Defaults to [PreferredNavApp.system].
+  PreferredNavApp get preferredNavApp {
+    final Object? raw = _box.get(_preferredNavAppKey);
+    if (raw is String) {
+      return PreferredNavApp.values.firstWhere(
+        (PreferredNavApp app) => app.name == raw,
+        orElse: () => PreferredNavApp.system,
+      );
+    }
+    return PreferredNavApp.system;
+  }
+
+  Future<void> setPreferredNavApp(PreferredNavApp app) async {
+    await _box.put(_preferredNavAppKey, app.name);
+  }
+
+  /// Whether the Smart Insights feature is shown on the Home screen.
+  ///
+  /// Defaults to true; the user can hide the card from Settings.
+  bool get areSmartInsightsEnabled =>
+      (_box.get(_smartInsightsEnabledKey) as bool?) ?? true;
+
+  Future<void> setSmartInsightsEnabled(bool enabled) async {
+    await _box.put(_smartInsightsEnabledKey, enabled);
   }
 
   /// Stable ids of insights the user has dismissed, so the agent stops

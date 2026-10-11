@@ -416,6 +416,36 @@ abstract class AppLocalizations {
   /// **'Select language'**
   String get selectLanguage;
 
+  /// No description provided for @preferredNavApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Preferred navigation app'**
+  String get preferredNavApp;
+
+  /// No description provided for @preferredNavAppSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Which app opens when you tap Navigate'**
+  String get preferredNavAppSubtitle;
+
+  /// No description provided for @navAppSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'System default'**
+  String get navAppSystem;
+
+  /// No description provided for @navAppGoogleMaps.
+  ///
+  /// In en, this message translates to:
+  /// **'Google Maps'**
+  String get navAppGoogleMaps;
+
+  /// No description provided for @navAppWaze.
+  ///
+  /// In en, this message translates to:
+  /// **'Waze'**
+  String get navAppWaze;
+
   /// No description provided for @sectionLocationServices.
   ///
   /// In en, this message translates to:
@@ -997,6 +1027,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Everything looks good — no suggestions right now.'**
   String get smartInsightsEmpty;
+
+  /// No description provided for @smartInsightsEmptyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Add more places to generate smart insights and suggestions.'**
+  String get smartInsightsEmptyHint;
+
+  /// No description provided for @smartInsightsEnable.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable Smart Insights'**
+  String get smartInsightsEnable;
+
+  /// No description provided for @smartInsightsEnableSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Show suggestions on the Home screen'**
+  String get smartInsightsEnableSubtitle;
 
   /// No description provided for @smartInsightsCloudAi.
   ///

@@ -173,6 +173,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get selectLanguage => 'Select language';
 
   @override
+  String get preferredNavApp => 'Preferred navigation app';
+
+  @override
+  String get preferredNavAppSubtitle => 'Which app opens when you tap Navigate';
+
+  @override
+  String get navAppSystem => 'System default';
+
+  @override
+  String get navAppGoogleMaps => 'Google Maps';
+
+  @override
+  String get navAppWaze => 'Waze';
+
+  @override
   String get sectionLocationServices => 'Location services';
 
   @override
@@ -495,6 +510,17 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get smartInsightsEmpty =>
       'Everything looks good — no suggestions right now.';
+
+  @override
+  String get smartInsightsEmptyHint =>
+      'Add more places to generate smart insights and suggestions.';
+
+  @override
+  String get smartInsightsEnable => 'Enable Smart Insights';
+
+  @override
+  String get smartInsightsEnableSubtitle =>
+      'Show suggestions on the Home screen';
 
   @override
   String get smartInsightsCloudAi => 'Cloud AI suggestions';

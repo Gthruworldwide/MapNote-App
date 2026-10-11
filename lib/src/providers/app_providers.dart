@@ -15,6 +15,7 @@ import '../data/remote/google_auth_service.dart';
 import '../data/repositories/place_repository.dart';
 import '../data/repositories/sync_repository.dart';
 import '../core/config/app_config.dart';
+import '../core/config/preferred_nav_app.dart';
 import '../services/agent_service.dart';
 import '../services/app_health_logger.dart';
 import '../services/app_logger.dart';
@@ -62,7 +63,13 @@ final Provider<LocationService> locationServiceProvider =
     Provider<LocationService>((Ref ref) => const LocationService());
 
 final Provider<NavigationService> navigationServiceProvider =
-    Provider<NavigationService>((Ref ref) => const NavigationService());
+    Provider<NavigationService>((Ref ref) {
+      // Rebuilt whenever the preferred-app setting changes, so every
+      // `nav.navigate(...)` call site picks the new app automatically.
+      return NavigationService(
+        preferredApp: ref.watch(preferredNavAppProvider),
+      );
+    });
 
 final Provider<ShareIntentService> shareIntentServiceProvider =
     Provider<ShareIntentService>((Ref ref) => const ShareIntentService());
@@ -117,9 +124,7 @@ final Provider<AppHealthLogger> appHealthLoggerProvider =
 
 /// Sanitized issue-reporting facade layered over the health log.
 final Provider<AppObserverService> appObserverServiceProvider =
-    Provider<AppObserverService>((
-      Ref ref,
-    ) {
+    Provider<AppObserverService>((Ref ref) {
       return AppObserverService(ref.watch(appHealthLoggerProvider));
     });
 
@@ -186,6 +191,19 @@ final AsyncNotifierProvider<AgentNotifier, List<AgentInsight>> agentProvider =
 /// Whether optional cloud (Gemini) suggestions are enabled.
 final NotifierProvider<CloudAiController, bool> cloudAiEnabledProvider =
     NotifierProvider<CloudAiController, bool>(CloudAiController.new);
+
+/// The app used to launch turn-by-turn navigation from place cards.
+final NotifierProvider<PreferredNavAppController, PreferredNavApp>
+preferredNavAppProvider =
+    NotifierProvider<PreferredNavAppController, PreferredNavApp>(
+      PreferredNavAppController.new,
+    );
+
+/// Whether the Smart Insights feature is shown on the Home screen.
+final NotifierProvider<SmartInsightsController, bool>
+smartInsightsEnabledProvider = NotifierProvider<SmartInsightsController, bool>(
+  SmartInsightsController.new,
+);
 
 // ---------------------------------------------------------------------------
 // Notifiers
@@ -304,7 +322,9 @@ class AuthNotifier extends AsyncNotifier<AuthUser?> {
           error: error,
           stackTrace: stackTrace,
         );
-        ref.read(appObserverServiceProvider).logIssue(
+        ref
+            .read(appObserverServiceProvider)
+            .logIssue(
               category: AppIssueCategory.sync,
               error: error.toString(),
               stackTrace: stackTrace.toString(),
@@ -316,12 +336,14 @@ class AuthNotifier extends AsyncNotifier<AuthUser?> {
   }
 
   Future<void> _persist(AuthUser user) async {
-    await ref.read(settingsRepositoryProvider).saveAuthSession(<String, dynamic>{
-      'id': user.id,
-      'email': user.email,
-      'displayName': user.displayName,
-      'photoUrl': user.photoUrl,
-    });
+    await ref
+        .read(settingsRepositoryProvider)
+        .saveAuthSession(<String, dynamic>{
+          'id': user.id,
+          'email': user.email,
+          'displayName': user.displayName,
+          'photoUrl': user.photoUrl,
+        });
   }
 
   Future<void> signIn() async {
@@ -445,11 +467,17 @@ class SyncController extends Notifier<SyncState> {
   /// Downloads the Drive backup and replaces local data.
   Future<void> restoreFromDrive() async {
     final AppHealthLogger health = ref.read(appHealthLoggerProvider);
-    health.log(HealthEventType.syncStarted, data: <String, Object?>{'kind': 'restore'});
+    health.log(
+      HealthEventType.syncStarted,
+      data: <String, Object?>{'kind': 'restore'},
+    );
     state = state.copyWith(status: SyncStatus.syncing, clearError: true);
     try {
       await ref.read(syncRepositoryProvider).restoreFromDrive();
-      health.log(HealthEventType.syncSucceeded, data: <String, Object?>{'kind': 'restore'});
+      health.log(
+        HealthEventType.syncSucceeded,
+        data: <String, Object?>{'kind': 'restore'},
+      );
       state = SyncState(
         status: SyncStatus.success,
         outcome: SyncOutcome.restored,
@@ -533,8 +561,9 @@ class AgentNotifier extends AsyncNotifier<List<AgentInsight>> {
   }
 
   List<AgentInsight> _visibleLocals(AgentContext context) {
-    final List<String> dismissed =
-        ref.read(settingsRepositoryProvider).dismissedInsightIds;
+    final List<String> dismissed = ref
+        .read(settingsRepositoryProvider)
+        .dismissedInsightIds;
     return ref
         .read(agentServiceProvider)
         .localInsights(context)
@@ -563,8 +592,9 @@ class AgentNotifier extends AsyncNotifier<List<AgentInsight>> {
     );
     if (!ref.mounted || cloud.isEmpty) return;
 
-    final List<String> dismissed =
-        ref.read(settingsRepositoryProvider).dismissedInsightIds;
+    final List<String> dismissed = ref
+        .read(settingsRepositoryProvider)
+        .dismissedInsightIds;
     final List<AgentInsight> current = state.value ?? const <AgentInsight>[];
     final Map<String, AgentInsight> byId = <String, AgentInsight>{
       for (final AgentInsight insight in current) insight.id: insight,
@@ -605,6 +635,29 @@ class CloudAiController extends Notifier<bool> {
     await ref.read(settingsRepositoryProvider).setCloudAiEnabled(enabled);
     state = enabled;
     await ref.read(agentProvider.notifier).refresh();
+  }
+}
+
+/// Persists the preferred navigation app choice.
+class PreferredNavAppController extends Notifier<PreferredNavApp> {
+  @override
+  PreferredNavApp build() =>
+      ref.watch(settingsRepositoryProvider).preferredNavApp;
+
+  Future<void> setPreferredApp(PreferredNavApp app) async {
+    await ref.read(settingsRepositoryProvider).setPreferredNavApp(app);
+    state = app;
+  }
+}
+
+/// Persists the Smart Insights visibility toggle.
+class SmartInsightsController extends Notifier<bool> {
+  @override
+  bool build() => ref.watch(settingsRepositoryProvider).areSmartInsightsEnabled;
+
+  Future<void> setEnabled(bool enabled) async {
+    await ref.read(settingsRepositoryProvider).setSmartInsightsEnabled(enabled);
+    state = enabled;
   }
 }
 

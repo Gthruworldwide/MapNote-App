@@ -307,7 +307,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
           const LocationStatusChip(),
-          const SmartInsightsCard(),
+          if (ref.watch(smartInsightsEnabledProvider))
+            const SmartInsightsCard(),
           Expanded(child: _buildBody(placesAsync, l10n)),
         ],
       ),

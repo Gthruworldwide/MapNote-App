@@ -81,11 +81,24 @@ class SmartInsightsList extends ConsumerWidget {
       if (!showWhenEmpty) return const SizedBox.shrink();
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 8),
-        child: Text(
-          l10n.smartInsightsEmpty,
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text(
+              l10n.smartInsightsEmpty,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 4),
+            // A concrete hint tells the user how the feature becomes useful.
+            Text(
+              l10n.smartInsightsEmptyHint,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
         ),
       );
     }
@@ -138,9 +151,8 @@ class _InsightTile extends ConsumerWidget {
                   Padding(
                     padding: const EdgeInsets.only(top: 4),
                     child: TextButton.icon(
-                      onPressed: () => ref
-                          .read(syncControllerProvider.notifier)
-                          .syncNow(),
+                      onPressed: () =>
+                          ref.read(syncControllerProvider.notifier).syncNow(),
                       icon: const Icon(Icons.cloud_sync_outlined, size: 18),
                       label: Text(l10n.insightActionSyncNow),
                       style: TextButton.styleFrom(
@@ -171,10 +183,7 @@ class _InsightTile extends ConsumerWidget {
 ) {
   switch (insight.kind) {
     case AgentInsightKind.custom:
-      return (
-        title: insight.customTitle ?? '',
-        body: insight.customBody ?? '',
-      );
+      return (title: insight.customTitle ?? '', body: insight.customBody ?? '');
     case AgentInsightKind.welcome:
       return (title: l10n.insightWelcomeTitle, body: l10n.insightWelcomeBody);
     case AgentInsightKind.nearbyDuplicates:

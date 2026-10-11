@@ -173,6 +173,22 @@ class AppLocalizationsAr extends AppLocalizations {
   String get selectLanguage => 'اختر اللغة';
 
   @override
+  String get preferredNavApp => 'تطبيق الملاحة المفضل';
+
+  @override
+  String get preferredNavAppSubtitle =>
+      'التطبيق الذي يُفتح عند الضغط على «تنقّل»';
+
+  @override
+  String get navAppSystem => 'افتراضي النظام';
+
+  @override
+  String get navAppGoogleMaps => 'خرائط جوجل';
+
+  @override
+  String get navAppWaze => 'ويز';
+
+  @override
   String get sectionLocationServices => 'خدمات الموقع';
 
   @override
@@ -490,6 +506,16 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get smartInsightsEmpty => 'كل شيء يبدو جيدًا — لا توجد اقتراحات الآن.';
+
+  @override
+  String get smartInsightsEmptyHint =>
+      'أضف المزيد من الأماكن لتوليد رؤى واقتراحات ذكية.';
+
+  @override
+  String get smartInsightsEnable => 'تفعيل الرؤى الذكية';
+
+  @override
+  String get smartInsightsEnableSubtitle => 'عرض الاقتراحات في الشاشة الرئيسية';
 
   @override
   String get smartInsightsCloudAi => 'اقتراحات الذكاء السحابي';

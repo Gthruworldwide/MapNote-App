@@ -4,6 +4,7 @@ import 'package:geolocator/geolocator.dart';
 
 import '../../../l10n/generated/app_localizations.dart';
 import '../../core/config/app_config.dart';
+import '../../core/config/preferred_nav_app.dart';
 import '../../core/utils/date_formats.dart';
 import '../../data/models/place.dart';
 import '../../data/remote/auth_service.dart';
@@ -29,11 +30,14 @@ class SettingsScreen extends ConsumerWidget {
     final AsyncValue<LocationStatus> location = ref.watch(
       locationStatusProvider,
     );
-    final int hiddenCount = ref
-        .watch(placesProvider)
-        .value
-        ?.where((Place place) => place.isHidden)
-        .length ?? 0;
+    final PreferredNavApp navApp = ref.watch(preferredNavAppProvider);
+    final int hiddenCount =
+        ref
+            .watch(placesProvider)
+            .value
+            ?.where((Place place) => place.isHidden)
+            .length ??
+        0;
 
     ref.listen<SyncState>(syncControllerProvider, (prev, next) {
       if (prev?.status != SyncStatus.syncing) return;
@@ -81,7 +85,14 @@ class SettingsScreen extends ConsumerWidget {
           ),
           _SettingsSection(
             title: l10n.sectionPreferences,
-            child: _buildPreferencesCard(context, ref, l10n, locale, themeMode),
+            child: _buildPreferencesCard(
+              context,
+              ref,
+              l10n,
+              locale,
+              themeMode,
+              navApp,
+            ),
           ),
           _SettingsSection(
             title: l10n.sectionSmartInsights,
@@ -353,6 +364,7 @@ class SettingsScreen extends ConsumerWidget {
     AppLocalizations l10n,
     Locale? locale,
     ThemeMode themeMode,
+    PreferredNavApp navApp,
   ) {
     final ThemeData theme = Theme.of(context);
     return Padding(
@@ -383,6 +395,38 @@ class SettingsScreen extends ConsumerWidget {
               ],
               onChanged: (Locale? value) =>
                   ref.read(localeControllerProvider.notifier).setLocale(value),
+            ),
+          ),
+          const Divider(height: 24),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.navigation_outlined),
+            title: Text(l10n.preferredNavApp),
+            subtitle: Text(l10n.preferredNavAppSubtitle),
+            trailing: DropdownButton<PreferredNavApp>(
+              value: navApp,
+              underline: const SizedBox.shrink(),
+              items: <DropdownMenuItem<PreferredNavApp>>[
+                DropdownMenuItem<PreferredNavApp>(
+                  value: PreferredNavApp.system,
+                  child: Text(l10n.navAppSystem),
+                ),
+                DropdownMenuItem<PreferredNavApp>(
+                  value: PreferredNavApp.googleMaps,
+                  child: Text(l10n.navAppGoogleMaps),
+                ),
+                DropdownMenuItem<PreferredNavApp>(
+                  value: PreferredNavApp.waze,
+                  child: Text(l10n.navAppWaze),
+                ),
+              ],
+              onChanged: (PreferredNavApp? value) {
+                if (value != null) {
+                  ref
+                      .read(preferredNavAppProvider.notifier)
+                      .setPreferredApp(value);
+                }
+              },
             ),
           ),
           const Divider(height: 24),
@@ -438,48 +482,65 @@ class SettingsScreen extends ConsumerWidget {
   ) {
     final ThemeData theme = Theme.of(context);
     final bool cloudAvailable = AppConfig.isGeminiConfigured;
+    final bool insightsEnabled = ref.watch(smartInsightsEnabledProvider);
     final bool cloudEnabled = ref.watch(cloudAiEnabledProvider);
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Row(
-            children: <Widget>[
-              Icon(
-                Icons.auto_awesome,
-                size: 20,
-                color: theme.colorScheme.primary,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  l10n.smartInsightsTitle,
-                  style: theme.textTheme.titleSmall,
+          // Master switch: hide or show the whole Smart Insights feature.
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            secondary: Icon(
+              Icons.auto_awesome,
+              color: theme.colorScheme.primary,
+            ),
+            title: Text(l10n.smartInsightsEnable),
+            subtitle: Text(l10n.smartInsightsEnableSubtitle),
+            value: insightsEnabled,
+            onChanged: (bool value) => ref
+                .read(smartInsightsEnabledProvider.notifier)
+                .setEnabled(value),
+          ),
+          if (insightsEnabled) ...<Widget>[
+            const SizedBox(height: 8),
+            Row(
+              children: <Widget>[
+                Icon(
+                  Icons.auto_awesome,
+                  size: 20,
+                  color: theme.colorScheme.primary,
                 ),
-              ),
-              IconButton(
-                tooltip: l10n.smartInsightsRefresh,
-                onPressed: () => ref.read(agentProvider.notifier).refresh(),
-                icon: const Icon(Icons.refresh, size: 20),
-                visualDensity: VisualDensity.compact,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    l10n.smartInsightsTitle,
+                    style: theme.textTheme.titleSmall,
+                  ),
+                ),
+                IconButton(
+                  tooltip: l10n.smartInsightsRefresh,
+                  onPressed: () => ref.read(agentProvider.notifier).refresh(),
+                  icon: const Icon(Icons.refresh, size: 20),
+                  visualDensity: VisualDensity.compact,
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            const SmartInsightsList(showWhenEmpty: true),
+            if (cloudAvailable) ...<Widget>[
+              const Divider(height: 24),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                secondary: const Icon(Icons.cloud_outlined),
+                title: Text(l10n.smartInsightsCloudAi),
+                subtitle: Text(l10n.smartInsightsCloudAiSubtitle),
+                value: cloudEnabled,
+                onChanged: (bool value) =>
+                    ref.read(cloudAiEnabledProvider.notifier).setEnabled(value),
               ),
             ],
-          ),
-          const SizedBox(height: 4),
-          const SmartInsightsList(showWhenEmpty: true),
-          if (cloudAvailable) ...<Widget>[
-            const Divider(height: 24),
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              secondary: const Icon(Icons.cloud_outlined),
-              title: Text(l10n.smartInsightsCloudAi),
-              subtitle: Text(l10n.smartInsightsCloudAiSubtitle),
-              value: cloudEnabled,
-              onChanged: (bool value) => ref
-                  .read(cloudAiEnabledProvider.notifier)
-                  .setEnabled(value),
-            ),
           ],
         ],
       ),
