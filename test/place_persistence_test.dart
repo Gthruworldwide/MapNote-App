@@ -50,6 +50,30 @@ void main() {
     }
   });
 
+  test('fromMap defaults isLocked to false when the key is missing or null',
+      () {
+    // Places saved before the lock feature existed have no 'isLocked' key. It
+    // must parse as false (never fall back to true and lock the location).
+    final Map<String, dynamic> base = _place().toMap()..remove('isLocked');
+    expect(Place.fromMap(base).isLocked, isFalse);
+
+    // An explicitly-null value behaves identically.
+    expect(
+      Place.fromMap(<String, dynamic>{...base, 'isLocked': null}).isLocked,
+      isFalse,
+    );
+
+    // Legacy string/number forms never coerce a "no" into "locked".
+    expect(
+      Place.fromMap(<String, dynamic>{...base, 'isLocked': 'no'}).isLocked,
+      isFalse,
+    );
+    expect(
+      Place.fromMap(<String, dynamic>{...base, 'isLocked': 0}).isLocked,
+      isFalse,
+    );
+  });
+
   test('a locked place stays locked after put (flush) and a box reopen', () async {
     await source().put(_place(isLocked: true));
 
@@ -89,6 +113,12 @@ void main() {
     expect(stored, isNotNull);
     expect(stored!.isLocked, isFalse,
         reason: 'an unlock must survive a restart, not revert to locked');
+
+    // The raw map read back from disk after the restart carries false too, so
+    // no other read path (startup, backup, sync) can flip it back to locked.
+    final Map<String, dynamic> rawAfterRestart =
+        Map<String, dynamic>.from(placesBox.get('place-1') as Map);
+    expect(rawAfterRestart['isLocked'], isFalse);
   });
 }
 
