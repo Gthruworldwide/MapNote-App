@@ -20,6 +20,40 @@ python tool/supervisor_agent.py --input routenote_diagnostics.json --yes
 python tool/supervisor_agent.py --watch --interval 15 --input routenote_diagnostics.json
 ```
 
+## Telegram control bridge
+
+`supervisor_agent.py` can also run as a small Telegram bot so the dev machine
+can be driven remotely (useful when you are away from the keyboard):
+
+```bash
+# put the token + your chat id in tool/.env (git-ignored)
+python tool/supervisor_agent.py --telegram-check   # validate token/chat id
+python tool/supervisor_agent.py --telegram         # start the polling loop
+```
+
+| Command | Effect |
+| --- | --- |
+| `/start`, `/help` | Show the control menu |
+| `/status` | System time, Git branch + working-tree state, and connected device (`REA NX9`) via `flutter devices` |
+| `/test` | Run `flutter test` and reply with the summary |
+| `/prompt <instruction>` | Forward the instruction to the dev agent (same hand-off as the automated loop) |
+
+Safety:
+
+- **Single authorized user.** Every update is checked against
+  `TELEGRAM_CHAT_ID`; messages from any other `user.id` are ignored.
+- **No shell.** Commands are fixed argv lists run with `shell=False`;
+  `/prompt` text is passed to the dev agent as a single argv element and is
+  never parsed by a shell.
+- **Redacted replies.** Command output is passed through the same redactor as
+  the diagnostics loop before it is sent.
+- The bot token lives only in `tool/.env`. A long-polling loop keeps a single
+  outbound HTTPS connection to `api.telegram.org`; nothing here touches the
+  Flutter app.
+
+> Start the polling loop inside `supervisor_agent.py` itself with
+> `--telegram`; it is a foreground process (Ctrl+C to stop).
+
 ## Input contract
 
 `--input` accepts either **one JSON array** of records or **JSON-lines**
@@ -58,6 +92,8 @@ traces into the input file.
 | `SUPERVISOR_GEMINI_MODEL` | `gemini-1.5-pro` | Model id |
 | `DEV_AGENT_CMD` | `claude` | Dev-agent binary (must be installed) |
 | `DEV_AGENT_EXTRA_ARGS` | `[]` | JSON list of fixed argv, e.g. `["-p","--output-format","text"]` |
+| `TELEGRAM_BOT_TOKEN` | — | BotFather token for the control bot |
+| `TELEGRAM_CHAT_ID` | — | The only `user.id` the bot will obey |
 
 ## Related
 
