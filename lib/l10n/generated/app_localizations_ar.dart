@@ -412,6 +412,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get unlockToUnlock => 'أكّد هويتك لإلغاء القفل';
 
   @override
+  String get unlockToShareQr => 'أكّد هويتك للمشاركة';
+
+  @override
   String get unlockToOpenVault => 'أكّد هويتك لفتح الخزنة المخفية';
 
   @override

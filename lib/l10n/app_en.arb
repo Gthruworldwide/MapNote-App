@@ -180,6 +180,7 @@
   "unlockToNavigate": "Verify your identity to navigate",
   "unlockToEdit": "Verify your identity to edit",
   "unlockToUnlock": "Verify your identity to unlock",
+  "unlockToShareQr": "Verify your identity to share",
   "unlockToOpenVault": "Verify your identity to open the Hidden Vault",
   "authenticationFailed": "Authentication failed",
   "biometricsUnavailable": "Biometric authentication isn't available on this device",

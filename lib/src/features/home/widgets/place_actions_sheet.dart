@@ -7,7 +7,6 @@ import '../../../../l10n/generated/app_localizations.dart';
 import '../../../providers/app_providers.dart';
 import '../../../services/lock_gate.dart';
 
-
 /// A result the sheet asks the caller to perform (needs a screen-level context).
 enum PlaceActionResult { shareQr }
 
@@ -22,6 +21,9 @@ Future<PlaceActionResult?> showPlaceActionsSheet(
   return showModalBottomSheet<PlaceActionResult>(
     context: context,
     showDragHandle: true,
+    // Lets the sheet grow taller than half the screen so the full action list
+    // stays reachable on small screens / large text scales without overflow.
+    isScrollControlled: true,
     builder: (BuildContext context) => _PlaceActionsSheet(place: place),
   );
 }
@@ -37,55 +39,57 @@ class _PlaceActionsSheet extends ConsumerWidget {
     final AppLocalizations l10n = AppLocalizations.of(context);
 
     return SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Padding(
-            padding: const EdgeInsets.fromLTRB(24, 4, 24, 8),
-            child: Text(
-              place.name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.titleMedium,
+      // Scrollable so a long action list (or a large system text scale) never
+      // overflows the bottom-sheet bounds — this was the 52px overflow error.
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 4, 24, 8),
+              child: Text(
+                place.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
             ),
-          ),
-          _ActionTile(
-            icon: Icons.directions,
-            label: l10n.navigate,
-            onTap: () => _navigate(context, ref, l10n),
-          ),
-          _ActionTile(
-            icon: place.isPinned
-                ? Icons.push_pin_outlined
-                : Icons.push_pin,
-            label: place.isPinned ? l10n.unpinFromTop : l10n.pinToTop,
-            onTap: () => _togglePin(context, ref, l10n),
-          ),
-          _ActionTile(
-            icon: Icons.qr_code_2,
-            label: l10n.shareQr,
-            onTap: () => _showQr(context),
-          ),
-          _ActionTile(
-            icon: Icons.add_to_home_screen,
-            label: l10n.addToHomeScreen,
-            onTap: () => _addShortcut(context, ref, l10n),
-          ),
-          const Divider(height: 8),
-          _ActionTile(
-            icon: place.isLocked ? Icons.lock_open : Icons.lock_outline,
-            label: place.isLocked ? l10n.unlockLocation : l10n.lockLocation,
-            onTap: () => _toggleLock(context, ref, l10n),
-          ),
-          if (!place.isHidden)
             _ActionTile(
-              icon: Icons.visibility_off_outlined,
-              label: l10n.hideLocation,
-              onTap: () => _hide(context, ref, l10n),
+              icon: Icons.directions,
+              label: l10n.navigate,
+              onTap: () => _navigate(context, ref, l10n),
             ),
-          const SizedBox(height: 8),
-        ],
+            _ActionTile(
+              icon: place.isPinned ? Icons.push_pin_outlined : Icons.push_pin,
+              label: place.isPinned ? l10n.unpinFromTop : l10n.pinToTop,
+              onTap: () => _togglePin(context, ref, l10n),
+            ),
+            _ActionTile(
+              icon: Icons.qr_code_2,
+              label: l10n.shareQr,
+              onTap: () => _showQr(context),
+            ),
+            _ActionTile(
+              icon: Icons.add_to_home_screen,
+              label: l10n.addToHomeScreen,
+              onTap: () => _addShortcut(context, ref, l10n),
+            ),
+            const Divider(height: 8),
+            _ActionTile(
+              icon: place.isLocked ? Icons.lock_open : Icons.lock_outline,
+              label: place.isLocked ? l10n.unlockLocation : l10n.lockLocation,
+              onTap: () => _toggleLock(context, ref, l10n),
+            ),
+            if (!place.isHidden)
+              _ActionTile(
+                icon: Icons.visibility_off_outlined,
+                label: l10n.hideLocation,
+                onTap: () => _hide(context, ref, l10n),
+              ),
+            const SizedBox(height: 8),
+          ],
+        ),
       ),
     );
   }
@@ -154,7 +158,9 @@ class _PlaceActionsSheet extends ConsumerWidget {
         .pinToHomeScreen(place);
     messenger.showSnackBar(
       SnackBar(
-        content: Text(requested ? l10n.shortcutRequested : l10n.shortcutUnavailable),
+        content: Text(
+          requested ? l10n.shortcutRequested : l10n.shortcutUnavailable,
+        ),
       ),
     );
   }
@@ -165,7 +171,22 @@ class _PlaceActionsSheet extends ConsumerWidget {
     AppLocalizations l10n,
   ) async {
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
-    final bool locked = !place.isLocked;
+
+    // Resolve the latest state through Riverpod (which mirrors Hive) instead of
+    // trusting the snapshot the sheet was built with, so toggling always
+    // reflects what is actually persisted.
+    bool isLocked = place.isLocked;
+    final List<Place>? places = ref.read(placesProvider).value;
+    if (places != null) {
+      for (final Place candidate in places) {
+        if (candidate.id == place.id) {
+          isLocked = candidate.isLocked;
+          break;
+        }
+      }
+    }
+
+    final bool locked = !isLocked;
     Navigator.of(context).pop();
 
     // Turning the lock *on* is free; turning it *off* must be verified.
@@ -179,9 +200,13 @@ class _PlaceActionsSheet extends ConsumerWidget {
       if (!allowed) return;
     }
 
+    // Persists isLocked via Hive and refreshes the provider so every listener
+    // (home list, detail screen, mask) rebuilds with the new state.
     await ref.read(placesProvider.notifier).setLocked(place.id, locked);
     messenger.showSnackBar(
-      SnackBar(content: Text(locked ? l10n.locationLocked : l10n.locationUnlocked)),
+      SnackBar(
+        content: Text(locked ? l10n.locationLocked : l10n.locationUnlocked),
+      ),
     );
   }
 
@@ -211,10 +236,6 @@ class _ActionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      leading: Icon(icon),
-      title: Text(label),
-      onTap: onTap,
-    );
+    return ListTile(leading: Icon(icon), title: Text(label), onTap: onTap);
   }
 }

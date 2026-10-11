@@ -145,6 +145,7 @@
   "unlockToNavigate": "أكّد هويتك للتنقل",
   "unlockToEdit": "أكّد هويتك للتعديل",
   "unlockToUnlock": "أكّد هويتك لإلغاء القفل",
+  "unlockToShareQr": "أكّد هويتك للمشاركة",
   "unlockToOpenVault": "أكّد هويتك لفتح الخزنة المخفية",
   "authenticationFailed": "فشل التحقق",
   "biometricsUnavailable": "التحقق الحيوي غير متاح على هذا الجهاز",

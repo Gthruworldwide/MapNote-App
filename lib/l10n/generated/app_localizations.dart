@@ -866,6 +866,12 @@ abstract class AppLocalizations {
   /// **'Verify your identity to unlock'**
   String get unlockToUnlock;
 
+  /// No description provided for @unlockToShareQr.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify your identity to share'**
+  String get unlockToShareQr;
+
   /// No description provided for @unlockToOpenVault.
   ///
   /// In en, this message translates to:

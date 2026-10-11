@@ -416,6 +416,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get unlockToUnlock => 'Verify your identity to unlock';
 
   @override
+  String get unlockToShareQr => 'Verify your identity to share';
+
+  @override
   String get unlockToOpenVault =>
       'Verify your identity to open the Hidden Vault';
 

@@ -43,9 +43,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final Stopwatch stopwatch = Stopwatch()..start();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      ref
-          .read(appHealthLoggerProvider)
-          .logUiLatency('home', stopwatch.elapsed);
+      ref.read(appHealthLoggerProvider).logUiLatency('home', stopwatch.elapsed);
     });
   }
 
@@ -78,48 +76,53 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final AppLocalizations l10n = AppLocalizations.of(context);
     await showModalBottomSheet<void>(
       context: context,
+      // Defaults to half-screen; allow full height so the options never
+      // overflow on small screens / large text scales.
+      isScrollControlled: true,
       showDragHandle: true,
       builder: (BuildContext sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 4, 24, 8),
-              child: Text(
-                l10n.addLocation,
-                style: Theme.of(sheetContext).textTheme.titleMedium,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 4, 24, 8),
+                child: Text(
+                  l10n.addLocation,
+                  style: Theme.of(sheetContext).textTheme.titleMedium,
+                ),
               ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.my_location),
-              title: Text(l10n.addCurrentLocation),
-              subtitle: Text(l10n.addCurrentLocationSubtitle),
-              onTap: () {
-                Navigator.of(sheetContext).pop();
-                _openAddPlace(mode: LocationEntryMode.gps);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.auto_awesome),
-              title: Text(l10n.aiSmartPaste),
-              subtitle: Text(l10n.aiSmartPasteSubtitle),
-              onTap: () {
-                Navigator.of(sheetContext).pop();
-                _handleSmartPaste();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.edit_location_alt_outlined),
-              title: Text(l10n.enterCoordinates),
-              subtitle: Text(l10n.enterCoordinatesSubtitle),
-              onTap: () {
-                Navigator.of(sheetContext).pop();
-                _openAddPlace(mode: LocationEntryMode.manual);
-              },
-            ),
-            const SizedBox(height: 8),
-          ],
+              ListTile(
+                leading: const Icon(Icons.my_location),
+                title: Text(l10n.addCurrentLocation),
+                subtitle: Text(l10n.addCurrentLocationSubtitle),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  _openAddPlace(mode: LocationEntryMode.gps);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.auto_awesome),
+                title: Text(l10n.aiSmartPaste),
+                subtitle: Text(l10n.aiSmartPasteSubtitle),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  _handleSmartPaste();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.edit_location_alt_outlined),
+                title: Text(l10n.enterCoordinates),
+                subtitle: Text(l10n.enterCoordinatesSubtitle),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  _openAddPlace(mode: LocationEntryMode.manual);
+                },
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
         ),
       ),
     );
@@ -211,14 +214,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   /// Opens the long-press context menu, then shows a QR dialog if requested.
+  ///
+  /// A locked place encodes its raw coordinates into the QR code, so sharing
+  /// one requires identity verification first (same gate as navigate/edit).
+  /// Unlocked places are shared directly, without any prompt.
   Future<void> _showPlaceActions(Place place) async {
     final PlaceActionResult? result = await showPlaceActionsSheet(
       context,
       place,
     );
-    if (result == PlaceActionResult.shareQr && mounted) {
-      await showPlaceQrDialog(context, place);
+    if (result != PlaceActionResult.shareQr || !mounted) return;
+
+    if (place.isLocked) {
+      final bool allowed = await ensureUnlocked(
+        ref,
+        l10n: AppLocalizations.of(context),
+        reason: AppLocalizations.of(context).unlockToShareQr,
+        messenger: ScaffoldMessenger.of(context),
+      );
+      if (!allowed || !mounted) return;
     }
+
+    await showPlaceQrDialog(context, place);
   }
 
   @override
