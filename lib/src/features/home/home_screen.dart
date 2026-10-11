@@ -311,7 +311,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
           const LocationStatusChip(),
-          if (ref.watch(autoMotionEnabledProvider))
+          // Keep the card on screen while AutoMotion is enabled, or while the
+          // day already has recorded motion, so paused users can still see
+          // today's totals from the Paused badge.
+          if (ref.watch(autoMotionEnabledProvider) ||
+              ref.watch(autoMotionControllerProvider).totalKm > 0)
             const AutoMotionCard(),
           if (ref.watch(smartInsightsEnabledProvider))
             const SmartInsightsCard(),

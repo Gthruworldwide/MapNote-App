@@ -7,8 +7,9 @@ import '../../../providers/app_providers.dart';
 /// The AutoMotion dashboard card for the Home screen.
 ///
 /// Surfaces today's recorded distance, today's max speed and whether tracking
-/// is live. Rendered on Home while AutoMotion is enabled (see
-/// [AutoMotionEnabledController]).
+/// is live. Home keeps it visible while AutoMotion is enabled, or while today
+/// already has recorded motion — in that case the badge reads "Paused" so the
+/// user can still see their day's totals.
 class AutoMotionCard extends ConsumerWidget {
   const AutoMotionCard({super.key});
 

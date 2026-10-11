@@ -1016,7 +1016,11 @@ class AutoMotionController extends Notifier<AutoMotionState> {
     if (enabled) {
       scheduleMicrotask(start);
     } else {
-      scheduleMicrotask(stop);
+      // Toggle off (or disabled from the start): stop any live stream first so
+      // nothing tracked so far is lost, then re-seed today's tallies from
+      // storage so the Home card can keep showing the day's metrics with a
+      // "Paused" badge.
+      scheduleMicrotask(_idle);
     }
     return _snapshot(tracker, enabled: enabled);
   }
@@ -1032,10 +1036,13 @@ class AutoMotionController extends Notifier<AutoMotionState> {
         .copyWith(unavailable: !started);
   }
 
-  /// Stops the tracker and persists today's metrics (toggle turned off).
-  Future<void> stop() async {
+  /// Called while AutoMotion is switched off. Persists anything still in
+  /// memory (if the toggle was just turned off mid-session), then loads today's
+  /// stored totals so the paused card still reflects the day's motion.
+  Future<void> _idle() async {
     final AutoMotionService tracker = ref.read(autoMotionServiceProvider);
     await tracker.stop();
+    await tracker.resyncFromStore();
     if (!ref.mounted) return;
     state = _snapshot(tracker, enabled: false);
   }

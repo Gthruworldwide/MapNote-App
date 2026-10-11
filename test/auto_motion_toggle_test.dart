@@ -10,6 +10,7 @@ import 'package:routenote/app.dart';
 import 'package:routenote/l10n/generated/app_localizations.dart';
 import 'package:routenote/src/data/local/auto_motion_data_source.dart';
 import 'package:routenote/src/data/local/hive_database.dart';
+import 'package:routenote/src/data/models/daily_gps_summary.dart';
 import 'package:routenote/src/data/remote/auth_service.dart';
 import 'package:routenote/src/features/home/widgets/auto_motion_card.dart';
 import 'package:routenote/src/features/settings/settings_screen.dart';
@@ -57,6 +58,25 @@ class _InstantMotion extends AutoMotionService {
     Stream<Position>? positions,
   }) async {
     return true;
+  }
+
+  @override
+  Future<void> stop() async {}
+}
+
+/// A tracker that never writes to Hive, used by the "paused with today's
+/// totals" test. `_idle` re-seeds today's totals from the store to drive the
+/// card, but `stop()` must not persist anything: the dispose-time save would
+/// hand a real Hive write to the FakeAsync teardown zone, which hangs.
+class _IdleMotion extends AutoMotionService {
+  _IdleMotion(AutoMotionDataSource store) : super(dailyStore: store);
+
+  @override
+  Future<bool> start({
+    LocationService? locations,
+    Stream<Position>? positions,
+  }) async {
+    return false;
   }
 
   @override
@@ -189,13 +209,6 @@ void main() {
     expect(persisted, isTrue);
   });
 
-  testWidgets('home hides the AutoMotion card when disabled', (
-    WidgetTester tester,
-  ) async {
-    await pumpApp(tester);
-    expect(find.byType(AutoMotionCard), findsNothing);
-  });
-
   testWidgets('home shows the AutoMotion dashboard card when enabled',
       (WidgetTester tester) async {
     // Seed through runAsync: real Hive writes cannot complete inside the
@@ -216,5 +229,37 @@ void main() {
     expect(find.text('0.00 km'), findsOneWidget);
     expect(find.text('0.0 km/h'), findsOneWidget);
     expect(find.text('Active'), findsOneWidget);
+  });
+
+  testWidgets(
+      'home keeps the AutoMotion card visible with today\'s totals while the '
+      'toggle is off (Paused badge)', (WidgetTester tester) async {
+    // AutoMotion is off, but today already has recorded motion from an earlier
+    // session — stored directly in the auto_motion box under its YYYY-MM-DD key.
+    final DateTime today = DailyGpsSummary.dayOf(DateTime.now());
+    await tester.runAsync(() => settingsBox.put(
+          DailyGpsSummary.dayKey(today),
+          <String, dynamic>{
+            'date': DailyGpsSummary.dayKey(today),
+            'total_km': 3.5,
+            'max_speed': 40,
+          },
+        ));
+
+    // Idle tracker that re-seeds today's totals from storage but never writes
+    // (a real stop() persist would hand a Hive write to the FakeAsync teardown
+    // zone and hang). The toggle is off, so no geolocator call is made.
+    await pumpApp(tester, motion: _IdleMotion(AutoMotionDataSource(settingsBox)));
+
+    expect(find.byType(AutoMotionCard), findsOneWidget);
+    expect(find.text('3.50 km'), findsOneWidget);
+    expect(find.text('40.0 km/h'), findsOneWidget);
+    expect(find.text('Paused'), findsOneWidget);
+  });
+
+  testWidgets('home hides the AutoMotion card when disabled and no motion yet',
+      (WidgetTester tester) async {
+    await pumpApp(tester);
+    expect(find.byType(AutoMotionCard), findsNothing);
   });
 }
