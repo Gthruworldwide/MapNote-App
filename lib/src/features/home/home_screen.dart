@@ -6,6 +6,7 @@ import '../../data/models/place.dart';
 import '../../data/remote/auth_service.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../providers/app_providers.dart';
+import '../../services/app_logger.dart';
 import '../../services/location_parser.dart';
 import '../../services/lock_gate.dart';
 import '../../services/navigation_service.dart';
@@ -148,6 +149,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     if (!mounted) return;
     if (parsed == null) {
+      AppLogger.log(
+        category: 'LOCATION_PARSER',
+        message: 'Failed to parse clipboard location',
+        error: '"$text" did not match the maps/regex patterns',
+        level: LogLevel.warning,
+      );
       ref
           .read(appHealthLoggerProvider)
           .logParseFailure(

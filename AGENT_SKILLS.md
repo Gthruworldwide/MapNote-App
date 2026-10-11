@@ -70,6 +70,13 @@ table `2.20.x`, package `hive_ce`). Two boxes:
   widget tests must override `appHealthLoggerProvider` with
   `AppHealthLogger(null)`** — a real box writes inside `testWidgets`
   FakeAsync and never completes, deadlocking the runner (known hazard).
+- **Single sanctioned file-writer exception:** `AppLogger`
+  (`lib/src/services/app_logger.dart`) writes `app_logs.txt` in the app
+  documents directory for the Supervisor Agent workflow
+  (`SUPERVISOR_INSTRUCTIONS.md`). It is the *only* on-disk file writer:
+  entries are credential-redacted and truncated, and the file is bounded
+  (keeps only the newest ~256 KB). Never add a second file logger, and never
+  bypass the redaction/truncation.
 - Schema changes are backwards compatible or migrate; never silently drop
   user data.
 
@@ -170,6 +177,9 @@ output. OAuth *client IDs* are public identifiers (fine in source); the client
 
 - Gemini key: `String.fromEnvironment` only; header `x-goog-api-key`, never a
   URL query parameter; never logged (opaque errors + `kDebugMode` gates).
+- `AppLogger` redacts keys/tokens/emails and truncates entries before writing
+  `app_logs.txt`; that file must never contain Gemini keys, bearer tokens, or
+  Google OAuth secrets (regression-tested in `app_logger_test.dart`).
 - `gemini_client_test.dart` includes regression tests that assert the key
   appears in the request **header** and **not** in the URL, and that transport
   errors stay opaque.
@@ -213,8 +223,12 @@ patterns (all range-checked before returning; `parse()` is pure/sync):
 
 Parsing is lenient (first match wins) but **safe**: out-of-range latitude
 (±90) / longitude (±180) is rejected; custom coordinates in the add screen are
-validated; parse failures are logged as anonymous health events — raw input and
-coordinates are never persisted from failures or sent to the cloud.
+validated; parse failures are logged as anonymous health events — the Hive
+health log never stores raw input or coordinates, and nothing is sent to the
+cloud. The only place raw parse input may appear is the bounded, redacted
+`app_logs.txt` device file (`AppLogger`), which the Supervisor Agent uses to
+reproduce regex edge cases; it never leaves the device except through an
+explicit developer export.
 
 **Eval.**
 

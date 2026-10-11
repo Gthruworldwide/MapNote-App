@@ -11,6 +11,7 @@ import 'src/features/add_place/add_place_screen.dart';
 import 'src/features/home/home_screen.dart';
 import 'src/providers/app_providers.dart';
 import 'src/services/app_health_logger.dart';
+import 'src/services/app_logger.dart';
 import 'src/services/home_shortcut_service.dart';
 import 'src/services/location_parser.dart';
 import 'src/services/lock_gate.dart';
@@ -88,6 +89,12 @@ class _RouteNoteAppState extends ConsumerState<RouteNoteApp>
     if (!mounted) return;
 
     if (parsed == null) {
+      AppLogger.log(
+        category: 'LOCATION_PARSER',
+        message: 'Failed to parse shared map text',
+        error: '"$raw" did not match the maps/regex patterns',
+        level: LogLevel.warning,
+      );
       ref
           .read(appHealthLoggerProvider)
           .logParseFailure(

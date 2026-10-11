@@ -204,6 +204,7 @@ section in Settings.
 lib/src/services/
   app_health_logger.dart      # bounded local event/health log (Hive-backed)
   app_observer_service.dart   # sanitized issue-reporting facade over the log
+  app_logger.dart             # bounded, redacted app_logs.txt diagnostics feed
   local_insight_engine.dart   # pure, offline rule engine (no network)
   gemini_client.dart          # optional Gemini generateContent client
   agent_service.dart          # facade: local engine + optional cloud layer

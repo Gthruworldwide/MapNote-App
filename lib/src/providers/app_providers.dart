@@ -17,6 +17,7 @@ import '../data/repositories/sync_repository.dart';
 import '../core/config/app_config.dart';
 import '../services/agent_service.dart';
 import '../services/app_health_logger.dart';
+import '../services/app_logger.dart';
 import '../services/app_observer_service.dart';
 import '../services/background_sync_scheduler.dart';
 import '../services/biometric_service.dart';
@@ -297,6 +298,12 @@ class AuthNotifier extends AsyncNotifier<AuthUser?> {
       // session existed but could not be validated — otherwise a signed-out
       // user going offline would spam the log.
       if (settings.isLoggedIn) {
+        AppLogger.log(
+          category: 'AUTH',
+          message: 'Silent sign-in restore failed',
+          error: error,
+          stackTrace: stackTrace,
+        );
         ref.read(appObserverServiceProvider).logIssue(
               category: AppIssueCategory.sync,
               error: error.toString(),
@@ -403,6 +410,11 @@ class SyncController extends Notifier<SyncState> {
       );
     } catch (e) {
       health.log(HealthEventType.syncFailed, message: e.toString());
+      AppLogger.log(
+        category: 'SYNC',
+        message: 'Drive backup sync failed',
+        error: e,
+      );
       state = SyncState(
         status: SyncStatus.error,
         error: e.toString(),
@@ -445,6 +457,11 @@ class SyncController extends Notifier<SyncState> {
       );
     } catch (e) {
       health.log(HealthEventType.syncFailed, message: e.toString());
+      AppLogger.log(
+        category: 'SYNC',
+        message: 'Restore from Drive failed',
+        error: e,
+      );
       state = SyncState(
         status: SyncStatus.error,
         error: e.toString(),

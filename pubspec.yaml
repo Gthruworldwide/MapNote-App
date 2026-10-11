@@ -47,17 +47,27 @@ dependencies:
   googleapis: ^17.0.0
   googleapis_auth: ^2.3.4
   workmanager: ^0.10.10
-  # 1.9.0 requires AGP 9.2+ / Kotlin 2.4 / Gradle 9.2; this project is on
-  # Gradle 9.1 + Kotlin 2.3.20, so stay on the 1.8.x line (same Dart API).
-  receive_sharing_intent: ^1.9.0
+  # 1.9.0 requires AGP 9.2+ / Kotlin 2.4 / Gradle 9.4 / compileSdk 37 + breaking
+  # iOS changes (SwiftPM + SceneDelegate). This project is pinned to Gradle
+  # 8.14 / AGP 8.11.1 and only SDK 34-36 platforms are installed, so stay on
+  # the last same-Dart-API 1.8.x release.
+  receive_sharing_intent: 1.8.1
   local_auth: ^3.0.2
   qr_flutter: ^4.1.0
   quick_actions: ^1.1.0
-  flutter_dynamic_icon: ^2.1.0
+  # Modern replacement for the removed `flutter_dynamic_icon` (whose legacy
+  # Android plugin broke the Gradle build). Not yet referenced in code —
+  # kept as the canonical dynamic-icon dependency for future use.
+  flutter_dynamic_icon_plus: ^1.2.1
+
+  flutter_localizations:
+    sdk: flutter
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  path_provider_platform_interface: ^2.1.2
+  plugin_platform_interface: ^2.1.8
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is

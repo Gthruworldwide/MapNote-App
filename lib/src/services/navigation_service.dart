@@ -55,7 +55,7 @@ class NavigationService {
   Future<bool> _tryLaunch(Uri uri, {bool external = false}) async {
     try {
       if (!await canLaunchUrl(uri)) return false;
-      return launchUrl(
+      return await launchUrl(
         uri,
         mode: external
             ? LaunchMode.externalApplication

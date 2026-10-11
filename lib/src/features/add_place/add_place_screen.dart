@@ -6,6 +6,7 @@ import 'package:uuid/uuid.dart';
 import '../../data/models/place.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../providers/app_providers.dart';
+import '../../services/app_logger.dart';
 import '../../services/location_parser.dart';
 import '../../services/location_service.dart';
 
@@ -164,6 +165,12 @@ class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
 
     if (!mounted) return;
     if (parsed == null) {
+      AppLogger.log(
+        category: 'LOCATION_PARSER',
+        message: 'Failed to parse pasted location',
+        error: '"$text" did not match the maps/regex patterns',
+        level: LogLevel.warning,
+      );
       ref
           .read(appHealthLoggerProvider)
           .logParseFailure(
