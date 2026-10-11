@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 
 import '../data/local/hive_database.dart';
+import '../data/local/auto_motion_data_source.dart';
 import '../data/local/gps_daily_data_source.dart';
 import '../data/local/place_local_data_source.dart';
 import '../data/local/settings_repository.dart';
@@ -21,6 +22,7 @@ import '../services/agent_service.dart';
 import '../services/app_health_logger.dart';
 import '../services/app_logger.dart';
 import '../services/app_observer_service.dart';
+import '../services/auto_motion_service.dart';
 import '../services/background_sync_scheduler.dart';
 import '../services/biometric_service.dart';
 import '../services/dynamic_icon_service.dart';
@@ -64,6 +66,15 @@ final Provider<GpsDailyDataSource> gpsDailyDataSourceProvider =
       return GpsDailyDataSource(ref.watch(hiveDatabaseProvider).gpsDailyBox);
     });
 
+/// Per-day AutoMotion metrics (dates → km / max speed), stored in Hive under
+/// `auto_motion_box` keyed by `YYYY-MM-DD`.
+final Provider<AutoMotionDataSource> autoMotionDataSourceProvider =
+    Provider<AutoMotionDataSource>((Ref ref) {
+      return AutoMotionDataSource(
+        ref.watch(hiveDatabaseProvider).autoMotionBox,
+      );
+    });
+
 // ---------------------------------------------------------------------------
 // Services
 // ---------------------------------------------------------------------------
@@ -76,6 +87,14 @@ final Provider<GpsTrackerService> gpsTrackerProvider =
     Provider<GpsTrackerService>((Ref ref) {
       return GpsTrackerService(
         dailyStore: ref.watch(gpsDailyDataSourceProvider),
+      );
+    });
+
+/// Phase-1 AutoMotion tracker (distance + max speed while the app is open).
+final Provider<AutoMotionService> autoMotionServiceProvider =
+    Provider<AutoMotionService>((Ref ref) {
+      return AutoMotionService(
+        dailyStore: ref.watch(autoMotionDataSourceProvider),
       );
     });
 
@@ -238,6 +257,20 @@ final NotifierProvider<GpsTrackingController, GpsTrackingState>
 gpsTrackingControllerProvider =
     NotifierProvider<GpsTrackingController, GpsTrackingState>(
       GpsTrackingController.new,
+    );
+
+/// Whether AutoMotion is enabled (Settings → AutoMotion).
+final NotifierProvider<AutoMotionEnabledController, bool>
+autoMotionEnabledProvider =
+    NotifierProvider<AutoMotionEnabledController, bool>(
+      AutoMotionEnabledController.new,
+    );
+
+/// Live AutoMotion dashboard state surfaced by the Home card.
+final NotifierProvider<AutoMotionController, AutoMotionState>
+autoMotionControllerProvider =
+    NotifierProvider<AutoMotionController, AutoMotionState>(
+      AutoMotionController.new,
     );
 
 // ---------------------------------------------------------------------------
@@ -889,6 +922,130 @@ class GpsTrackingController extends Notifier<GpsTrackingState> {
     bool active = false,
   }) {
     return GpsTrackingState(
+      enabled: enabled,
+      active: active,
+      totalKm: tracker.totalDistanceKm,
+      maxSpeedKmh: tracker.maxSpeedKmh,
+      currentSpeedKmh: tracker.currentSpeedKmh,
+      unavailable: false,
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// AutoMotion
+// ---------------------------------------------------------------------------
+
+/// Persists the Settings toggle for AutoMotion.
+class AutoMotionEnabledController extends Notifier<bool> {
+  @override
+  bool build() => ref.watch(settingsRepositoryProvider).isAutoMotionEnabled;
+
+  Future<void> setEnabled(bool value) async {
+    await ref.read(settingsRepositoryProvider).setAutoMotionEnabled(value);
+    state = value;
+  }
+}
+
+/// Immutable snapshot shown by the AutoMotion dashboard card.
+class AutoMotionState {
+  const AutoMotionState({
+    required this.enabled,
+    required this.active,
+    required this.totalKm,
+    required this.maxSpeedKmh,
+    required this.currentSpeedKmh,
+    required this.unavailable,
+  });
+
+  /// Whether the AutoMotion toggle is currently on.
+  final bool enabled;
+
+  /// Whether the position stream is live right now.
+  final bool active;
+
+  /// Distance recorded today, in kilometres.
+  final double totalKm;
+
+  /// Highest speed recorded today, in km/h.
+  final double maxSpeedKmh;
+
+  /// Speed of the most recent fix, in km/h.
+  final double currentSpeedKmh;
+
+  /// True when tracking could not start (GPS off / permission denied).
+  final bool unavailable;
+
+  AutoMotionState copyWith({
+    bool? enabled,
+    bool? active,
+    double? totalKm,
+    double? maxSpeedKmh,
+    double? currentSpeedKmh,
+    bool? unavailable,
+  }) {
+    return AutoMotionState(
+      enabled: enabled ?? this.enabled,
+      active: active ?? this.active,
+      totalKm: totalKm ?? this.totalKm,
+      maxSpeedKmh: maxSpeedKmh ?? this.maxSpeedKmh,
+      currentSpeedKmh: currentSpeedKmh ?? this.currentSpeedKmh,
+      unavailable: unavailable ?? this.unavailable,
+    );
+  }
+}
+
+/// Bridges the [AutoMotionService] stream into a widget-friendly state.
+///
+/// [build] watches the enabled toggle: flipping it starts or stops the tracker
+/// automatically, and the snapshot refreshes as positions accumulate.
+class AutoMotionController extends Notifier<AutoMotionState> {
+  @override
+  AutoMotionState build() {
+    final bool enabled = ref.watch(autoMotionEnabledProvider);
+    final AutoMotionService tracker = ref.read(autoMotionServiceProvider);
+    // Capture the tracker before dispose: Ref cannot be read inside lifecycle
+    // callbacks. `stop()` persists the day's metrics when anything was tracked.
+    ref.onDispose(() {
+      try {
+        unawaited(tracker.stop());
+      } catch (_) {
+        // Best-effort persistence on disposal.
+      }
+    });
+    if (enabled) {
+      scheduleMicrotask(start);
+    } else {
+      scheduleMicrotask(stop);
+    }
+    return _snapshot(tracker, enabled: enabled);
+  }
+
+  /// Starts the tracker (called when the toggle turns on or the app opens).
+  Future<void> start() async {
+    final AutoMotionService tracker = ref.read(autoMotionServiceProvider);
+    final bool started = await tracker.start(
+      locations: ref.read(locationServiceProvider),
+    );
+    if (!ref.mounted) return;
+    state = _snapshot(tracker, enabled: true, active: started)
+        .copyWith(unavailable: !started);
+  }
+
+  /// Stops the tracker and persists today's metrics (toggle turned off).
+  Future<void> stop() async {
+    final AutoMotionService tracker = ref.read(autoMotionServiceProvider);
+    await tracker.stop();
+    if (!ref.mounted) return;
+    state = _snapshot(tracker, enabled: false);
+  }
+
+  AutoMotionState _snapshot(
+    AutoMotionService tracker, {
+    required bool enabled,
+    bool active = false,
+  }) {
+    return AutoMotionState(
       enabled: enabled,
       active: active,
       totalKm: tracker.totalDistanceKm,

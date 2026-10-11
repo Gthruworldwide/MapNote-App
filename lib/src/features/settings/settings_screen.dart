@@ -80,6 +80,10 @@ class SettingsScreen extends ConsumerWidget {
             child: _buildGpsCard(context, ref, l10n),
           ),
           _SettingsSection(
+            title: l10n.autoMotionSection,
+            child: _buildAutoMotionCard(context, ref, l10n),
+          ),
+          _SettingsSection(
             title: l10n.sectionSync,
             child: _buildSyncCard(context, ref, l10n, sync),
           ),
@@ -302,6 +306,53 @@ class SettingsScreen extends ConsumerWidget {
       if (status != null && status.needsAction) {
         messenger.showSnackBar(
           SnackBar(content: Text(l10n.dailyGpsPermissionHint)),
+        );
+      }
+    }
+  }
+
+  // --- AutoMotion ------------------------------------------------------------
+
+  Widget _buildAutoMotionCard(
+    BuildContext context,
+    WidgetRef ref,
+    AppLocalizations l10n,
+  ) {
+    final ThemeData theme = Theme.of(context);
+    final bool enabled = ref.watch(autoMotionEnabledProvider);
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: SwitchListTile(
+        contentPadding: EdgeInsets.zero,
+        secondary: Icon(
+          Icons.directions_walk,
+          color: theme.colorScheme.primary,
+        ),
+        title: Text(l10n.autoMotionToggle),
+        subtitle: Text(l10n.autoMotionToggleSubtitle),
+        value: enabled,
+        onChanged: (bool value) =>
+            _toggleAutoMotion(context, ref, l10n, value),
+      ),
+    );
+  }
+
+  Future<void> _toggleAutoMotion(
+    BuildContext context,
+    WidgetRef ref,
+    AppLocalizations l10n,
+    bool value,
+  ) async {
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    await ref.read(autoMotionEnabledProvider.notifier).setEnabled(value);
+    if (value) {
+      // After enabling, surface a hint when GPS or the permission is missing;
+      // the tracker itself stays off until the user grants access.
+      await ref.read(locationStatusProvider.notifier).refresh();
+      final LocationStatus? status = ref.read(locationStatusProvider).value;
+      if (status != null && status.needsAction) {
+        messenger.showSnackBar(
+          SnackBar(content: Text(l10n.autoMotionPermissionHint)),
         );
       }
     }

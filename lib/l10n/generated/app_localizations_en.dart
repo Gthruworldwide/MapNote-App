@@ -361,6 +361,32 @@ class AppLocalizationsEn extends AppLocalizations {
   String get kmhUnit => 'km/h';
 
   @override
+  String get autoMotionSection => 'AutoMotion';
+
+  @override
+  String get autoMotionToggle => 'Enable AutoMotion';
+
+  @override
+  String get autoMotionToggleSubtitle =>
+      'Automatically records distance and max speed while the app is open';
+
+  @override
+  String get autoMotionPermissionHint =>
+      'Location access is needed for AutoMotion. Turn on GPS and allow location access, then re-enable AutoMotion.';
+
+  @override
+  String get autoMotionDistance => 'Today\'s distance';
+
+  @override
+  String get autoMotionMaxSpeed => 'Max speed today';
+
+  @override
+  String get autoMotionActive => 'Active';
+
+  @override
+  String get autoMotionPaused => 'Paused';
+
+  @override
   String get locationChipServiceOff => 'Location off — tap to enable';
 
   @override

@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:geolocator/geolocator.dart';
 
+import '../core/utils/geo_distance.dart';
 import '../data/local/gps_daily_data_source.dart';
 import '../data/models/daily_gps_summary.dart';
 import 'location_service.dart';
@@ -181,18 +182,6 @@ class GpsTrackerService {
     double lon1,
     double lat2,
     double lon2,
-  ) {
-    const double earthRadiusKm = 6371.0;
-    final double dLat = _toRadians(lat2 - lat1);
-    final double dLon = _toRadians(lon2 - lon1);
-    final double a =
-        math.sin(dLat / 2) * math.sin(dLat / 2) +
-        math.cos(_toRadians(lat1)) *
-            math.cos(_toRadians(lat2)) *
-            math.sin(dLon / 2) *
-            math.sin(dLon / 2);
-    return 2 * earthRadiusKm * math.asin(math.min(1.0, math.sqrt(a)));
-  }
-
-  static double _toRadians(double degrees) => degrees * math.pi / 180;
+  ) =>
+      haversineKm(lat1, lon1, lat2, lon2);
 }

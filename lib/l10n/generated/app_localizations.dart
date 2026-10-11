@@ -758,6 +758,54 @@ abstract class AppLocalizations {
   /// **'km/h'**
   String get kmhUnit;
 
+  /// No description provided for @autoMotionSection.
+  ///
+  /// In en, this message translates to:
+  /// **'AutoMotion'**
+  String get autoMotionSection;
+
+  /// No description provided for @autoMotionToggle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable AutoMotion'**
+  String get autoMotionToggle;
+
+  /// No description provided for @autoMotionToggleSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatically records distance and max speed while the app is open'**
+  String get autoMotionToggleSubtitle;
+
+  /// No description provided for @autoMotionPermissionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Location access is needed for AutoMotion. Turn on GPS and allow location access, then re-enable AutoMotion.'**
+  String get autoMotionPermissionHint;
+
+  /// No description provided for @autoMotionDistance.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s distance'**
+  String get autoMotionDistance;
+
+  /// No description provided for @autoMotionMaxSpeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Max speed today'**
+  String get autoMotionMaxSpeed;
+
+  /// No description provided for @autoMotionActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get autoMotionActive;
+
+  /// No description provided for @autoMotionPaused.
+  ///
+  /// In en, this message translates to:
+  /// **'Paused'**
+  String get autoMotionPaused;
+
   /// No description provided for @locationChipServiceOff.
   ///
   /// In en, this message translates to:

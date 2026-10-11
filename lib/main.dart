@@ -42,6 +42,7 @@ Future<void> main() async {
     placesBox: await Hive.openBox<dynamic>(AppConfig.placesBoxName),
     settingsBox: await Hive.openBox<dynamic>(AppConfig.settingsBoxName),
     gpsDailyBox: await Hive.openBox<dynamic>(AppConfig.gpsDailyBoxName),
+    autoMotionBox: await Hive.openBox<dynamic>(AppConfig.autoMotionBoxName),
   );
 
   runApp(

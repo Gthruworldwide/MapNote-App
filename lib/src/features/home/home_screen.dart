@@ -13,6 +13,7 @@ import '../../services/navigation_service.dart';
 import '../add_place/add_place_screen.dart';
 import '../place_detail/place_detail_screen.dart';
 import '../settings/settings_screen.dart';
+import 'widgets/auto_motion_card.dart';
 import 'widgets/location_status_chip.dart';
 import 'widgets/place_actions_sheet.dart';
 import 'widgets/place_card.dart';
@@ -310,6 +311,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
           const LocationStatusChip(),
+          if (ref.watch(autoMotionEnabledProvider))
+            const AutoMotionCard(),
           if (ref.watch(smartInsightsEnabledProvider))
             const SmartInsightsCard(),
           Expanded(child: _buildBody(placesAsync, l10n)),

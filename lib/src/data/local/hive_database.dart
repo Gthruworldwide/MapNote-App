@@ -7,7 +7,9 @@ class HiveDatabase {
     required this.placesBox,
     required this.settingsBox,
     Box<dynamic>? gpsDailyBox,
-  }) : gpsDailyBox = gpsDailyBox ?? settingsBox;
+    Box<dynamic>? autoMotionBox,
+  }) : gpsDailyBox = gpsDailyBox ?? settingsBox,
+       autoMotionBox = autoMotionBox ?? settingsBox;
 
   /// Box keyed by place id, values are JSON-compatible maps.
   final Box<dynamic> placesBox;
@@ -19,4 +21,9 @@ class HiveDatabase {
   /// constructors (background isolate, tests) fall back to the settings box so
   /// nothing extra needs to be opened.
   final Box<dynamic> gpsDailyBox;
+
+  /// Per-day AutoMotion metrics, keyed `YYYY-MM-DD`. `main()` passes the
+  /// dedicated `auto_motion_box`; other constructors fall back to the settings
+  /// box so nothing extra needs to be opened.
+  final Box<dynamic> autoMotionBox;
 }

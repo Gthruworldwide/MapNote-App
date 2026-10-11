@@ -360,6 +360,32 @@ class AppLocalizationsAr extends AppLocalizations {
   String get kmhUnit => 'كم/س';
 
   @override
+  String get autoMotionSection => 'أوتوموشن';
+
+  @override
+  String get autoMotionToggle => 'تفعيل أوتوموشن';
+
+  @override
+  String get autoMotionToggleSubtitle =>
+      'يسجّل المسافة والسرعة القصوى تلقائيًا أثناء فتح التطبيق';
+
+  @override
+  String get autoMotionPermissionHint =>
+      'يلزم إذن الموقع لأوتوموشن. شغّل GPS واسمح بتحديد الموقع ثم أعد تفعيل أوتوموشن.';
+
+  @override
+  String get autoMotionDistance => 'المسافة اليوم';
+
+  @override
+  String get autoMotionMaxSpeed => 'السرعة القصوى اليوم';
+
+  @override
+  String get autoMotionActive => 'نشط';
+
+  @override
+  String get autoMotionPaused => 'متوقف';
+
+  @override
   String get locationChipServiceOff => 'الموقع متوقف — اضغط للتفعيل';
 
   @override

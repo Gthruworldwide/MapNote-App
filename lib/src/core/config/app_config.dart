@@ -52,6 +52,7 @@ class AppConfig {
   static const String placesBoxName = 'places';
   static const String settingsBoxName = 'settings';
   static const String gpsDailyBoxName = 'gps_daily';
+  static const String autoMotionBoxName = 'auto_motion_box';
 
   /// How often the periodic background backup runs.
   static const Duration backgroundSyncFrequency = Duration(hours: 24);

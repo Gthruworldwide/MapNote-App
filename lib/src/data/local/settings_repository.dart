@@ -18,6 +18,7 @@ class SettingsRepository {
   static const String _preferredNavAppKey = 'preferred_nav_app';
   static const String _smartInsightsEnabledKey = 'smart_insights_enabled';
   static const String _gpsTrackingEnabledKey = 'gps_tracking_enabled';
+  static const String _autoMotionEnabledKey = 'enable_auto_motion';
 
   /// BCP-47 language code of the selected locale, or null for system default.
   String? get localeCode => _box.get(_localeKey) as String?;
@@ -116,6 +117,16 @@ class SettingsRepository {
 
   Future<void> setGpsTrackingEnabled(bool enabled) async {
     await _box.put(_gpsTrackingEnabledKey, enabled);
+  }
+
+  /// Whether AutoMotion is switched on (Settings → AutoMotion).
+  ///
+  /// Defaults to off; AutoMotion only records while the app is open and while a
+  /// location permission is granted.
+  bool get isAutoMotionEnabled => _box.get(_autoMotionEnabledKey) == true;
+
+  Future<void> setAutoMotionEnabled(bool enabled) async {
+    await _box.put(_autoMotionEnabledKey, enabled);
   }
 
   /// Stable ids of insights the user has dismissed, so the agent stops
