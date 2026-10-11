@@ -66,6 +66,9 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  # End-to-end integration tests (flutter test integration_test/app_test.dart).
+  integration_test:
+    sdk: flutter
   path_provider_platform_interface: ^2.1.2
   plugin_platform_interface: ^2.1.8
 

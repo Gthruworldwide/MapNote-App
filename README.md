@@ -310,8 +310,10 @@ lib/
       place_detail/                # view / navigate / delete
       settings/                    # sign-in, sync, restore, language, theme, agent
 test/                              # Hive-backed widget tests + parser/share tests
+integration_test/app_test.dart     # on-device end-to-end UI flow tests
 ios/ShareExtension/                # iOS share-extension templates + README
 scripts/run_dev.ps1                # Windows helper: run with real OAuth IDs
+scripts/run_integration_tests.ps1  # Windows helper: run the E2E integration tests
 assets/app_icon.png                # source icon for flutter_launcher_icons
 assets/app_icon_animated.gif       # bundled animated asset
 ```
@@ -436,6 +438,20 @@ injected with `--dart-define` (never hardcoded):
 ```sh
 flutter analyze     # expected: No issues found!
 flutter test        # Hive-backed widget smoke tests
+```
+
+### End-to-end (integration) tests
+
+`integration_test/app_test.dart` drives the real widget tree on a device or
+emulator: it launches the app, navigates Places → Settings → Smart Insights,
+long-presses a place to open the actions sheet (asserting no layout overflow)
+and exercises the lock/unlock toggle. External platform channels (Google
+sign-in, biometrics, geolocator) are stubbed so the flows stay deterministic.
+
+```sh
+flutter test integration_test/app_test.dart -d <device-id>
+# Windows shortcut (omit -Device to use the only connected device):
+.\scripts\run_integration_tests.ps1 -Device <device-id>
 ```
 
 ## Platform configuration
