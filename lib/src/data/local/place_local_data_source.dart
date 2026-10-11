@@ -25,12 +25,19 @@ class PlaceLocalDataSource {
   }
 
   /// Inserts or updates a place (keyed by its id).
+  ///
+  /// The Hive box is explicitly [flush]ed afterwards: `put` alone only
+  /// commits to Hive's in-memory cache and writes the file back lazily, so a
+  /// force-stop or crash right after a lock/unlock could silently revert
+  /// `place.isLocked` on the next launch. Flushing pins the change to disk.
   Future<void> put(Place place) async {
     await _database.placesBox.put(place.id, place.toMap());
+    await _database.placesBox.flush();
   }
 
   Future<void> delete(String id) async {
     await _database.placesBox.delete(id);
+    await _database.placesBox.flush();
   }
 
   /// Atomically replaces the whole local store (used by restore-from-Drive).
@@ -41,5 +48,6 @@ class PlaceLocalDataSource {
         };
     await _database.placesBox.clear();
     await _database.placesBox.putAll(entries);
+    await _database.placesBox.flush();
   }
 }
