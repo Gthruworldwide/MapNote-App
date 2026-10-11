@@ -38,6 +38,17 @@ python tool/supervisor_agent.py --telegram         # start the polling loop
 | `/test` | Run `flutter test` and reply with the summary |
 | `/prompt <instruction>` | Forward the instruction to the dev agent (same hand-off as the automated loop) |
 
+`/prompt` runs whatever `DEV_AGENT_CMD` + `DEV_AGENT_EXTRA_ARGS` point at, with
+the instruction appended as one argv element, from the repo root. Example for
+the OpenCode CLI (not on PATH here, so an absolute path is used):
+
+```env
+DEV_AGENT_CMD=C:\path\to\opencode-cli.exe
+DEV_AGENT_EXTRA_ARGS=["run","--auto","--model","opencode/big-pickle"]
+```
+
+(`--auto` lets it apply edits unattended; drop it to require approvals.)
+
 Safety:
 
 - **Single authorized user.** Every update is checked against

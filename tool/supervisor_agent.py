@@ -113,6 +113,15 @@ def redact(text: str) -> str:
     return text
 
 
+# Terminal color/style escape sequences (the dev-agent CLI emits these).
+_ANSI_ESCAPE = re.compile(r"\x1b\[[0-9;?]*[ -/]*[@-~]")
+
+
+def strip_ansi(text: str) -> str:
+    """Remove ANSI escape sequences so chat replies are clean text."""
+    return _ANSI_ESCAPE.sub("", text)
+
+
 def make_console_utf8_safe() -> None:
     """Best-effort: never crash printing Unicode to a legacy (cp1252) console.
 
@@ -294,6 +303,9 @@ def run_dev_agent(
         text=True,
         capture_output=True,
         timeout=timeout,
+        cwd=str(repo_root()),
+        encoding="utf-8",
+        errors="replace",
     )
 
 
@@ -563,13 +575,13 @@ def status_report() -> str:
     else:
         lines.append(f"- flutter devices failed: {(err or out).strip()[:200]}")
 
-    return redact("\n".join(lines))
+    return redact(strip_ansi("\n".join(lines)))
 
 
 def test_report() -> str:
     """Run `flutter test` and return a concise summary."""
     rc, out, err = run_command(["flutter", "test"], TEST_TIMEOUT_SECONDS)
-    combined = (out + ("\n" + err if err else "")).rstrip()
+    combined = strip_ansi((out + ("\n" + err if err else "")).rstrip())
     verdict = "✅ passed" if rc == 0 else f"❌ failed (exit {rc})"
     tail = [l for l in combined.splitlines() if l.strip()][-15:]
     body = "\n".join(tail) if tail else "(no output)"
@@ -589,8 +601,9 @@ def prompt_report(instruction: str) -> str:
         )
     except subprocess.TimeoutExpired:
         return f"⌛ dev agent timed out after {DEV_AGENT_TIMEOUT_SECONDS}s."
-    body = (result.stdout or "") + (("\n" + result.stderr) if result.stderr else "")
-    body = body.strip() or "(no output)"
+    body = strip_ansi(
+        (result.stdout or "") + (("\n" + result.stderr) if result.stderr else "")
+    ).strip() or "(no output)"
     return redact(f"🤖 dev agent exit code: {result.returncode}\n\n{body[-3_000:]}")
 
 
