@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -15,6 +17,24 @@ import 'src/services/background_sync_scheduler.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // --- Firebase (Crashlytics + Analytics) ------------------------------------
+  // Best-effort: RouteNote is offline-first, so a missing or incomplete
+  // google-services.json must never stop the app from launching. Crashlytics is
+  // only used once init succeeded.
+  bool crashlyticsReady = false;
+  try {
+    await Firebase.initializeApp();
+    crashlyticsReady = true;
+  } catch (error, stack) {
+    debugPrint('Firebase.initializeApp() failed: $error');
+    AppLogger.log(
+      category: 'FIREBASE',
+      message: 'Firebase.initializeApp() failed; Crashlytics disabled',
+      error: error,
+      stackTrace: stack,
+    );
+  }
+
   // --- Automatic Global Error Handling & App Logging ------------------------
   FlutterError.onError = (FlutterErrorDetails details) {
     FlutterError.presentError(details);
@@ -24,6 +44,9 @@ Future<void> main() async {
       error: details.exception,
       stackTrace: details.stack,
     );
+    if (crashlyticsReady) {
+      FirebaseCrashlytics.instance.recordFlutterFatalError(details);
+    }
   };
 
   PlatformDispatcher.instance.onError = (Object error, StackTrace stack) {
@@ -33,6 +56,9 @@ Future<void> main() async {
       error: error,
       stackTrace: stack,
     );
+    if (crashlyticsReady) {
+      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    }
     return true;
   };
 
