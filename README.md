@@ -7,7 +7,8 @@ It saves GPS locations locally on the device (Hive), backs them up to the user's
 *private* Google Drive app-data folder, and delegates turn-by-turn navigation to
 Google Maps or Waze via deep links.
 
-No Firebase. No custom server. No database to operate. Your data is yours.
+No custom server, no database to operate — your data is yours. Firebase is used
+only for anonymous crash and usage telemetry, never for your places.
 
 ---
 
@@ -20,6 +21,8 @@ No Firebase. No custom server. No database to operate. Your data is yours.
 - [User flow](#user-flow)
 - [Tech stack](#tech-stack)
 - [How sync works](#how-sync-works)
+- [Monitoring & recommendation agent (Smart Insights)](#monitoring--recommendation-agent-smart-insights)
+- [Telemetry & crash reporting (Firebase)](#telemetry--crash-reporting-firebase)
 - [Backup format](#backup-format)
 - [Project structure](#project-structure)
 - [Getting started](#getting-started)
@@ -27,6 +30,7 @@ No Firebase. No custom server. No database to operate. Your data is yours.
 - [Localization](#localization)
 - [Quality gates](#quality-gates)
 - [Platform configuration](#platform-configuration)
+- [Distributing to testers (Firebase App Distribution)](#distributing-to-testers-firebase-app-distribution)
 - [Roadmap](#roadmap)
 - [License](#license)
 
@@ -43,9 +47,10 @@ have to pay for and maintain.
 - **Private cloud backup.** Optional Google Sign-In grants exactly one scope,
   `drive.appdata`, which exposes only the app's *own hidden* Drive folder. The
   user's documents, photos, and other Drive files are never visible to the app.
-- **Zero backend.** There is no server to host, no auth server, and no analytics.
-  OAuth happens directly between the app and Google; the backup is a single JSON
-  file in the user's Drive.
+- **Zero backend.** There is no server to host, no auth server, and no database to
+  operate. OAuth happens directly between the app and Google; the backup is a
+  single JSON file in the user's Drive. Anonymous crash reports and usage
+  analytics (Firebase) are the only telemetry, and they never include your places.
 - **Bilingual.** Full English / Arabic UI, no hardcoded strings.
 
 ## Design principles (strict rules)
@@ -53,7 +58,8 @@ have to pay for and maintain.
 These are non-negotiable constraints for the project:
 
 1. **Zero external backend.** No Firebase, AWS, or any custom backend servers for
-   database storage.
+   database storage. Firebase is used *only* for anonymous crash/usage telemetry
+   (see [Telemetry & crash reporting](#telemetry--crash-reporting-firebase)).
 2. **Offline-first.** All data is saved locally on the device using a fast local
    database (`Hive`). The app is fully functional with no network.
 3. **Cloud sync, the "WhatsApp model".** Backup and cross-device sync serialise
@@ -129,6 +135,8 @@ is the operating system's local storage plus the user's own Google Drive.
   UI latency) and the shape of the user's data, then suggests tidy-ups, sync
   reminders and optimisations. Works fully offline with a local rule engine; an
   optional Google Gemini layer adds localized tips when a key is configured.
+- 📈 **Crash & usage telemetry** — best-effort Firebase Crashlytics + Analytics so
+  crashes are fixed before testers hit them (anonymous; never your places).
 
 ## User flow
 
@@ -166,6 +174,8 @@ is the operating system's local storage plus the user's own Google Drive.
 | IDs | `uuid` |
 | Icons | `flutter_launcher_icons` (3D adaptive emblem from `assets/icon/ic_launcher_foreground.png` + monochrome) |
 | Routing | Plain `Navigator` (no `go_router`) |
+| Telemetry | `firebase_core` + `firebase_crashlytics` + `firebase_analytics` (Firebase BoM 35.0.0) |
+| Tester distribution | Firebase App Distribution (`firebase appdistribution:distribute`) |
 
 ## How sync works
 
@@ -266,6 +276,35 @@ To keep suggestions grounded in real state, the cloud model may call two small
 A tool result is only produced — and only leaves the device — if the model
 actually invokes it, which itself only happens while cloud AI is enabled.
 
+## Telemetry & crash reporting (Firebase)
+
+RouteNote never sends your places anywhere but your own Google Drive. Firebase is
+used only for two *anonymous* operational signals:
+
+| Product | Package | What it does |
+| --- | --- | --- |
+| **Crashlytics** | `firebase_crashlytics` | Reports uncaught Dart exceptions and native crashes/ANRs with a stack trace so they can be fixed before testers hit them. |
+| **Analytics** | `firebase_analytics` | Collects anonymous usage events and session data (sessions, device model, app version). No place names, notes, ids or coordinates are logged. |
+
+How it is wired:
+
+- `lib/main.dart` initialises Firebase once at startup inside a `try/catch`, so an
+  offline cold start (or a bad config) can never block the app. Dart errors are
+  forwarded to `FirebaseCrashlytics` from `FlutterError.onError` and
+  `PlatformDispatcher.instance.onError`.
+- The native side is configured by the `com.google.gms.google-services` and
+  `com.google.firebase.crashlytics` Gradle plugins plus
+  `android/app/google-services.json` (committed — a client config, not a secret).
+- The Crashlytics Gradle plugin uploads the release mapping files, so stack traces
+  stay readable after R8 minification.
+- Debug builds expose a **Test Crash** button (the guide's step 3) that is
+  compiled out of release/profile builds; it was used to verify the pipeline
+  end-to-end.
+
+> Both collectors default to on. They can be turned off at runtime with
+> `setAnalyticsCollectionEnabled(false)` / `setCrashlyticsCollectionEnabled(false)`.
+> iOS is not wired to Firebase in this repository (Android only).
+
 ## Backup format
 
 A single JSON file (`routenote_backup.json`) in the app-specific Drive folder:
@@ -330,6 +369,7 @@ integration_test/app_test.dart     # on-device end-to-end UI flow tests
 ios/ShareExtension/                # iOS share-extension templates + README
 scripts/run_dev.ps1                # Windows helper: run with real OAuth IDs
 scripts/run_integration_tests.ps1  # Windows helper: run the E2E integration tests
+scripts/distribute_app.ps1         # Windows helper: upload a release APK to App Distribution
 assets/icon/                       # 3D launcher-icon sources (foreground + monochrome)
 assets/app_icon_animated.gif       # bundled animated asset
 ```
@@ -435,6 +475,22 @@ dart run flutter_launcher_icons
 > `flutter_tools` (feature-flags error, exit 255); `dart run flutter_launcher_icons`
 > is the reliable entry point.
 
+### 6. Firebase (already configured)
+
+Crashlytics and Analytics are wired up and committed, so a fresh clone builds with
+them out of the box:
+
+- `android/app/google-services.json` — the Android client for the `routenote-app`
+  Firebase project (package `com.routenote.routenote`).
+- `android/settings.gradle.kts` + `android/app/build.gradle.kts` — apply the
+  `google-services` and `firebase.crashlytics` plugins and add the SDKs via the
+  Firebase BoM.
+- `lib/main.dart` — best-effort `Firebase.initializeApp()` and crash handlers.
+
+To point the app at a different Firebase project, replace
+`android/app/google-services.json` with the file downloaded from your console,
+keeping the package name `com.routenote.routenote`.
+
 ## Configuration reference
 
 All compile-time values live in `lib/src/core/config/app_config.dart` and are
@@ -446,6 +502,9 @@ injected with `--dart-define` (never hardcoded):
 | `GOOGLE_IOS_CLIENT_ID` | iOS (for sign-in) | `clientId` in `GoogleSignIn.instance.initialize` |
 | `GEMINI_API_KEY` | No — optional | Enables the optional cloud recommendation layer (`GeminiClient`); without it the agent runs fully offline |
 | `GEMINI_MODEL` | No — defaults to `gemini-2.0-flash` | Model used by the optional cloud recommendation layer |
+
+Firebase is configured natively (not through `--dart-define`); see
+[Firebase (already configured)](#6-firebase-already-configured).
 
 ## Localization
 
@@ -484,6 +543,13 @@ Already committed — the notes below explain what is in place.
   `RECEIVE_BOOT_COMPLETED`, a `<queries>` block for the `geo`,
   `google.navigation`, and `https` intents, and `ACTION_SEND` /
   `ACTION_SEND_MULTIPLE` share filters for `text/*`.
+- **Firebase Gradle plugins** (`android/settings.gradle.kts`,
+  `android/app/build.gradle.kts`): `com.google.gms.google-services` and
+  `com.google.firebase.crashlytics` (**3.0.8**) are applied for the
+  `routenote-app` project, with the SDKs pinned by the Firebase **BoM 35.0.0**.
+- **Debug test-crash button** (`MainActivity.kt`): the Crashlytics guide's
+  "Test Crash" button is added only when the activity is debuggable, so it never
+  appears in a release or profile build.
 - **Share target:** Android is fully wired. On iOS the `receive_sharing_intent`
   plugin also needs a Share Extension **target**, which can only be created in
   Xcode — ready-to-use templates and step-by-step instructions live in
@@ -500,6 +566,61 @@ Already committed — the notes below explain what is in place.
   the adaptive background `#090C15`. The dark alt-icon set used by the dynamic
   light/dark switch is rendered by `tool/gen_dark_icon.ps1`.
 
+## Distributing to testers (Firebase App Distribution)
+
+Ship builds to testers straight from the Firebase CLI — no Play Console
+round-trip, and every install's crashes flow into the same Crashlytics dashboard.
+
+### One-time setup
+
+```sh
+npm install -g firebase-tools
+firebase login
+firebase use routenote-app          # project 679774190551
+```
+
+Testers/groups are managed in the console under
+**App Distribution → Testers & Groups**. The Android app id for this project is:
+
+```
+1:679774190551:android:d7bf2f949f60ed62912992
+```
+
+### Build and distribute
+
+```sh
+# 1. Build the release APK
+flutter build apk --release \
+  --dart-define=GOOGLE_SERVER_CLIENT_ID=xxxx.apps.googleusercontent.com \
+  --dart-define=GOOGLE_IOS_CLIENT_ID=yyyy.apps.googleusercontent.com
+
+# 2. Upload it to a tester group
+firebase appdistribution:distribute \
+  build/app/outputs/flutter-apk/app-release.apk \
+  --app 1:679774190551:android:d7bf2f949f60ed62912992 \
+  --groups testers \
+  --release-notes "RouteNote 1.0.1 (2) — pilot build"
+```
+
+Testers receive an email invite and install through the **App Tester** app.
+
+On Windows the upload step is wrapped in a helper script:
+
+```powershell
+.\scripts\distribute_app.ps1 -Groups testers -Notes "RouteNote 1.0.1 (2) — pilot"
+```
+
+> **Signing.** Release builds currently use the **debug** keystore
+> (`signingConfig = signingConfigs.getByName("debug")` in
+> `android/app/build.gradle.kts`). That is fine for App Distribution and for
+> Google Sign-In while testing (add the debug SHA-1 to your Android OAuth
+> client), but a Play Store release needs a real upload keystore with its SHA-1
+> registered in both Google Cloud and Firebase.
+
+> Prefer a Play-format bundle? `flutter build appbundle --release` produces the
+> `.aab`; App Distribution installs the APK directly, which is why the APK is the
+> default here.
+
 ## Roadmap
 
 RouteNote follows the **project master roadmap**: an offline-first, zero-backend
@@ -507,7 +628,7 @@ location-saving and navigation app for Android and iOS.
 
 **Tech requirements.** Flutter (latest stable) · Riverpod · Hive · `geolocator` ·
 `url_launcher` · `google_sign_in` + `googleapis` (Drive API v3) ·
-`flutter_localizations` + `intl`.
+`flutter_localizations` + `intl` · Firebase Crashlytics + Analytics.
 
 **Delivery phases**
 
@@ -518,6 +639,7 @@ location-saving and navigation app for Android and iOS.
 | **3 — Navigation delegation** | Google Maps / Waze via `url_launcher` intents only — no in-app turn-by-turn | ✅ Done |
 | **4 — Zero-backend sync** | Google Sign-In (v7), Drive v3 `appDataFolder`, device-wins backup/restore, auto-sync on open & resume, 24h background task | ✅ Done |
 | **5 — Polish & release** | EN/AR localization, light/dark themes, launcher icons, MIT license, README | ✅ Done |
+| **6 — Observability & tester distribution** | Firebase Crashlytics + Analytics (best-effort init), debug-only test-crash button, Firebase App Distribution workflow | ✅ Done |
 | **Future** | Optional timestamp-based merge, multi-device conflict UI, import/export, parking shortcut widget | 💡 Ideas |
 
 ## License

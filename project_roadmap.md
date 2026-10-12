@@ -6,7 +6,7 @@
 
 ## 1. Core Architecture & Philosophy (STRICT RULES)
 
-- **ZERO EXTERNAL BACKEND:** Do NOT use Firebase, AWS, or any custom backend servers for database storage.
+- **ZERO EXTERNAL BACKEND:** Do NOT use Firebase, AWS, or any custom backend servers for database storage. (Exception: anonymous crash/usage telemetry via Firebase Crashlytics + Analytics is permitted — it never stores or transmits user places.)
 - **Storage Mechanism:** The app is Offline-First. All data is saved locally on the device using a fast local database (`Hive`).
 - **Cloud Sync (The WhatsApp Model):** For backup and cross-device sync, the app uses Google OAuth 2.0 and the **Google Drive API**. The local database is serialized into a JSON file and synced silently to the user's Google Drive (using `drive.appdata` scope for hidden app-specific storage).
 - **Bilingual UI (i18n):** The application UI MUST support both **Arabic (ar)** and **English (en)** natively using `flutter_localizations` and `.arb` files. Do NOT hardcode UI strings.
@@ -31,3 +31,5 @@
 - **Share Target:** `receive_sharing_intent` (text/link sharing into the app).
 - **Auth & Sync:** `google_sign_in` and `googleapis` (Drive API v3).
 - **Localization:** `flutter_localizations` & `intl`.
+- **Observability:** Firebase Crashlytics + Analytics (anonymous telemetry only — never user data).
+- **Tester distribution:** Firebase App Distribution (`firebase appdistribution:distribute`).
