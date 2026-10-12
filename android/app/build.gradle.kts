@@ -3,6 +3,9 @@ plugins {
     // Processes android/app/google-services.json into the app's resources.
     // Must be applied after com.android.application.
     id("com.google.gms.google-services")
+    // Deobfuscates Crashlytics stack traces. Must be applied after the Google
+    // Services plugin.
+    id("com.google.firebase.crashlytics")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }

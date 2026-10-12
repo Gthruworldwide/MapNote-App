@@ -22,6 +22,9 @@ plugins {
     id("com.android.application") version "8.11.1" apply false
     id("org.jetbrains.kotlin.android") version "2.4.21" apply false
     id("com.google.gms.google-services") version "4.5.0" apply false
+    // Uploads the release mapping/symbol files so Crashlytics can deobfuscate
+    // stack traces. Must be applied after the Google Services plugin.
+    id("com.google.firebase.crashlytics") version "3.0.8" apply false
 }
 
 include(":app")
