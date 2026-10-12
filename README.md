@@ -635,6 +635,19 @@ Already committed — the notes below explain what is in place.
   layers; `tool/gen_dark_icon.ps1` builds the dark alt-icon set (`ic_launcher_dark`,
   `#000000` backdrop) used by the dynamic light/dark switch. Adaptive backgrounds:
   `#FFFFFF` (light) / `#000000` (dark), see `android/app/src/main/res/values/colors.xml`.
+  The switch is driven by the two `<activity-alias>` entries in
+  `AndroidManifest.xml` (`.ic_launcher` enabled, `.ic_launcher_dark` disabled) and
+  `lib/src/services/dynamic_icon_service.dart`.
+  > **Keep the alias names fully qualified.** `flutter_dynamic_icon_plus` passes the
+  > Dart string straight to `ComponentName(context, name)` and compares it verbatim
+  > against `ActivityInfo.name` (always `<applicationId>.<alias>`). A short name
+  > such as `ic_launcher_dark` is never expanded by the system, so
+  > `setComponentEnabledSetting` throws *"Component class … does not exist"* inside
+  > the plugin's own service — a native crash Dart cannot catch. `lightIconName` /
+  > `darkIconName` must therefore stay
+  > `com.routenote.routenote.ic_launcher` / `…ic_launcher_dark`, tied to the
+  > `applicationId` in `android/app/build.gradle.kts`. The switch is applied when the
+  > task leaves recents, which is when the plugin writes it.
 - **Branding:** the RouteNote lockup is vector (`assets/brand/route_note_mark.svg`
   + `route_note_wordmark.svg`, composed by `lib/src/core/brand/brand_lockup.dart`)
   and backs the cold-start splash and the Settings → About card.

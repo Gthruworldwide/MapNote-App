@@ -49,19 +49,41 @@ void main() {
       );
     });
 
-    test('the dark alias name contains the light one (regression guard)', () {
-      // apply() compares the FQ component name with a '.$target' suffix, never a
-      // plain substring, precisely because of this overlap.
-      expect(DynamicIconService.darkIconName, contains(DynamicIconService.lightIconName));
+    test('alias names are fully qualified so the plugin can resolve them', () {
+      // flutter_dynamic_icon_plus passes these strings straight into
+      // ComponentName(context, name) and stores them to compare against
+      // ActivityInfo.name (always fully qualified). A short name
+      // ('ic_launcher_dark') is not expanded by the system, so
+      // setComponentEnabledSetting throws "Component class … does not exist"
+      // from inside the plugin's service — an uncatchable native crash.
+      const String applicationId = 'com.routenote.routenote';
       expect(
-        'com.routenote.routenote.ic_launcher_dark'
-            .endsWith('.${DynamicIconService.lightIconName}'),
+        DynamicIconService.lightIconName,
+        '$applicationId.ic_launcher',
+      );
+      expect(
+        DynamicIconService.darkIconName,
+        '$applicationId.ic_launcher_dark',
+      );
+    });
+
+    test('the two alias names are distinct with no prefix overlap', () {
+      // The dark alias name contains the light one, so apply() compares the
+      // full component name for equality rather than testing a substring or
+      // tail — 'com.routenote.routenote.ic_launcher' is not the tail of the
+      // dark name, but the bare 'ic_launcher' fragment is.
+      expect(
+        DynamicIconService.darkIconName,
+        contains(DynamicIconService.lightIconName),
+      );
+      expect(
+        DynamicIconService.darkIconName
+            .endsWith(DynamicIconService.lightIconName),
         isFalse,
       );
       expect(
-        'com.routenote.routenote.ic_launcher_dark'
-            .endsWith('.${DynamicIconService.darkIconName}'),
-        isTrue,
+        DynamicIconService.lightIconName == DynamicIconService.darkIconName,
+        isFalse,
       );
     });
   });
