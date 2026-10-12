@@ -9,6 +9,42 @@
       "client_info": {
         "mobilesdk_app_id": "1:679774190551:android:c9c1cbaaad30637d912992",
         "android_client_info": {
+          "package_name": "com.example.routenote"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "679774190551-ojvh4k0r769c77osa7n0v3a3itlvsfr4.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDmtJLeTApTtkBi6SwHs9nQJGDoOBapxME"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "679774190551-ojvh4k0r769c77osa7n0v3a3itlvsfr4.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "679774190551-79f3eefd6ncu34appi5rie8lo2use8i9.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.routenote.routenote"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:679774190551:android:d7bf2f949f60ed62912992",
+        "android_client_info": {
           "package_name": "com.routenote.routenote"
         }
       },
