@@ -67,11 +67,10 @@ void main() {
       );
     });
 
-    test('the two alias names are distinct with no prefix overlap', () {
-      // The dark alias name contains the light one, so apply() compares the
-      // full component name for equality rather than testing a substring or
-      // tail — 'com.routenote.routenote.ic_launcher' is not the tail of the
-      // dark name, but the bare 'ic_launcher' fragment is.
+    test('the light name is a prefix of the dark name (compare regress guard)', () {
+      // '…ic_launcher' is a prefix of '…ic_launcher_dark', but not a tail, so
+      // apply() must compare the whole component name for equality rather than
+      // testing a substring or a suffix.
       expect(
         DynamicIconService.darkIconName,
         contains(DynamicIconService.lightIconName),

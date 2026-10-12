@@ -365,7 +365,7 @@ lib/
       place_detail/                # view / navigate / delete
       settings/                    # sign-in, sync, restore, language, theme, agent
                                    #   + hidden_vault_screen (locked places)
-test/                              # Hive-backed widget tests + parser/share tests (119)
+test/                              # Hive-backed widget tests + parser/share tests (120)
 integration_test/app_test.dart     # on-device end-to-end UI flow tests
 ios/ShareExtension/                # iOS share-extension templates + README
 scripts/run_dev.ps1                # Windows helper: run with real OAuth IDs
