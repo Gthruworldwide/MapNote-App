@@ -1,10 +1,14 @@
 package com.routenote.routenote
 
 import android.content.Intent
+import android.content.pm.ApplicationInfo
 import android.content.pm.ShortcutInfo
 import android.content.pm.ShortcutManager
 import android.graphics.drawable.Icon
 import android.os.Build
+import android.os.Bundle
+import android.view.ViewGroup
+import android.widget.Button
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -14,6 +18,37 @@ import io.flutter.plugin.common.MethodChannel
 class MainActivity : FlutterFragmentActivity() {
     private var shortcutsChannel: MethodChannel? = null
     private var pendingPlaceId: String? = null
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        addTestCrashButtonIfDebuggable()
+    }
+
+    /**
+     * Debug-only "Test Crash" button from the Crashlytics Android get-started
+     * guide (Step 3). Pressing it forces an uncaught exception so the first
+     * Crashlytics report can be produced and verified. Release and profile
+     * builds are left untouched (the activity is not debuggable there).
+     *
+     * https://firebase.google.com/docs/crashlytics/android/get-started#force_a_test_crash
+     */
+    private fun addTestCrashButtonIfDebuggable() {
+        val isDebuggable =
+            (applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
+        if (!isDebuggable) return
+
+        val crashButton = Button(this).apply {
+            text = "Test Crash"
+            setOnClickListener { throw RuntimeException("Test Crash") }
+        }
+        addContentView(
+            crashButton,
+            ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+            ),
+        )
+    }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
