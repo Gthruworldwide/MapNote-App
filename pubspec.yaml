@@ -59,6 +59,10 @@ dependencies:
   # Android plugin broke the Gradle build). Drives the light/dark launcher-icon
   # switch in lib/src/services/dynamic_icon_service.dart.
   flutter_dynamic_icon_plus: ^1.2.1
+  # Draws the RouteNote lockup (assets/brand/route_note_*.svg) as real vector, so
+  # the cold-start splash can scale the mark up without any raster softness, and
+  # the same assets serve iOS and Android. See lib/src/core/brand/.
+  flutter_svg: ^2.3.0
 
   flutter_localizations:
     sdk: flutter
@@ -100,9 +104,11 @@ flutter:
   # Bundled assets. The animated launcher-icon source is consumed at build time
   # by flutter_launcher_icons and does not need to be listed here.
   #
-  # assets/brand/ holds the transparent RouteNote lockups used by the splash
-  # screen and the About card. Subdirectories (assets/brand/src/) are not
-  # bundled, so the SVG sources stay out of the app.
+  # assets/brand/ holds the transparent RouteNote lockup, split into its two
+  # vector parts (assets/brand/route_note_mark.svg and route_note_wordmark.svg)
+  # because the cold-start splash animates them independently. Subdirectories
+  # (assets/brand/src/) are not bundled, so the Figma sources stay out of the
+  # app.
   assets:
     - assets/app_icon_animated.gif
     - assets/brand/

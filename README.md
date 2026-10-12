@@ -173,7 +173,7 @@ is the operating system's local storage plus the user's own Google Drive.
 | Localization | `flutter_localizations` + `intl` + ARB (`app_en.arb`, `app_ar.arb`) |
 | IDs | `uuid` |
 | Icons | `flutter_launcher_icons` (Figma "Location Notebook" pin; light/dark masters + glyph + monochrome) |
-| Branding | Figma lockups in `assets/brand/` (transparent, chevron cut-out) → splash screen + About card; built by `tool/gen_brand_logo.ps1` |
+| Branding | Vector lockup in `assets/brand/` (two SVGs: pin `route_note_mark`, two-tone `route_note_wordmark`) → animated cold-start splash + static About card; built by `tool/gen_brand_logo.ps1` |
 | Routing | Plain `Navigator` (no `go_router`) |
 | Telemetry | `firebase_core` + `firebase_crashlytics` + `firebase_analytics` (Firebase BoM 35.0.0) |
 | Tester distribution | Firebase App Distribution (`firebase appdistribution:distribute`) |
@@ -365,7 +365,7 @@ lib/
       place_detail/                # view / navigate / delete
       settings/                    # sign-in, sync, restore, language, theme, agent
                                    #   + hidden_vault_screen (locked places)
-test/                              # Hive-backed widget tests + parser/share tests (114)
+test/                              # Hive-backed widget tests + parser/share tests (119)
 integration_test/app_test.dart     # on-device end-to-end UI flow tests
 ios/ShareExtension/                # iOS share-extension templates + README
 scripts/run_dev.ps1                # Windows helper: run with real OAuth IDs
@@ -373,8 +373,8 @@ scripts/run_integration_tests.ps1  # Windows helper: run the E2E integration tes
 scripts/distribute_app.ps1         # Windows helper: upload a release APK to App Distribution
 assets/icon/                       # launcher-icon sources (Figma SVG in src/, light/dark
                                    #   1024px masters, glyph + monochrome layers)
-assets/brand/                      # transparent RouteNote lockups for the splash + About
-                                   #   card, built from src/ Figma exports
+assets/brand/                      # RouteNote lockup as two SVGs (mark + wordmark),
+                                   #   built by tool/gen_brand_logo.ps1 from src/
 assets/app_icon_animated.gif       # bundled animated asset
 ```
 
@@ -486,30 +486,62 @@ powershell -ExecutionPolicy Bypass -File tool\gen_dark_icon.ps1 -Phase res
 > `flutter_tools` (feature-flags error, exit 255); `dart run flutter_launcher_icons`
 > is the reliable entry point.
 
-The branded splash lockups are built by `tool/gen_brand_logo.ps1` from the Figma
-exports in `assets/brand/src/`. The Figma artboards are solid white or black and
-the pin's chevron is stroked in the artboard colour, so the tool drops the
-artboard and moves the chevron into an SVG mask that punches it out of the pin.
-The result is a single *transparent* lockup that reads correctly on either
-backdrop — which is what the in-app assets (`assets/brand/route_note_lockup_*.png`),
-the Android splash bitmaps (`drawable-*/launch_logo.png`) and the iOS
-`LaunchImage{,@2x,@3x}.png` set are all cut from.
+### Brand logo and splash
+
+`tool/gen_brand_logo.ps1` derives the app's brand assets from the canonical Figma
+export in `assets/brand/src/` (`figma_lockup_horizontal_light.svg`, frame
+415x176). It emits **two** SVGs, not one:
+
+| File | Contents | Cropped viewBox |
+| --- | --- | --- |
+| `assets/brand/route_note_mark.svg` | the location-pin / notebook mark | `31.5 31.5 78.5 113` |
+| `assets/brand/route_note_wordmark.svg` | "Route" (`#145CFF`) + "Note" (`#00CFFF`) | `136 31.5 245 113` |
+
+They are split because the cold-start splash animates the two halves
+independently, and they share one vertical band so `BrandLockup`
+(`lib/src/core/brand/brand_lockup.dart`) can recompose them at any size — the
+geometry constants live in both files, so keep them in step.
+
+The Figma artboards are solid white or black and the pin's chevron is stroked in
+the *artboard* colour, so the tool drops the artboard and moves the chevron into
+an SVG `<mask>` (evaluated as luminance) that punches it out of the pin. The
+mark is therefore genuinely transparent there, and one asset pair reads correctly
+on the white day splash, the AMOLED night splash and the themed About card. Being
+vector, the mark also scales up on startup with no raster softness.
 
 ```sh
-# 1. derive the transparent lockups from the Figma exports
-powershell -ExecutionPolicy Bypass -File tool\gen_brand_logo.ps1 -Phase src
-# 2. rasterise them to the committed PNG masters (one-off; needs resvg)
-#      assets/brand/route_note_lockup_vertical.png    658x648
-#      assets/brand/route_note_lockup_horizontal.png  830x352
-# 3. write the Android splash bitmaps + the iOS LaunchImage set
-powershell -ExecutionPolicy Bypass -File tool\gen_brand_logo.ps1 -Phase res
+# Regenerate both SVGs (idempotent, no external tools).
+powershell -ExecutionPolicy Bypass -File tool\gen_brand_logo.ps1
 ```
 
-Where they appear: the **stacked** lockup is the cold-start splash — both the
-native launch window (`launch_background.xml`, white day / black night) and
-`BrandSplash`, a fade-out overlay mounted from `MaterialApp.builder` so the live
-navigator sits underneath it. The **horizontal** lockup heads the Settings →
-About card.
+**Where they appear.** The **horizontal** lockup heads the Settings → About card
+(static, width 190). The **cold-start splash** is `BrandSplash`, an overlay
+mounted from `MaterialApp.builder` and kept for the app's lifetime, so it sits
+above the navigator, never re-parents it, and never replays on navigation or on
+returning from the background. The platform launch screens
+(`android/app/src/main/res/drawable*/launch_background.xml` and iOS
+`LaunchScreen.storyboard`) show only the plain brand background — no logo — so
+the entrance animation can build the lockup from invisible without it blinking
+out first.
+
+**Motion contract.** The entrance is 850 ms, ease-out (`Curves.easeOut`, the
+reference's `cubic-bezier(0, 0, 0.58, 1)`), no overshoot:
+
+| t (s) | Animation |
+| --- | --- |
+| 0.00 | mark invisible at 88% scale; wordmark hidden, +6 lp below its final spot |
+| 0.00 → 0.50 | mark opacity 0 → 1 |
+| 0.00 → 0.60 | mark scale 88% → 100%, centre fixed |
+| 0.28 → 0.85 | wordmark opacity 0 → 1 and rises 6 lp into place |
+| 0.85 → 1.10 | cross-fade (250 ms) to the live app |
+
+The reference file (`RouteNote / Motion / Horizontal / 2s`) runs for 2 s, but its
+last 1.15 s is just the finished lockup being held — the splash stops when the
+entrance ends. Starting up adds no fixed delay: `main()` finishes Firebase/Hive
+initialization before `runApp`, so the app is already live under the splash; a
+slower initialization simply holds the finished logo. With **Reduce Motion** the
+entrance is skipped (the final lockup is shown immediately) while the cross-fade
+is kept, since a dissolve is the recommended substitute for movement.
 
 ### 6. Firebase (already configured)
 
@@ -603,11 +635,15 @@ Already committed — the notes below explain what is in place.
   layers; `tool/gen_dark_icon.ps1` builds the dark alt-icon set (`ic_launcher_dark`,
   `#000000` backdrop) used by the dynamic light/dark switch. Adaptive backgrounds:
   `#FFFFFF` (light) / `#000000` (dark), see `android/app/src/main/res/values/colors.xml`.
-- **Branding:** the Figma lockups in `assets/brand/` back the splash screen and the
-  Settings → About card. `lib/src/features/splash/brand_splash.dart` holds the
-  stacked lockup over the live navigator and fades out; the Android launch window
-  and iOS `LaunchImage` show the same art before Flutter's first frame.
-  `tool/gen_brand_logo.ps1` regenerates every derived bitmap.
+- **Branding:** the RouteNote lockup is vector (`assets/brand/route_note_mark.svg`
+  + `route_note_wordmark.svg`, composed by `lib/src/core/brand/brand_lockup.dart`)
+  and backs the cold-start splash and the Settings → About card.
+  `lib/src/features/splash/brand_splash.dart` plays the approved 850 ms entrance
+  over the live navigator and cross-fades out (see "Brand logo and splash" for the
+  motion contract). The Android launch window and the iOS launch screen show the
+  same plain brand background before Flutter's first frame — never the logo, so
+  the animation can build it from invisible. `tool/gen_brand_logo.ps1` regenerates
+  both SVGs.
 
 ## Distributing to testers (Firebase App Distribution)
 

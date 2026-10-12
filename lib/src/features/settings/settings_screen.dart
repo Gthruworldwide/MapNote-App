@@ -3,8 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 
 import '../../../l10n/generated/app_localizations.dart';
-import '../../core/brand/brand_assets.dart';
-import '../../core/brand/brand_logo.dart';
+import '../../core/brand/brand_lockup.dart';
 import '../../core/config/app_config.dart';
 import '../../core/config/preferred_nav_app.dart';
 import '../../core/utils/date_formats.dart';
@@ -669,10 +668,9 @@ class SettingsScreen extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           // Brand lockup: the horizontal wordmark centred over the blurb, so
-          // the About section doubles as the app's branding page.
-          const Center(
-            child: BrandLogo(BrandAssets.lockupHorizontal, width: 220),
-          ),
+          // the About section doubles as the app's branding page. The splash
+          // plays the animated entrance on cold start only; here it is static.
+          const Center(child: BrandLockup(width: 190)),
           const SizedBox(height: 20),
           Text(
             l10n.aboutDescription,

@@ -1,194 +1,135 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    RouteNote brand-logo asset generator (splash screen + in-app lockups).
+    RouteNote brand-logo asset generator (vector mark + wordmark).
 
 .DESCRIPTION
-    The Figma design ships four "RouteNote / Brand Logo" lockups:
+    The app renders the RouteNote lockup from *vector* assets, and the cold-start
+    splash animates the two halves independently, so the Figma lockup is split
+    into two SVGs:
 
-        Orientation = Horizontal | Vertical
-        Theme       = Light (white artboard) | AMOLED (black artboard)
+        Brand mark / Location + Notebook  ->  assets/brand/route_note_mark.svg
+        RouteNote / Wordmark              ->  assets/brand/route_note_wordmark.svg
 
-    Each lockup is the blue pin mark (#145CFF) with cyan notebook lines
-    (#00CFFF) plus a blue "RouteNote" wordmark, drawn on a solid artboard, and
-    the pin's chevron is stroked in the *artboard* colour (white on Light, black
-    on AMOLED). The raw export therefore only composites correctly onto a pure
-    white or pure black page.
+    Both are derived from the canonical Figma export
+    assets/brand/src/figma_lockup_horizontal_light.svg. Its frame is 415x176 and
+    holds exactly those two layers, with ink boxes of:
 
-    This tool derives transparent lockups instead: the Figma canvas and the
-    artboard rectangles are dropped, and the chevron is moved into an SVG
-    <mask> that punches a hole through the pin. Whatever the page background is
-    then shows through the chevron, so a single asset serves light *and* dark
-    themes (and the same PNG works for the white day splash and the black night
-    splash).
+        mark      x[ 32.000 .. 109.538]  y[ 32.000 .. 144.000]
+        wordmark  x[136.898 .. 380.5  ]  y[ 71.440 .. 106.720]
 
-    Phases
-    ------
-      -Phase src  assets/brand/src/figma_lockup_*.svg
-                    -> assets/brand/src/lockup_{vertical,horizontal}.svg
+    Each part is cropped to the shared vertical band 31.500 .. 144.500 (the
+    mark's box grown by a 0.5 unit bleed) plus its own horizontal band, also
+    with a 0.5 unit bleed, so both assets are exactly 113 units tall and the
+    horizontal gap between them is 26 units:
 
-      -Phase res  assets/brand/route_note_lockup_vertical.png
-                    -> android/app/src/main/res/drawable-*/launch_logo.png
-                    -> ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage{,@2x,@3x}.png
+        mark      viewBox "31.5  31.5  78.5 113"
+        wordmark  viewBox "136.0 31.5 245.0 113"
 
-    The two PNG masters themselves (assets/brand/route_note_lockup_*.png, which
-    are also the Flutter-facing assets) are rasterised once from the transparent
-    SVGs with resvg (@resvg/resvg-js) and committed, so no SVG renderer is
-    needed at run time - -Phase res is a plain System.Drawing downscale.
+    lib/src/core/brand/brand_lockup.dart repeats those numbers as layout
+    constants - keep the two in step.
 
-    Full regeneration
-    -----------------
-      1. ./tool/gen_brand_logo.ps1 -Phase src
-      2. resvg -> assets/brand/route_note_lockup_vertical.png    (658x648)
-         resvg -> assets/brand/route_note_lockup_horizontal.png  (830x352)
-      3. ./tool/gen_brand_logo.ps1 -Phase res
-
-    (Step 2 is the same one-off resvg step the launcher-icon masters went
-    through; see README "Brand logo".)
+    The chevron inside the mark is stroked in the *artboard* colour in the Figma
+    export (white on the Light frame, black on AMOLED): it is a hole, not a
+    shape. It is therefore moved into an SVG <mask> instead - a white field
+    minus the black chevron stroke, evaluated as luminance - so whatever is
+    behind the logo shows through the chevron. One asset then serves the white
+    day splash, the AMOLED night splash and the themed About card.
 
     Usage
     -----
-      ./tool/gen_brand_logo.ps1 -Phase src
-      ./tool/gen_brand_logo.ps1 -Phase res
-      ./tool/gen_brand_logo.ps1 -Phase all
+      ./tool/gen_brand_logo.ps1
 #>
 [CmdletBinding()]
-param(
-    [ValidateSet('src', 'res', 'all')]
-    [string]$Phase = 'all'
-)
+param()
 
 $ErrorActionPreference = 'Stop'
-Add-Type -AssemblyName System.Drawing
 
 $root     = Split-Path -Parent $PSScriptRoot
 $brandDir = Join-Path $root 'assets\brand'
-$srcDir   = Join-Path $brandDir 'src'
+$source   = Join-Path $brandDir 'src\figma_lockup_horizontal_light.svg'
 
-# Splash logo geometry, in dp at mdpi. The lockup artboard carries padding
-# around the mark, so the visible logo lands around 75% of this width.
-$splashBaseWidth = 200
+# Lockup geometry, in Figma user units (the source frame is 415x176).
+$frameWidth    = 415
+$frameHeight   = 176
+$bandTop       = 31.5
+$bandHeight    = 113.0
+$markLeft      = 31.5
+$markWidth     = 78.5
+$wordmarkLeft  = 136.0
+$wordmarkWidth = 245.0
 
-# --- Phase: src (Figma lockups -> transparent SVG lockups) -----------------
+if (-not (Test-Path -LiteralPath $source)) { throw "Missing Figma source: $source" }
 
-function Convert-Lockup {
-    param(
-        [Parameter(Mandatory)][string]$InputPath,
-        [Parameter(Mandatory)][string]$OutputPath
-    )
+# --- split the Figma export into its two layers -----------------------------
 
-    $lines  = Get-Content -LiteralPath $InputPath
-    $header = $lines[0]
-    $svgW   = [int][double]([regex]::Match($header, 'width="([\d.]+)"').Groups[1].Value)
-    $svgH   = [int][double]([regex]::Match($header, 'height="([\d.]+)"').Groups[1].Value)
+$markPaths     = New-Object 'System.Collections.Generic.List[string]'
+$wordmarkPaths = New-Object 'System.Collections.Generic.List[string]'
+$chevronD      = $null
+$chevronWidth  = $null
+$group         = $null
 
-    # The chevron is stroked in the artboard colour; capture its geometry for
-    # the mask, then rebuild the document without it.
-    $chevron = $null
-    foreach ($line in $lines[1..($lines.Count - 1)]) {
-        if ($line -match 'stroke="(white|black)"') { $chevron = $line.Trim(); break }
+foreach ($line in (Get-Content -LiteralPath $source)) {
+    if ($line -match '^\s*<g id="([^"]+)"') {
+        $group = $Matches[1]
+        continue
     }
-    if (-not $chevron) { throw "No chevron stroke path found in $InputPath" }
-    $chevronD = [regex]::Match($chevron, '\bd="([^"]*)"').Groups[1].Value
-    $chevronW = [regex]::Match($chevron, 'stroke-width="([^"]*)"').Groups[1].Value
+    if ($line -match '^\s*</g>') {
+        $group = $null
+        continue
+    }
+    if ($line -notmatch '^\s*<path\b') { continue }
 
-    $out = New-Object 'System.Collections.Generic.List[string]'
-    $out.Add($header)
-    foreach ($line in $lines[1..($lines.Count - 1)]) {
-        if ($line -match '^\s*<rect[^>]*fill="#1E1E1E"') { continue }
-        if ($line -match '^\s*<rect[^>]*fill="(white|black)"') { continue }
-        if ($line -match 'stroke="(white|black)"') { continue }
-
-        if ($line -match '<g id="Orientation=') {
-            $out.Add($line)
-            $out.Add('<defs>')
-            $out.Add("  <mask id=`"chevron-cutout`" maskUnits=`"userSpaceOnUse`" x=`"0`" y=`"0`" width=`"$svgW`" height=`"$svgH`">")
-            $out.Add("    <rect x=`"0`" y=`"0`" width=`"$svgW`" height=`"$svgH`" fill=`"white`"/>")
-            $out.Add("    <path d=`"$chevronD`" stroke=`"black`" stroke-width=`"$chevronW`" fill=`"none`"/>")
-            $out.Add('  </mask>')
-            $out.Add('</defs>')
-        }
-        elseif ($line -match '<g id="Brand mark') {
-            $out.Add(($line -replace '>$', ' mask="url(#chevron-cutout)">'))
-        }
-        else {
-            $out.Add($line)
-        }
+    if ($line -match 'stroke="(?:white|black)"') {
+        # The chevron: not a shape, a hole punched through the pin.
+        $chevronD     = [regex]::Match($line, '\bd="([^"]*)"').Groups[1].Value
+        $chevronWidth = [regex]::Match($line, 'stroke-width="([^"]*)"').Groups[1].Value
+        continue
     }
 
-    # UTF-8 without a BOM: an XML BOM trips up some SVG consumers.
-    [System.IO.File]::WriteAllLines($OutputPath, $out, (New-Object System.Text.UTF8Encoding($false)))
-    Write-Host ("  {0,-22} {1}x{2}  (chevron -> cut-out)" -f (Split-Path -Leaf $OutputPath), $svgW, $svgH)
-}
-
-function Invoke-SrcPhase {
-    Write-Host 'Phase src: Figma lockups -> transparent SVG'
-    # Light and AMOLED differ only in the (discarded) artboard and chevron
-    # colour, so the Light export is the canonical source.
-    Convert-Lockup -InputPath (Join-Path $srcDir 'figma_lockup_vertical_light.svg') `
-        -OutputPath (Join-Path $srcDir 'lockup_vertical.svg')
-    Convert-Lockup -InputPath (Join-Path $srcDir 'figma_lockup_horizontal_light.svg') `
-        -OutputPath (Join-Path $srcDir 'lockup_horizontal.svg')
-}
-
-# --- Phase: res (transparent PNG master -> platform splash bitmaps) --------
-
-function Resize-Png {
-    param(
-        [Parameter(Mandatory)][string]$InputPath,
-        [Parameter(Mandatory)][string]$OutputPath,
-        [Parameter(Mandatory)][int]$Width,
-        [Parameter(Mandatory)][int]$Height
-    )
-
-    $source = [System.Drawing.Bitmap]::FromFile($InputPath)
-    $target = New-Object System.Drawing.Bitmap($Width, $Height, [System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
-    $graphics = [System.Drawing.Graphics]::FromImage($target)
-    $graphics.CompositingMode = [System.Drawing.Drawing2D.CompositingMode]::SourceCopy
-    $graphics.CompositingQuality = [System.Drawing.Drawing2D.CompositingQuality]::HighQuality
-    $graphics.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
-    $graphics.PixelOffsetMode = [System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality
-    $graphics.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::HighQuality
-    $graphics.DrawImage($source, (New-Object System.Drawing.Rectangle(0, 0, $Width, $Height)))
-    $graphics.Dispose()
-    $target.Save($OutputPath, [System.Drawing.Imaging.ImageFormat]::Png)
-    $target.Dispose()
-    $source.Dispose()
-}
-
-function Invoke-ResPhase {
-    $master = Join-Path $brandDir 'route_note_lockup_vertical.png'
-    if (-not (Test-Path -LiteralPath $master)) {
-        throw "Missing PNG master $master - rasterise lockup_vertical.svg with resvg first."
+    if ($group -eq 'Brand mark / Location + Notebook') {
+        $markPaths.Add($line.Trim())
     }
-
-    $probe = [System.Drawing.Image]::FromFile($master)
-    $ratio = $probe.Height / $probe.Width
-    $probe.Dispose()
-
-    Write-Host 'Phase res: splash bitmaps'
-    $densities = [ordered]@{ mdpi = 1.0; hdpi = 1.5; xhdpi = 2.0; xxhdpi = 3.0; xxxhdpi = 4.0 }
-    foreach ($density in $densities.Keys) {
-        $width  = [int][Math]::Round($splashBaseWidth * $densities[$density])
-        $height = [int][Math]::Round($width * $ratio)
-        $dir    = Join-Path $root "android\app\src\main\res\drawable-$density"
-        New-Item -ItemType Directory -Force -Path $dir | Out-Null
-        Resize-Png -InputPath $master -OutputPath (Join-Path $dir 'launch_logo.png') -Width $width -Height $height
-        Write-Host ("  drawable-{0,-8} launch_logo.png   {1}x{2}" -f $density, $width, $height)
-    }
-
-    $iosDir = Join-Path $root 'ios\Runner\Assets.xcassets\LaunchImage.imageset'
-    foreach ($scale in 1, 2, 3) {
-        $width  = $splashBaseWidth * $scale
-        $height = [int][Math]::Round($width * $ratio)
-        $name   = if ($scale -eq 1) { 'LaunchImage.png' } else { "LaunchImage@${scale}x.png" }
-        Resize-Png -InputPath $master -OutputPath (Join-Path $iosDir $name) -Width $width -Height $height
-        Write-Host ("  LaunchImage{0,-8} {1}x{2}" -f $(if ($scale -eq 1) { '' } else { "@${scale}x" }), $width, $height)
+    elseif ($group -eq 'RouteNote / Wordmark') {
+        $wordmarkPaths.Add($line.Trim())
     }
 }
 
-# --- run -------------------------------------------------------------------
+if ($markPaths.Count -eq 0) { throw "No mark paths found in $source" }
+if ($wordmarkPaths.Count -eq 0) { throw "No wordmark paths found in $source" }
+if (-not $chevronD) { throw "No chevron stroke found in $source" }
 
-if ($Phase -eq 'src' -or $Phase -eq 'all') { Invoke-SrcPhase }
-if ($Phase -eq 'res' -or $Phase -eq 'all') { Invoke-ResPhase }
+# --- emit the two runtime assets -------------------------------------------
+
+$mark = New-Object 'System.Collections.Generic.List[string]'
+$mark.Add(('<svg width="{0}" height="{1}" viewBox="{2} {3} {0} {1}" fill="none" xmlns="http://www.w3.org/2000/svg">' -f $markWidth, $bandHeight, $markLeft, $bandTop))
+$mark.Add('  <defs>')
+$mark.Add(('    <mask id="chevron-cutout" mask-type="luminance" maskUnits="userSpaceOnUse" x="0" y="0" width="{0}" height="{1}">' -f $frameWidth, $frameHeight))
+$mark.Add(('      <rect x="0" y="0" width="{0}" height="{1}" fill="white"/>' -f $frameWidth, $frameHeight))
+$mark.Add(('      <path d="{0}" stroke="black" stroke-width="{1}" fill="none"/>' -f $chevronD, $chevronWidth))
+$mark.Add('    </mask>')
+$mark.Add('  </defs>')
+$mark.Add('  <g mask="url(#chevron-cutout)">')
+foreach ($path in $markPaths) { $mark.Add('    ' + $path) }
+$mark.Add('  </g>')
+$mark.Add('</svg>')
+
+$wordmark = New-Object 'System.Collections.Generic.List[string]'
+$wordmark.Add(('<svg width="{0}" height="{1}" viewBox="{2} {3} {0} {1}" fill="none" xmlns="http://www.w3.org/2000/svg">' -f $wordmarkWidth, $bandHeight, $wordmarkLeft, $bandTop))
+$wordmark.Add('  <g>')
+foreach ($path in $wordmarkPaths) { $wordmark.Add('    ' + $path) }
+$wordmark.Add('  </g>')
+$wordmark.Add('</svg>')
+
+# UTF-8 without a BOM: an XML BOM trips up some SVG consumers.
+$utf8 = New-Object System.Text.UTF8Encoding($false)
+$markFile = Join-Path $brandDir 'route_note_mark.svg'
+$wordmarkFile = Join-Path $brandDir 'route_note_wordmark.svg'
+[System.IO.File]::WriteAllLines($markFile, $mark, $utf8)
+[System.IO.File]::WriteAllLines($wordmarkFile, $wordmark, $utf8)
+
+Write-Host 'RouteNote brand assets'
+Write-Host ('  {0,-26} {1} paths   viewBox {2} {3} {4} {5}' -f 'route_note_mark.svg', $markPaths.Count, $markLeft, $bandTop, $markWidth, $bandHeight)
+Write-Host ('  {0,-26} {1} paths   viewBox {2} {3} {4} {5}' -f 'route_note_wordmark.svg', $wordmarkPaths.Count, $wordmarkLeft, $bandTop, $wordmarkWidth, $bandHeight)
+Write-Host ('  lockup: {0} x {1} units, gap {2}' -f ($markWidth + 26 + $wordmarkWidth), $bandHeight, 26)
 Write-Host 'Done.'

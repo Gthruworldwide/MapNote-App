@@ -1,12 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Launch splash: the transparent RouteNote lockup (tool/gen_brand_logo.ps1)
-     centred on the window background. -->
+<!-- Launch splash: a plain brand-coloured background. The RouteNote lockup is
+     not drawn here - the in-app entrance animation builds it from scratch in the
+     first Flutter frame, and painting it first would make it blink out as the
+     animation restarts from invisible. ?android:colorBackground follows the
+     light/dark LaunchTheme (white in values/, AMOLED black in values-night/). -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:drawable="@android:color/white" />
-
-    <item>
-        <bitmap
-            android:gravity="center"
-            android:src="@drawable/launch_logo" />
-    </item>
+    <item android:drawable="?android:colorBackground" />
 </layer-list>
