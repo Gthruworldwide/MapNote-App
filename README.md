@@ -119,6 +119,11 @@ is the operating system's local storage plus the user's own Google Drive.
 - 🧭 Navigation delegated to Google Maps / Waze via deep links — no in-app maps.
 - 🌐 Arabic / English UI (`flutter_localizations` + ARB files).
 - 🌗 Light & dark themes.
+- 🛰️ **Daily GPS tracking** — an optional toggle that records today's distance
+  and max speed while the app is open.
+- 🚶 **AutoMotion** — an independent daily motion tracker with a custom
+  electric-blue/mint status badge; when paused, the Home card stays visible with
+  today's recorded totals.
 - 🤖 **Smart Insights** — a privacy-first monitoring & recommendation agent that
   watches local app health (lifecycle, sync failures, location-parsing failures,
   UI latency) and the shape of the user's data, then suggests tidy-ups, sync
@@ -159,7 +164,7 @@ is the operating system's local storage plus the user's own Google Drive.
 | Share target | `receive_sharing_intent` (text/links shared into the app) |
 | Localization | `flutter_localizations` + `intl` + ARB (`app_en.arb`, `app_ar.arb`) |
 | IDs | `uuid` |
-| Icons | `flutter_launcher_icons` (generated from `assets/app_icon.png`) |
+| Icons | `flutter_launcher_icons` (3D adaptive emblem from `assets/icon/ic_launcher_foreground.png` + monochrome) |
 | Routing | Plain `Navigator` (no `go_router`) |
 
 ## How sync works
@@ -291,30 +296,41 @@ lib/
   src/
     core/
       config/app_config.dart       # --dart-define OAuth IDs, scope, file/box names
+      config/preferred_nav_app.dart
       navigation/app_navigator.dart # global navigator key (share intents)
       theme/app_theme.dart         # light & dark themes
       utils/date_formats.dart
+      utils/geo_distance.dart      # shared Haversine distance helper
     data/
-      models/                      # Place, BackupData (JSON shape)
-      local/                       # HiveDatabase, PlaceLocalDataSource, SettingsRepository
+      models/                      # Place, BackupData, DailyGpsSummary, AgentInsight
+      local/                       # HiveDatabase, PlaceLocalDataSource,
+                                   #   SettingsRepository, auto_motion_data_source,
+                                   #   gps_daily_data_source
       remote/                      # auth_service, google_auth_service, drive_service
       repositories/                # PlaceRepository, SyncRepository
     services/                      # location, navigation, location_parser,
                                    #   share_intent, background sync scheduler,
-                                   #   app_health_logger, local_insight_engine,
+                                   #   gps_tracker_service, auto_motion_service,
+                                   #   lock_gate, biometric_service,
+                                   #   dynamic_icon_service, home_shortcut_service,
+                                   #   app_health_logger, app_observer_service,
+                                   #   app_logger, local_insight_engine,
                                    #   gemini_client, agent_service
     providers/app_providers.dart   # all Riverpod providers & notifiers
     features/
       home/                        # list + search + AppBar actions + Smart Insights
+        widgets/                   # place_card, smart_insights_card,
+                                   #   auto_motion_card + auto_motion_badge
       add_place/                   # GPS or pasted/manual coordinates, name & notes
       place_detail/                # view / navigate / delete
       settings/                    # sign-in, sync, restore, language, theme, agent
-test/                              # Hive-backed widget tests + parser/share tests
+                                   #   + hidden_vault_screen (locked places)
+test/                              # Hive-backed widget tests + parser/share tests (113)
 integration_test/app_test.dart     # on-device end-to-end UI flow tests
 ios/ShareExtension/                # iOS share-extension templates + README
 scripts/run_dev.ps1                # Windows helper: run with real OAuth IDs
 scripts/run_integration_tests.ps1  # Windows helper: run the E2E integration tests
-assets/app_icon.png                # source icon for flutter_launcher_icons
+assets/icon/                       # 3D launcher-icon sources (foreground + monochrome)
 assets/app_icon_animated.gif       # bundled animated asset
 ```
 
@@ -408,11 +424,16 @@ flutter build appbundle --release --dart-define=GOOGLE_SERVER_CLIENT_ID=... --da
 flutter build ios      --release --dart-define=GOOGLE_SERVER_CLIENT_ID=... --dart-define=GOOGLE_IOS_CLIENT_ID=...
 ```
 
-Regenerate the native launcher icons after changing `assets/app_icon.png`:
+Regenerate the native launcher icons after changing the source art under
+`assets/icon/` (`ic_launcher_foreground.png` + `ic_launcher_monochrome.png`):
 
 ```sh
-flutter pub run flutter_launcher_icons
+dart run flutter_launcher_icons
 ```
+
+> On this Flutter SDK, `flutter pub run flutter_launcher_icons` can crash in
+> `flutter_tools` (feature-flags error, exit 255); `dart run flutter_launcher_icons`
+> is the reliable entry point.
 
 ## Configuration reference
 
@@ -474,7 +495,10 @@ Already committed — the notes below explain what is in place.
   the app, plus the `ShareMedia-$(PRODUCT_BUNDLE_IDENTIFIER)` scheme used by the
   share extension.
 - **Application ID / bundle ID:** `com.routenote.routenote` on both platforms.
-- **Icons:** generated with `flutter_launcher_icons` from `assets/app_icon.png`.
+- **Icons:** generated with `flutter_launcher_icons` from
+  `assets/icon/ic_launcher_foreground.png` (+ `ic_launcher_monochrome.png`), with
+  the adaptive background `#090C15`. The dark alt-icon set used by the dynamic
+  light/dark switch is rendered by `tool/gen_dark_icon.ps1`.
 
 ## Roadmap
 
