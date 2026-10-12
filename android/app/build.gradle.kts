@@ -38,6 +38,17 @@ android {
     }
 }
 
+dependencies {
+    // Import the Firebase BoM: it pins compatible versions for every Firebase
+    // Android library below, so no explicit versions are needed there.
+    implementation(platform("com.google.firebase:firebase-bom:35.0.0"))
+
+    // Firebase products (add the ones you use).
+    implementation("com.google.firebase:firebase-analytics")
+
+    // https://firebase.google.com/docs/android/setup#available-libraries
+}
+
 kotlin {
     compilerOptions {
         jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
