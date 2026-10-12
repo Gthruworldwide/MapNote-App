@@ -12,6 +12,7 @@ import 'package:routenote/src/data/local/auto_motion_data_source.dart';
 import 'package:routenote/src/data/local/hive_database.dart';
 import 'package:routenote/src/data/models/daily_gps_summary.dart';
 import 'package:routenote/src/data/remote/auth_service.dart';
+import 'package:routenote/src/features/home/widgets/auto_motion_badge.dart';
 import 'package:routenote/src/features/home/widgets/auto_motion_card.dart';
 import 'package:routenote/src/features/settings/settings_screen.dart';
 import 'package:routenote/src/providers/app_providers.dart';
@@ -228,7 +229,12 @@ void main() {
     // status badge.
     expect(find.text('0.00 km'), findsOneWidget);
     expect(find.text('0.0 km/h'), findsOneWidget);
-    expect(find.text('Active'), findsOneWidget);
+    // The status badge is now a custom painter, not a text label: assert its
+    // active state directly.
+    final AutoMotionBadge badge =
+        tester.widget<AutoMotionBadge>(find.byType(AutoMotionBadge));
+    expect(badge.isActive, isTrue);
+    expect(badge.isUnavailable, isFalse);
   });
 
   testWidgets(
@@ -254,7 +260,11 @@ void main() {
     expect(find.byType(AutoMotionCard), findsOneWidget);
     expect(find.text('3.50 km'), findsOneWidget);
     expect(find.text('40.0 km/h'), findsOneWidget);
-    expect(find.text('Paused'), findsOneWidget);
+    // Paused: the badge is neither active nor unavailable.
+    final AutoMotionBadge badge =
+        tester.widget<AutoMotionBadge>(find.byType(AutoMotionBadge));
+    expect(badge.isActive, isFalse);
+    expect(badge.isUnavailable, isFalse);
   });
 
   testWidgets('home hides the AutoMotion card when disabled and no motion yet',

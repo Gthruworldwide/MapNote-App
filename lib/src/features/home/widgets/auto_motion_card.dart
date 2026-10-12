@@ -3,20 +3,22 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../providers/app_providers.dart';
-import 'auto_motion_badge.dart';\n/// The AutoMotion dashboard card for the Home screen.
+import 'auto_motion_badge.dart';
+
+/// The AutoMotion dashboard card for the Home screen.
 ///
 /// Surfaces today's recorded distance, today's max speed and whether tracking
 /// is live. Home keeps it visible while AutoMotion is enabled, or while today
 /// already has recorded motion — in that case the badge reads "Paused" so the
 /// user can still see their day's totals.
 class AutoMotionCard extends ConsumerWidget {
-  const AutoMotionCard({super.key}
+  const AutoMotionCard({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final AppLocalizations l10n = AppLocalizations.of(context
-    final ThemeData theme = Theme.of(context
-    final AutoMotionState state = ref.watch(autoMotionControllerProvider
+    final AppLocalizations l10n = AppLocalizations.of(context);
+    final ThemeData theme = Theme.of(context);
+    final AutoMotionState state = ref.watch(autoMotionControllerProvider);
 
     return Card(
       margin: const EdgeInsetsDirectional.fromSTEB(16, 4, 16, 8),
@@ -70,9 +72,10 @@ class AutoMotionCard extends ConsumerWidget {
           ],
         ),
       ),
-    
+    );
   }
-}\n\n
+}
+
 /// A single labelled number in the AutoMotion card (distance / max speed).
 class _AutoMotionMetric extends StatelessWidget {
   const _AutoMotionMetric({
@@ -87,7 +90,7 @@ class _AutoMotionMetric extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context
+    final ThemeData theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
@@ -111,10 +114,6 @@ class _AutoMotionMetric extends StatelessWidget {
           ),
         ),
       ],
-    
+    );
   }
-}\n\n
-
-
-
-
+}
