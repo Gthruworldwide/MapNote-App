@@ -78,7 +78,7 @@
             android:name=".ic_launcher_dark"
             android:exported="true"
             android:enabled="false"
-            android:icon="@mipmap/ic_launcher_dark"
+            android:icon="@mipmap/ic_launcher"
             android:roundIcon="@mipmap/ic_launcher_dark"
             android:label="routenote"
             android:targetActivity=".MainActivity">

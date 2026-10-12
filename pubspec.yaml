@@ -105,15 +105,16 @@ flutter:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/icon/ic_launcher_foreground.png"
+  # Full "White" master (white backdrop + pin glyph) -> legacy Android + iOS.
+  image_path: "assets/icon/ic_launcher_master_light.png"
   min_sdk_android: 21
   remove_alpha_ios: true
 
-  # Adaptive / themed launcher icon (Android 8+). The foreground is the 3D pin
-  # emblem centered in the adaptive safe zone; the dark background color plus
-  # the monochrome layer give Android 13+ Material You themed icons. The dark
-  # alt-icon (ic_launcher_dark) used by the dynamic light/dark switch is
-  # rendered by tool/gen_dark_icon.ps1.
-  adaptive_icon_background: "#090C15"
+  # Adaptive / themed launcher icon (Android 8+). The foreground is the pin
+  # glyph centered in the adaptive safe zone; the white backdrop color plus the
+  # monochrome layer give Android 13+ Material You themed icons. The dark
+  # alt-icon (ic_launcher_dark, AMOLED-black backdrop) used by the dynamic
+  # light/dark switch is rendered by tool/gen_dark_icon.ps1.
+  adaptive_icon_background: "#FFFFFF"
   adaptive_icon_foreground: "assets/icon/ic_launcher_foreground.png"
   adaptive_icon_monochrome: "assets/icon/ic_launcher_monochrome.png"

@@ -172,7 +172,7 @@ is the operating system's local storage plus the user's own Google Drive.
 | Share target | `receive_sharing_intent` (text/links shared into the app) |
 | Localization | `flutter_localizations` + `intl` + ARB (`app_en.arb`, `app_ar.arb`) |
 | IDs | `uuid` |
-| Icons | `flutter_launcher_icons` (3D adaptive emblem from `assets/icon/ic_launcher_foreground.png` + monochrome) |
+| Icons | `flutter_launcher_icons` (Figma "Location Notebook" pin; light/dark masters + glyph + monochrome) |
 | Routing | Plain `Navigator` (no `go_router`) |
 | Telemetry | `firebase_core` + `firebase_crashlytics` + `firebase_analytics` (Firebase BoM 35.0.0) |
 | Tester distribution | Firebase App Distribution (`firebase appdistribution:distribute`) |
@@ -370,7 +370,8 @@ ios/ShareExtension/                # iOS share-extension templates + README
 scripts/run_dev.ps1                # Windows helper: run with real OAuth IDs
 scripts/run_integration_tests.ps1  # Windows helper: run the E2E integration tests
 scripts/distribute_app.ps1         # Windows helper: upload a release APK to App Distribution
-assets/icon/                       # 3D launcher-icon sources (foreground + monochrome)
+assets/icon/                       # launcher-icon sources (Figma SVG in src/, light/dark
+                                   #   1024px masters, glyph + monochrome layers)
 assets/app_icon_animated.gif       # bundled animated asset
 ```
 
@@ -464,11 +465,18 @@ flutter build appbundle --release --dart-define=GOOGLE_SERVER_CLIENT_ID=... --da
 flutter build ios      --release --dart-define=GOOGLE_SERVER_CLIENT_ID=... --dart-define=GOOGLE_IOS_CLIENT_ID=...
 ```
 
-Regenerate the native launcher icons after changing the source art under
-`assets/icon/` (`ic_launcher_foreground.png` + `ic_launcher_monochrome.png`):
+Regenerate the native launcher icons after changing the source art. The Figma
+exports live in `assets/icon/src/` (light + dark SVG); the rasterised 1024×1024
+masters are `assets/icon/ic_launcher_master_light.png` (white "normal" backdrop)
+and `assets/icon/ic_launcher_master_dark.png` (AMOLED-black dark backdrop).
 
 ```sh
+# 1. extract the pin glyph + themed silhouette from the light master
+powershell -ExecutionPolicy Bypass -File tool\gen_dark_icon.ps1 -Phase assets
+# 2. build the light icon set (legacy + adaptive + iOS)
 dart run flutter_launcher_icons
+# 3. build the dark alt-icon set used by the dynamic light/dark switch
+powershell -ExecutionPolicy Bypass -File tool\gen_dark_icon.ps1 -Phase res
 ```
 
 > On this Flutter SDK, `flutter pub run flutter_launcher_icons` can crash in
@@ -561,10 +569,12 @@ Already committed — the notes below explain what is in place.
   the app, plus the `ShareMedia-$(PRODUCT_BUNDLE_IDENTIFIER)` scheme used by the
   share extension.
 - **Application ID / bundle ID:** `com.routenote.routenote` on both platforms.
-- **Icons:** generated with `flutter_launcher_icons` from
-  `assets/icon/ic_launcher_foreground.png` (+ `ic_launcher_monochrome.png`), with
-  the adaptive background `#090C15`. The dark alt-icon set used by the dynamic
-  light/dark switch is rendered by `tool/gen_dark_icon.ps1`.
+- **Icons:** the Figma "Location Notebook" pin. `flutter_launcher_icons` builds the
+  light icon from `assets/icon/ic_launcher_master_light.png` (white backdrop) plus
+  the glyph (`ic_launcher_foreground.png`) and themed (`ic_launcher_monochrome.png`)
+  layers; `tool/gen_dark_icon.ps1` builds the dark alt-icon set (`ic_launcher_dark`,
+  `#000000` backdrop) used by the dynamic light/dark switch. Adaptive backgrounds:
+  `#FFFFFF` (light) / `#000000` (dark), see `android/app/src/main/res/values/colors.xml`.
 
 ## Distributing to testers (Firebase App Distribution)
 
