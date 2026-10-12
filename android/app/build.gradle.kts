@@ -46,7 +46,10 @@ dependencies {
     // Android library below, so no explicit versions are needed there.
     implementation(platform("com.google.firebase:firebase-bom:35.0.0"))
 
-    // Firebase products (add the ones you use).
+    // Firebase SDKs used by the app (versions pinned by the BoM above):
+    // Crashlytics for crash/ANR reporting, Analytics for breadcrumb logs.
+    // https://firebase.google.com/docs/crashlytics/android/get-started#add-sdk
+    implementation("com.google.firebase:firebase-crashlytics")
     implementation("com.google.firebase:firebase-analytics")
 
     // https://firebase.google.com/docs/android/setup#available-libraries
