@@ -9,6 +9,7 @@ import 'src/core/theme/app_theme.dart';
 import 'src/data/models/place.dart';
 import 'src/features/add_place/add_place_screen.dart';
 import 'src/features/home/home_screen.dart';
+import 'src/features/splash/brand_splash.dart';
 import 'src/providers/app_providers.dart';
 import 'src/services/app_health_logger.dart';
 import 'src/services/app_logger.dart';
@@ -261,6 +262,10 @@ class _RouteNoteAppState extends ConsumerState<RouteNoteApp>
       locale: locale,
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
+      // Branded cold-start splash: an overlay above the navigator, so the home
+      // route (and early share-intent / shortcut navigation) is live underneath.
+      builder: (BuildContext context, Widget? child) =>
+          BrandSplash(child: child ?? const SizedBox.shrink()),
       home: const HomeScreen(),
     );
   }

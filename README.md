@@ -173,6 +173,7 @@ is the operating system's local storage plus the user's own Google Drive.
 | Localization | `flutter_localizations` + `intl` + ARB (`app_en.arb`, `app_ar.arb`) |
 | IDs | `uuid` |
 | Icons | `flutter_launcher_icons` (Figma "Location Notebook" pin; light/dark masters + glyph + monochrome) |
+| Branding | Figma lockups in `assets/brand/` (transparent, chevron cut-out) → splash screen + About card; built by `tool/gen_brand_logo.ps1` |
 | Routing | Plain `Navigator` (no `go_router`) |
 | Telemetry | `firebase_core` + `firebase_crashlytics` + `firebase_analytics` (Firebase BoM 35.0.0) |
 | Tester distribution | Firebase App Distribution (`firebase appdistribution:distribute`) |
@@ -364,7 +365,7 @@ lib/
       place_detail/                # view / navigate / delete
       settings/                    # sign-in, sync, restore, language, theme, agent
                                    #   + hidden_vault_screen (locked places)
-test/                              # Hive-backed widget tests + parser/share tests (113)
+test/                              # Hive-backed widget tests + parser/share tests (114)
 integration_test/app_test.dart     # on-device end-to-end UI flow tests
 ios/ShareExtension/                # iOS share-extension templates + README
 scripts/run_dev.ps1                # Windows helper: run with real OAuth IDs
@@ -372,6 +373,8 @@ scripts/run_integration_tests.ps1  # Windows helper: run the E2E integration tes
 scripts/distribute_app.ps1         # Windows helper: upload a release APK to App Distribution
 assets/icon/                       # launcher-icon sources (Figma SVG in src/, light/dark
                                    #   1024px masters, glyph + monochrome layers)
+assets/brand/                      # transparent RouteNote lockups for the splash + About
+                                   #   card, built from src/ Figma exports
 assets/app_icon_animated.gif       # bundled animated asset
 ```
 
@@ -483,6 +486,31 @@ powershell -ExecutionPolicy Bypass -File tool\gen_dark_icon.ps1 -Phase res
 > `flutter_tools` (feature-flags error, exit 255); `dart run flutter_launcher_icons`
 > is the reliable entry point.
 
+The branded splash lockups are built by `tool/gen_brand_logo.ps1` from the Figma
+exports in `assets/brand/src/`. The Figma artboards are solid white or black and
+the pin's chevron is stroked in the artboard colour, so the tool drops the
+artboard and moves the chevron into an SVG mask that punches it out of the pin.
+The result is a single *transparent* lockup that reads correctly on either
+backdrop — which is what the in-app assets (`assets/brand/route_note_lockup_*.png`),
+the Android splash bitmaps (`drawable-*/launch_logo.png`) and the iOS
+`LaunchImage{,@2x,@3x}.png` set are all cut from.
+
+```sh
+# 1. derive the transparent lockups from the Figma exports
+powershell -ExecutionPolicy Bypass -File tool\gen_brand_logo.ps1 -Phase src
+# 2. rasterise them to the committed PNG masters (one-off; needs resvg)
+#      assets/brand/route_note_lockup_vertical.png    658x648
+#      assets/brand/route_note_lockup_horizontal.png  830x352
+# 3. write the Android splash bitmaps + the iOS LaunchImage set
+powershell -ExecutionPolicy Bypass -File tool\gen_brand_logo.ps1 -Phase res
+```
+
+Where they appear: the **stacked** lockup is the cold-start splash — both the
+native launch window (`launch_background.xml`, white day / black night) and
+`BrandSplash`, a fade-out overlay mounted from `MaterialApp.builder` so the live
+navigator sits underneath it. The **horizontal** lockup heads the Settings →
+About card.
+
 ### 6. Firebase (already configured)
 
 Crashlytics and Analytics are wired up and committed, so a fresh clone builds with
@@ -575,6 +603,11 @@ Already committed — the notes below explain what is in place.
   layers; `tool/gen_dark_icon.ps1` builds the dark alt-icon set (`ic_launcher_dark`,
   `#000000` backdrop) used by the dynamic light/dark switch. Adaptive backgrounds:
   `#FFFFFF` (light) / `#000000` (dark), see `android/app/src/main/res/values/colors.xml`.
+- **Branding:** the Figma lockups in `assets/brand/` back the splash screen and the
+  Settings → About card. `lib/src/features/splash/brand_splash.dart` holds the
+  stacked lockup over the live navigator and fades out; the Android launch window
+  and iOS `LaunchImage` show the same art before Flutter's first frame.
+  `tool/gen_brand_logo.ps1` regenerates every derived bitmap.
 
 ## Distributing to testers (Firebase App Distribution)
 

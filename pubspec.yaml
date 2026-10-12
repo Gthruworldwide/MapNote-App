@@ -99,8 +99,13 @@ flutter:
 
   # Bundled assets. The animated launcher-icon source is consumed at build time
   # by flutter_launcher_icons and does not need to be listed here.
+  #
+  # assets/brand/ holds the transparent RouteNote lockups used by the splash
+  # screen and the About card. Subdirectories (assets/brand/src/) are not
+  # bundled, so the SVG sources stay out of the app.
   assets:
     - assets/app_icon_animated.gif
+    - assets/brand/
 
 flutter_launcher_icons:
   android: true
