@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ic_launcher_background">#FFFFFF</color>
+    <color name="ic_launcher_background">#090C15</color>
     <!-- Backdrop of the dark icon variant (dynamic dark/light switch). -->
     <color name="ic_launcher_dark_background">#0D1B2A</color>
 </resources>

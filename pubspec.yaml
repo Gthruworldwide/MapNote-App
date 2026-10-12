@@ -78,11 +78,39 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.1
+
+# For information on the generic Dart part of this file, see the
+# following page: https://dart.dev/tools/pub/pubspec
+
+# The following section is specific to Flutter packages.
+flutter:
+
+  # The following line ensures that the Material Icons font is
+  # included with your application, so that you can use the icons in
+  # the material Icons class.
+  uses-material-design: true
+
+  # Generate the localizations from the ARB files in lib/l10n.
+  generate: true
+
+  # Bundled assets. The animated launcher-icon source is consumed at build time
+  # by flutter_launcher_icons and does not need to be listed here.
+  assets:
+    - assets/app_icon_animated.gif
 
 flutter_launcher_icons:
   android: true
   ios: true
   image_path: "assets/icon/ic_launcher_foreground.png"
+  min_sdk_android: 21
+  remove_alpha_ios: true
+
+  # Adaptive / themed launcher icon (Android 8+). The foreground is the 3D pin
+  # emblem centered in the adaptive safe zone; the dark background color plus
+  # the monochrome layer give Android 13+ Material You themed icons. The dark
+  # alt-icon (ic_launcher_dark) used by the dynamic light/dark switch is
+  # rendered by tool/gen_dark_icon.ps1.
   adaptive_icon_background: "#090C15"
   adaptive_icon_foreground: "assets/icon/ic_launcher_foreground.png"
   adaptive_icon_monochrome: "assets/icon/ic_launcher_monochrome.png"
