@@ -573,14 +573,24 @@ round-trip, and every install's crashes flow into the same Crashlytics dashboard
 
 ### One-time setup
 
+The CLI is a Node.js tool, so install Node.js first, then:
+
 ```sh
 npm install -g firebase-tools
 firebase login
 firebase use routenote-app          # project 679774190551
 ```
 
-Testers/groups are managed in the console under
-**App Distribution → Testers & Groups**. The Android app id for this project is:
+Groups and testers live under **App Distribution → Testers & Groups** in the
+console, and can also be managed from the CLI:
+
+```sh
+firebase appdistribution:groups:create testers testers --project routenote-app
+firebase appdistribution:testers:add you@example.com --group-alias testers --project routenote-app
+firebase appdistribution:groups:list --project routenote-app
+```
+
+The Android app id for this project is:
 
 ```
 1:679774190551:android:d7bf2f949f60ed62912992
@@ -609,6 +619,11 @@ On Windows the upload step is wrapped in a helper script:
 ```powershell
 .\scripts\distribute_app.ps1 -Groups testers -Notes "RouteNote 1.0.1 (2) — pilot"
 ```
+
+> **Script blocked by execution policy?** Windows defaults to a `Restricted`
+> policy. Allow local scripts once with
+> `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`, or run the script with
+> `powershell -ExecutionPolicy Bypass -File .\scripts\distribute_app.ps1 -Groups testers`.
 
 > **Signing.** Release builds currently use the **debug** keystore
 > (`signingConfig = signingConfigs.getByName("debug")` in

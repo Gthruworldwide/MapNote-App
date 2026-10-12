@@ -25,10 +25,20 @@ if (-not (Test-Path $Path)) {
   throw "APK not found at '$Path'. Build it first:  flutter build apk --release"
 }
 
+# Locate the Firebase CLI: prefer PATH, then a user-scoped Node install.
+$firebase = (Get-Command firebase -ErrorAction SilentlyContinue).Source
+if (-not $firebase) {
+  $firebase = Get-ChildItem "$env:LOCALAPPDATA\nodejs\node-*\firebase.cmd" -ErrorAction SilentlyContinue |
+    Select-Object -First 1 -ExpandProperty FullName
+}
+if (-not $firebase) {
+  throw 'Firebase CLI not found. Install it with:  npm install -g firebase-tools'
+}
+
 $fbArgs = @('appdistribution:distribute', $Path, '--app', $appId, '--groups', $Groups)
 if ($Notes) { $fbArgs += @('--release-notes', $Notes) }
 
 Write-Host "Uploading $Path to group '$Groups'..." -ForegroundColor Cyan
-& firebase @fbArgs
+& $firebase @fbArgs
 
 Write-Host 'Distributed. Testers will receive an email invite.' -ForegroundColor Green
