@@ -359,7 +359,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   .where(
                     (Place p) =>
                         p.name.toLowerCase().contains(_query) ||
-                        p.notes.toLowerCase().contains(_query),
+                        p.notes.toLowerCase().contains(_query) ||
+                        p.plusCode.toLowerCase().contains(_query),
                   )
                   .toList();
 

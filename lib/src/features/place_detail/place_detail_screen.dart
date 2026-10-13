@@ -99,7 +99,8 @@ class PlaceDetailScreen extends ConsumerWidget {
                     Expanded(
                       child: Text(
                         '${l10n.latitude}: ${place.latitude.toStringAsFixed(6)}\n'
-                        '${l10n.longitude}: ${place.longitude.toStringAsFixed(6)}',
+                        '${l10n.longitude}: ${place.longitude.toStringAsFixed(6)}\n'
+                        '${l10n.plusCode}: ${place.plusCode}',
                         style: theme.textTheme.bodyMedium,
                       ),
                     ),
@@ -182,7 +183,11 @@ class PlaceDetailScreen extends ConsumerWidget {
     Place place,
   ) async {
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
-    await Clipboard.setData(ClipboardData(text: place.formattedCoordinates));
+    // Include the Plus Code so the pasted text works everywhere, even in apps
+    // that only understand Open Location Codes.
+    final String text =
+        '${place.formattedCoordinates}\n${l10n.plusCode}: ${place.plusCode}';
+    await Clipboard.setData(ClipboardData(text: text));
     messenger.showSnackBar(SnackBar(content: Text(l10n.coordinatesCopied)));
   }
 

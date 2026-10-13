@@ -97,11 +97,22 @@ class PlaceCard extends StatelessWidget {
                     if (masked)
                       const _LockMask(height: 14, widthFactor: 0.5, top: 3)
                     else
-                      Text(
-                        place.formattedCoordinates,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.primary,
-                        ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Text(
+                            place.formattedCoordinates,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.primary,
+                            ),
+                          ),
+                          Text(
+                            place.plusCode,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.outline,
+                            ),
+                          ),
+                        ],
                       ),
                   ],
                 ),

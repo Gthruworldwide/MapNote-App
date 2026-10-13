@@ -1,7 +1,7 @@
 {
   "@@locale": "ar",
 
-  "appTitle": "روت نوت",
+  "appTitle": "MapNote",
   "placesTitle": "أماكني",
   "searchHint": "ابحث بالاسم أو الملاحظات",
 
@@ -29,6 +29,8 @@
   "coordinateInvalid": "أدخل رقمًا صالحًا",
   "latitudeRange": "يجب أن يكون خط العرض بين ‎-90 و90",
   "longitudeRange": "يجب أن يكون خط الطول بين ‎-180 و180",
+  "plusCode": "رمز Plus",
+  "plusCodeHint": "مثال: 8FVC9G8F+6W",
   "shareNoLocation": "لم يتم العثور على موقع في النص المُشارَك",
 
   "save": "حفظ",
@@ -97,7 +99,7 @@
   "restoreFailed": "فشلت الاستعادة: {error}",
 
   "locationPermissionTitle": "مطلوب إذن الموقع",
-  "locationPermissionMessage": "يحتاج روت نوت إلى الوصول لموقعك لحفظ الأماكن.",
+  "locationPermissionMessage": "يحتاج MapNote إلى الوصول لموقعك لحفظ الأماكن.",
   "locationServicesDisabled": "يرجى تفعيل خدمات الموقع على جهازك.",
   "locationUnavailable": "تعذّر تحديد موقعك. حاول مرة أخرى.",
   "openAppSettings": "افتح الإعدادات",
@@ -140,7 +142,7 @@
 
   "about": "حول",
   "version": "الإصدار",
-  "aboutDescription": "يحفظ روت نوت أماكنك المفضلة دون اتصال ويزامنها إلى جوجل درايف الخاص بك. يتم فتح التنقل في تطبيق الخرائط الذي تستخدمه بالفعل.",
+  "aboutDescription": "يحفظ MapNote أماكنك المفضلة دون اتصال ويزامنها إلى جوجل درايف الخاص بك. يتم فتح التنقل في تطبيق الخرائط الذي تستخدمه بالفعل.",
 
   "addLocation": "إضافة موقع",
   "addCurrentLocation": "الموقع الحالي",
@@ -221,7 +223,7 @@
   "insightStaleBackupNeverBody": "لم تنشئ نسخة احتياطية بعد. زامن الآن للحفاظ على أماكنك.",
   "insightPinFavoritesTitle": "ثبّت أماكنك المفضلة",
   "insightPinFavoritesBody": "لديك {count} أماكن محفوظة ولا يوجد أي مكان مثبّت. اضغط مطوّلًا على مكان لتثبيته في الأعلى.",
-  "insightOptimizationTitle": "حافظ على ترتيب روت نوت",
+  "insightOptimizationTitle": "حافظ على ترتيب MapNote",
   "insightOptimizationBody": "القائمة الكبيرة تُحمّل أبطأ. راجع الأماكن المكررة أو غير المستخدمة واحذف ما لا تحتاجه.",
   "insightActionSyncNow": "زامن الآن"
 }

@@ -38,6 +38,8 @@ void main() {
     expect(find.text('private journal'), findsNothing);
     expect(find.textContaining('30.044'), findsNothing);
     expect(find.textContaining('31.235'), findsNothing);
+    // The Plus Code encodes the exact location, so it is hidden too.
+    expect(find.text('8G2H26VP+Q7'), findsNothing);
 
     // The lock indicator is still visible so the row is recognizable.
     expect(find.byIcon(Icons.lock), findsOneWidget);
@@ -51,6 +53,8 @@ void main() {
     expect(find.text('Secret Spot'), findsOneWidget);
     expect(find.text('private journal'), findsOneWidget);
     expect(find.textContaining('30.044'), findsOneWidget);
+    // The derived Plus Code for these coordinates is shown alongside them.
+    expect(find.text('8G2H26VP+Q7'), findsOneWidget);
     expect(find.byIcon(Icons.lock), findsNothing);
   });
 }

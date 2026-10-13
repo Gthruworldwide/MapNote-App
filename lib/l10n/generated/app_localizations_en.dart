@@ -9,7 +9,7 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get appTitle => 'RouteNote';
+  String get appTitle => 'MapNote';
 
   @override
   String get placesTitle => 'My Places';
@@ -85,6 +85,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get longitudeRange => 'Longitude must be between -180 and 180';
+
+  @override
+  String get plusCode => 'Plus Code';
+
+  @override
+  String get plusCodeHint => 'e.g. 8FVC9G8F+6W';
 
   @override
   String get shareNoLocation => 'No location found in the shared text';
@@ -285,7 +291,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get locationPermissionMessage =>
-      'RouteNote needs access to your location to save places.';
+      'MapNote needs access to your location to save places.';
 
   @override
   String get locationServicesDisabled =>
@@ -408,7 +414,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get aboutDescription =>
-      'RouteNote saves your favourite places offline and syncs them to your private Google Drive. Navigation opens in the maps app you already use.';
+      'MapNote saves your favourite places offline and syncs them to your private Google Drive. Navigation opens in the maps app you already use.';
 
   @override
   String get addLocation => 'Add location';
@@ -661,7 +667,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get insightOptimizationTitle => 'Keep RouteNote tidy';
+  String get insightOptimizationTitle => 'Keep MapNote tidy';
 
   @override
   String get insightOptimizationBody =>

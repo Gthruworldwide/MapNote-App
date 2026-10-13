@@ -1,4 +1,6 @@
-/// A saved location. This is the core domain entity of RouteNote.
+import '../../core/utils/plus_code.dart';
+
+/// A saved location. This is the core domain entity of MapNote.
 ///
 /// The JSON shape matches the documented backup format:
 /// ```json
@@ -75,6 +77,12 @@ class Place {
   String get formattedCoordinates =>
       '${latitude.toStringAsFixed(5)}, ${longitude.toStringAsFixed(5)}';
 
+  /// The global Open Location Code (a.k.a. "Plus Code") for these coordinates,
+  /// e.g. `8FVC9G8F+6W`.
+  ///
+  /// Derived on demand so it can never drift from [latitude]/[longitude].
+  String get plusCode => PlusCode.encode(latitude, longitude);
+
   /// A universal Google Maps link that opens the location in any maps app.
   String get mapsLink =>
       'https://www.google.com/maps/search/?api=1&query=$latitude,$longitude';
@@ -93,7 +101,13 @@ class Place {
     };
   }
 
-  Map<String, dynamic> toJson() => toMap();
+  /// Exported shape (Drive backup). The stored [toMap] keeps only the source of
+  /// truth; the Plus Code is added here so exports carry it without it ever
+  /// becoming a stale stored copy.
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    ...toMap(),
+    'plusCode': plusCode,
+  };
 
   factory Place.fromMap(Map<String, dynamic> map) {
     return Place(

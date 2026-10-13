@@ -69,6 +69,10 @@ dependencies:
   firebase_core: ^4.15.0
   firebase_crashlytics: ^5.4.0
   firebase_analytics: ^12.6.0
+  # Pure-Dart Open Location Code (Plus Code) encode/decode, computed entirely
+  # on-device so capturing or pasting a location never needs a network call.
+  # Wrapped by lib/src/core/utils/plus_code.dart.
+  open_location_code: ^1.0.1
 
 dev_dependencies:
   flutter_test:

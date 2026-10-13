@@ -9,7 +9,7 @@ class AppLocalizationsAr extends AppLocalizations {
   AppLocalizationsAr([String locale = 'ar']) : super(locale);
 
   @override
-  String get appTitle => 'روت نوت';
+  String get appTitle => 'MapNote';
 
   @override
   String get placesTitle => 'أماكني';
@@ -85,6 +85,12 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get longitudeRange => 'يجب أن يكون خط الطول بين ‎-180 و180';
+
+  @override
+  String get plusCode => 'رمز Plus';
+
+  @override
+  String get plusCodeHint => 'مثال: 8FVC9G8F+6W';
 
   @override
   String get shareNoLocation => 'لم يتم العثور على موقع في النص المُشارَك';
@@ -286,7 +292,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get locationPermissionMessage =>
-      'يحتاج روت نوت إلى الوصول لموقعك لحفظ الأماكن.';
+      'يحتاج MapNote إلى الوصول لموقعك لحفظ الأماكن.';
 
   @override
   String get locationServicesDisabled => 'يرجى تفعيل خدمات الموقع على جهازك.';
@@ -405,7 +411,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get aboutDescription =>
-      'يحفظ روت نوت أماكنك المفضلة دون اتصال ويزامنها إلى جوجل درايف الخاص بك. يتم فتح التنقل في تطبيق الخرائط الذي تستخدمه بالفعل.';
+      'يحفظ MapNote أماكنك المفضلة دون اتصال ويزامنها إلى جوجل درايف الخاص بك. يتم فتح التنقل في تطبيق الخرائط الذي تستخدمه بالفعل.';
 
   @override
   String get addLocation => 'إضافة موقع';
@@ -655,7 +661,7 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get insightOptimizationTitle => 'حافظ على ترتيب روت نوت';
+  String get insightOptimizationTitle => 'حافظ على ترتيب MapNote';
 
   @override
   String get insightOptimizationBody =>

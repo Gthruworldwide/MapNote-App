@@ -101,7 +101,7 @@ abstract class AppLocalizations {
   /// No description provided for @appTitle.
   ///
   /// In en, this message translates to:
-  /// **'RouteNote'**
+  /// **'MapNote'**
   String get appTitle;
 
   /// No description provided for @placesTitle.
@@ -253,6 +253,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Longitude must be between -180 and 180'**
   String get longitudeRange;
+
+  /// No description provided for @plusCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Plus Code'**
+  String get plusCode;
+
+  /// No description provided for @plusCodeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. 8FVC9G8F+6W'**
+  String get plusCodeHint;
 
   /// No description provided for @shareNoLocation.
   ///
@@ -617,7 +629,7 @@ abstract class AppLocalizations {
   /// No description provided for @locationPermissionMessage.
   ///
   /// In en, this message translates to:
-  /// **'RouteNote needs access to your location to save places.'**
+  /// **'MapNote needs access to your location to save places.'**
   String get locationPermissionMessage;
 
   /// No description provided for @locationServicesDisabled.
@@ -845,7 +857,7 @@ abstract class AppLocalizations {
   /// No description provided for @aboutDescription.
   ///
   /// In en, this message translates to:
-  /// **'RouteNote saves your favourite places offline and syncs them to your private Google Drive. Navigation opens in the maps app you already use.'**
+  /// **'MapNote saves your favourite places offline and syncs them to your private Google Drive. Navigation opens in the maps app you already use.'**
   String get aboutDescription;
 
   /// No description provided for @addLocation.
@@ -1283,7 +1295,7 @@ abstract class AppLocalizations {
   /// No description provided for @insightOptimizationTitle.
   ///
   /// In en, this message translates to:
-  /// **'Keep RouteNote tidy'**
+  /// **'Keep MapNote tidy'**
   String get insightOptimizationTitle;
 
   /// No description provided for @insightOptimizationBody.

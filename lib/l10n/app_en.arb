@@ -1,7 +1,7 @@
 {
   "@@locale": "en",
 
-  "appTitle": "RouteNote",
+  "appTitle": "MapNote",
   "placesTitle": "My Places",
   "searchHint": "Search by name or notes",
 
@@ -29,6 +29,8 @@
   "coordinateInvalid": "Enter a valid number",
   "latitudeRange": "Latitude must be between -90 and 90",
   "longitudeRange": "Longitude must be between -180 and 180",
+  "plusCode": "Plus Code",
+  "plusCodeHint": "e.g. 8FVC9G8F+6W",
   "shareNoLocation": "No location found in the shared text",
 
   "save": "Save",
@@ -132,7 +134,7 @@
   },
 
   "locationPermissionTitle": "Location permission needed",
-  "locationPermissionMessage": "RouteNote needs access to your location to save places.",
+  "locationPermissionMessage": "MapNote needs access to your location to save places.",
   "locationServicesDisabled": "Please enable location services on your device.",
   "locationUnavailable": "Could not determine your location. Please try again.",
   "openAppSettings": "Open settings",
@@ -175,7 +177,7 @@
 
   "about": "About",
   "version": "Version",
-  "aboutDescription": "RouteNote saves your favourite places offline and syncs them to your private Google Drive. Navigation opens in the maps app you already use.",
+  "aboutDescription": "MapNote saves your favourite places offline and syncs them to your private Google Drive. Navigation opens in the maps app you already use.",
 
   "addLocation": "Add location",
   "addCurrentLocation": "Current Location",
@@ -291,7 +293,7 @@
       "count": { "type": "int" }
     }
   },
-  "insightOptimizationTitle": "Keep RouteNote tidy",
+  "insightOptimizationTitle": "Keep MapNote tidy",
   "insightOptimizationBody": "A large list loads slower. Review duplicate or unused places and remove what you no longer need.",
   "insightActionSyncNow": "Sync now"
 }

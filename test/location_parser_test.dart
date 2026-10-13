@@ -81,6 +81,39 @@ void main() {
     });
   });
 
+  group('Plus Codes', () {
+    test('decodes a raw global Plus Code', () {
+      final ParsedLocation? parsed = parser.parse('8FVC9G8F+6W');
+      expect(parsed, isNotNull);
+      expect(parsed!.latitude, closeTo(47.3655625, 1e-9));
+      expect(parsed.longitude, closeTo(8.5248125, 1e-9));
+    });
+
+    test('decodes a Plus Code grouped with a space and in lower case', () {
+      final ParsedLocation? parsed = parser.parse('8fvc 9g8f+6w');
+      expect(parsed, isNotNull);
+      expect(parsed!.latitude, closeTo(47.3655625, 1e-9));
+    });
+
+    test('decodes a Plus Code embedded in free text', () {
+      final ParsedLocation? parsed = parser.parse('Blue Gate car park 8FVC9G8F+6W');
+      expect(parsed, isNotNull);
+      expect(parsed!.latitude, closeTo(47.3655625, 1e-9));
+    });
+
+    test('decodes a URL-encoded Plus Code from a maps link', () {
+      final ParsedLocation? parsed = parser.parse(
+        'https://www.google.com/maps/search/?api=1&query=8FVC9G8F%2B6W',
+      );
+      expect(parsed, isNotNull);
+      expect(parsed!.latitude, closeTo(47.3655625, 1e-9));
+    });
+
+    test('ignores short codes, which need a reference location', () {
+      expect(parser.parse('9G8F+6W'), isNull);
+    });
+  });
+
   group('short links', () {
     test('recognises short map links', () {
       expect(

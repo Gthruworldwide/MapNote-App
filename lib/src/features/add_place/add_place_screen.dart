@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../core/utils/plus_code.dart';
 import '../../data/models/place.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../providers/app_providers.dart';
@@ -56,6 +57,7 @@ class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
   late final TextEditingController _notesController;
   late final TextEditingController _latitudeController;
   late final TextEditingController _longitudeController;
+  late final TextEditingController _plusCodeController;
 
   LocationEntryMode _mode = LocationEntryMode.gps;
   LocationResult? _location;
@@ -74,6 +76,7 @@ class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
     _notesController = TextEditingController(text: widget.place?.notes ?? '');
     _latitudeController = TextEditingController();
     _longitudeController = TextEditingController();
+    _plusCodeController = TextEditingController();
 
     final Place? place = widget.place;
     final bool hasInitial =
@@ -99,6 +102,10 @@ class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
         if (mounted) _captureLocation();
       });
     }
+
+    // Seed the Plus Code preview from any coordinates that are already known
+    // (an edit, a shared location, or the GPS fix that follows shortly).
+    _refreshPlusCode();
   }
 
   @override
@@ -107,6 +114,7 @@ class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
     _notesController.dispose();
     _latitudeController.dispose();
     _longitudeController.dispose();
+    _plusCodeController.dispose();
     super.dispose();
   }
 
@@ -132,11 +140,47 @@ class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
         _longitudeController.text = success.longitude.toString();
       }
       setState(() => _mode = mode);
+      _refreshPlusCode();
       return;
     }
 
     setState(() => _mode = mode);
     if (_location is! LocationSuccess) _captureLocation();
+  }
+
+  /// Recomputes the Plus Code whenever the manual latitude/longitude change.
+  ///
+  /// The field is a live preview, refreshed from the coordinates that are the
+  /// source of truth; it is never saved itself.
+  void _refreshPlusCode() {
+    final double? latitude = double.tryParse(_latitudeController.text.trim());
+    final double? longitude = double.tryParse(_longitudeController.text.trim());
+    if (latitude != null &&
+        longitude != null &&
+        latitude.abs() <= 90 &&
+        longitude.abs() <= 180) {
+      final String next = PlusCode.encode(latitude, longitude);
+      if (_plusCodeController.text != next) {
+        _plusCodeController.text = next;
+      }
+    } else if (_plusCodeController.text.isNotEmpty) {
+      _plusCodeController.text = '';
+    }
+  }
+
+  /// Decodes a Plus Code typed or pasted into the manual field and fills the
+  /// latitude/longitude fields with its centre point.
+  ///
+  /// Programmatic `controller.text =` writes do not re-trigger the text fields'
+  /// `onChanged`, so this cannot loop back into the Plus Code field.
+  void _applyPlusCode(String value) {
+    final PlusCodePoint? decoded = PlusCode.decode(value);
+    if (decoded == null) return;
+    // Five decimals is the precision the app already shows for coordinates and
+    // is far finer than the ~13.5 m cell a ten-digit code describes, so this
+    // only strips the binary-floating-point noise (e.g. 47.365562499999996).
+    _latitudeController.text = decoded.latitude.toStringAsFixed(5);
+    _longitudeController.text = decoded.longitude.toStringAsFixed(5);
   }
 
   /// Reads the clipboard and fills in any coordinates (and name) it finds.
@@ -377,6 +421,7 @@ class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
                 prefixIcon: const Icon(Icons.pin_drop_outlined),
               ),
               validator: (String? value) => _validateLatitude(value),
+              onChanged: (_) => _refreshPlusCode(),
             ),
             const SizedBox(height: 12),
             TextFormField(
@@ -391,6 +436,18 @@ class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
                 prefixIcon: const Icon(Icons.pin_drop_outlined),
               ),
               validator: (String? value) => _validateLongitude(value),
+              onChanged: (_) => _refreshPlusCode(),
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _plusCodeController,
+              textCapitalization: TextCapitalization.characters,
+              decoration: InputDecoration(
+                labelText: l10n.plusCode,
+                hintText: l10n.plusCodeHint,
+                prefixIcon: const Icon(Icons.grid_on),
+              ),
+              onChanged: _applyPlusCode,
             ),
           ],
         ),
@@ -442,6 +499,12 @@ class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
                   icon: Icons.pin_drop_outlined,
                   label: l10n.longitude,
                   value: longitude.toStringAsFixed(6),
+                ),
+                const SizedBox(height: 4),
+                _CoordRow(
+                  icon: Icons.grid_on,
+                  label: l10n.plusCode,
+                  value: PlusCode.encode(latitude, longitude),
                 ),
                 if (accuracy != null) ...<Widget>[
                   const SizedBox(height: 4),

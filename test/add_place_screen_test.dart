@@ -117,4 +117,44 @@ void main() {
 
     expect(find.text('Latitude must be between -90 and 90'), findsOneWidget);
   });
+
+  testWidgets('a typed Plus Code decodes into the coordinate fields', (
+    WidgetTester tester,
+  ) async {
+    await pumpScreen(
+      tester,
+      const AddPlaceScreen(initialMode: LocationEntryMode.manual),
+    );
+
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Plus Code'),
+      '8FVC9G8F+6W',
+    );
+    await tester.pumpAndSettle();
+
+    // The centre of the decoded cell is written into latitude/longitude.
+    expect(find.textContaining('47.3655'), findsOneWidget);
+    expect(find.textContaining('8.5248'), findsOneWidget);
+  });
+
+  testWidgets('the coordinate fields drive the Plus Code preview', (
+    WidgetTester tester,
+  ) async {
+    await pumpScreen(
+      tester,
+      const AddPlaceScreen(initialMode: LocationEntryMode.manual),
+    );
+
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Latitude'),
+      '30.0444',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Longitude'),
+      '31.2357',
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('8G2H26VP+Q7'), findsOneWidget);
+  });
 }
