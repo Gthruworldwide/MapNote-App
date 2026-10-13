@@ -1,6 +1,6 @@
 # PROJECT MASTER ROADMAP & CONTEXT
 
-**Project Name:** RouteNote
+**Project Name:** MapNote
 **Role:** Expert Senior Flutter Developer and Architect.
 **Objective:** Build an offline-first, zero-backend location saving and navigation mobile application (Android/iOS).
 

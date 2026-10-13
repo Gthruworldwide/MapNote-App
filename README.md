@@ -1,8 +1,8 @@
-# RouteNote
+# MapNote
 
 **Save your favourite places offline. Sync them to your private Google Drive.**
 
-RouteNote is an **offline-first, zero-backend** Flutter app for Android and iOS.
+MapNote is an **offline-first, zero-backend** Flutter app for Android and iOS.
 It saves GPS locations locally on the device (Hive), backs them up to the user's
 *private* Google Drive app-data folder, and delegates turn-by-turn navigation to
 Google Maps or Waze via deep links.
@@ -38,7 +38,7 @@ only for anonymous crash and usage telemetry, never for your places.
 
 ## Overview
 
-RouteNote solves a simple problem: remembering places (a parking spot, a trailhead,
+MapNote solves a simple problem: remembering places (a parking spot, a trailhead,
 a friend's building) without depending on a third-party account or a backend you
 have to pay for and maintain.
 
@@ -114,7 +114,7 @@ is the operating system's local storage plus the user's own Google Drive.
 - ✏️ **Custom coordinates** — switch to a manual latitude/longitude entry with
   range validation instead of using the current GPS fix.
 - 🔗 **Share target** — share a place from Google Maps / WhatsApp / a browser
-  and RouteNote opens the save screen pre-filled.
+  and MapNote opens the save screen pre-filled.
 - 💾 Fully offline-first — all data lives in a local Hive database.
 - ☁️ One-tap backup/sync to the user's **private** Google Drive app-data folder.
 - 🔒 Only the `drive.appdata` scope is ever requested.
@@ -211,7 +211,7 @@ a confirmation dialog).
 
 ## Monitoring & recommendation agent (Smart Insights)
 
-RouteNote ships a lightweight, privacy-first "AI assistant" that watches the
+MapNote ships a lightweight, privacy-first "AI assistant" that watches the
 app's local health and the shape of the user's data, then surfaces contextual
 suggestions in a subtle **Smart Insights** card on Home and a **Smart insights**
 section in Settings.
@@ -279,7 +279,7 @@ actually invokes it, which itself only happens while cloud AI is enabled.
 
 ## Telemetry & crash reporting (Firebase)
 
-RouteNote never sends your places anywhere but your own Google Drive. Firebase is
+MapNote never sends your places anywhere but your own Google Drive. Firebase is
 used only for two *anonymous* operational signals:
 
 | Product | Package | What it does |
@@ -373,7 +373,7 @@ scripts/run_integration_tests.ps1  # Windows helper: run the E2E integration tes
 scripts/distribute_app.ps1         # Windows helper: upload a release APK to App Distribution
 assets/icon/                       # launcher-icon sources (Figma SVG in src/, light/dark
                                    #   1024px masters, glyph + monochrome layers)
-assets/brand/                      # RouteNote lockup as two SVGs (mark + wordmark),
+assets/brand/                      # MapNote lockup as two SVGs (mark + wordmark),
                                    #   built by tool/gen_brand_logo.ps1 from src/
 assets/app_icon_animated.gif       # bundled animated asset
 ```
@@ -648,7 +648,7 @@ Already committed — the notes below explain what is in place.
   > `com.routenote.routenote.ic_launcher` / `…ic_launcher_dark`, tied to the
   > `applicationId` in `android/app/build.gradle.kts`. The switch is applied when the
   > task leaves recents, which is when the plugin writes it.
-- **Branding:** the RouteNote lockup is vector (`assets/brand/route_note_mark.svg`
+- **Branding:** the MapNote lockup is vector (`assets/brand/route_note_mark.svg`
   + `route_note_wordmark.svg`, composed by `lib/src/core/brand/brand_lockup.dart`)
   and backs the cold-start splash and the Settings → About card.
   `lib/src/features/splash/brand_splash.dart` plays the approved 850 ms entrance
@@ -701,7 +701,7 @@ firebase appdistribution:distribute \
   build/app/outputs/flutter-apk/app-release.apk \
   --app 1:679774190551:android:d7bf2f949f60ed62912992 \
   --groups testers \
-  --release-notes "RouteNote 1.0.1 (2) — pilot build"
+  --release-notes "MapNote 1.0.3 (4) — pilot build"
 ```
 
 Testers receive an email invite and install through the **App Tester** app.
@@ -709,7 +709,7 @@ Testers receive an email invite and install through the **App Tester** app.
 On Windows the upload step is wrapped in a helper script:
 
 ```powershell
-.\scripts\distribute_app.ps1 -Groups testers -Notes "RouteNote 1.0.1 (2) — pilot"
+.\scripts\distribute_app.ps1 -Groups testers -Notes "MapNote 1.0.3 (4) — pilot"
 ```
 
 > **Script blocked by execution policy?** Windows defaults to a `Restricted`
@@ -730,7 +730,7 @@ On Windows the upload step is wrapped in a helper script:
 
 ## Roadmap
 
-RouteNote follows the **project master roadmap**: an offline-first, zero-backend
+MapNote follows the **project master roadmap**: an offline-first, zero-backend
 location-saving and navigation app for Android and iOS.
 
 **Tech requirements.** Flutter (latest stable) · Riverpod · Hive · `geolocator` ·
@@ -755,5 +755,5 @@ Released under the **MIT License**. See [`MIT-LICENSE`](MIT-LICENSE).
 
 ## Disclaimer
 
-RouteNote is an independent project and is not affiliated with Google, Google
+MapNote is an independent project and is not affiliated with Google, Google
 Maps, or Waze. Map and navigation trademarks belong to their respective owners.
