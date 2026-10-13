@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../core/utils/haptics.dart';
 import '../../core/utils/plus_code.dart';
 import '../../data/models/place.dart';
 import '../../../l10n/generated/app_localizations.dart';
@@ -239,6 +240,8 @@ class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
   Future<void> _save() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
+    Haptics.light();
+
     final double? latitude;
     final double? longitude;
     if (_mode == LocationEntryMode.gps) {
@@ -407,7 +410,14 @@ class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Text(l10n.customCoordinates, style: theme.textTheme.labelLarge),
+            Text(
+              l10n.customCoordinates,
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.8,
+              ),
+            ),
             const SizedBox(height: 12),
             TextFormField(
               controller: _latitudeController,
@@ -487,7 +497,14 @@ class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Text(l10n.currentLocation, style: theme.textTheme.labelLarge),
+                Text(
+                  l10n.currentLocation,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.8,
+                  ),
+                ),
                 const SizedBox(height: 8),
                 _CoordRow(
                   icon: Icons.pin_drop_outlined,
@@ -566,9 +583,20 @@ class _CoordRow extends StatelessWidget {
       children: <Widget>[
         Icon(icon, size: 18, color: theme.colorScheme.primary),
         const SizedBox(width: 8),
-        Text(label, style: theme.textTheme.bodyMedium),
+        Text(
+          label,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
         const Spacer(),
-        Text(value, style: theme.textTheme.bodyMedium),
+        Text(
+          value,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurface,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ],
     );
   }

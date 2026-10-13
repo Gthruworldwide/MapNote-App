@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/utils/date_formats.dart';
+import '../../core/utils/haptics.dart';
 import '../../data/models/place.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../providers/app_providers.dart';
@@ -84,32 +85,50 @@ class PlaceDetailScreen extends ConsumerWidget {
                     ),
                   ),
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.outline,
+                    color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
                 const SizedBox(height: 12),
-                Row(
-                  children: <Widget>[
-                    Icon(
-                      Icons.pin_drop_outlined,
-                      size: 20,
-                      color: theme.colorScheme.primary,
+                Container(
+                  padding: const EdgeInsets.fromLTRB(14, 8, 6, 8),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary.withValues(alpha: 0.06),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: theme.colorScheme.primary.withValues(alpha: 0.15),
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        '${l10n.latitude}: ${place.latitude.toStringAsFixed(6)}\n'
-                        '${l10n.longitude}: ${place.longitude.toStringAsFixed(6)}\n'
-                        '${l10n.plusCode}: ${place.plusCode}',
-                        style: theme.textTheme.bodyMedium,
+                  ),
+                  child: Row(
+                    children: <Widget>[
+                      Icon(
+                        Icons.pin_drop_outlined,
+                        size: 20,
+                        color: theme.colorScheme.primary,
                       ),
-                    ),
-                    IconButton(
-                      tooltip: l10n.copyCoordinates,
-                      onPressed: () => _copyCoordinates(context, l10n, place),
-                      icon: const Icon(Icons.copy),
-                    ),
-                  ],
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          '${l10n.latitude}: ${place.latitude.toStringAsFixed(6)}\n'
+                          '${l10n.longitude}: ${place.longitude.toStringAsFixed(6)}\n'
+                          '${l10n.plusCode}: ${place.plusCode}',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurface,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: l10n.copyCoordinates,
+                        onPressed: () => _copyCoordinates(context, l10n, place),
+                        style: IconButton.styleFrom(
+                          backgroundColor: theme.colorScheme.primary.withValues(
+                            alpha: 0.10,
+                          ),
+                          foregroundColor: theme.colorScheme.primary,
+                        ),
+                        icon: const Icon(Icons.copy, size: 20),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -119,17 +138,16 @@ class PlaceDetailScreen extends ConsumerWidget {
         FilledButton.icon(
           onPressed: () => _navigate(context, ref, l10n, place),
           icon: const Icon(Icons.directions),
-          label: Text(l10n.navigate),
+          label: _PillLabel(text: l10n.navigate),
         ),
         const SizedBox(height: 12),
         Row(
           children: <Widget>[
             Expanded(
               child: OutlinedButton.icon(
-                onPressed: () =>
-                    _openInGoogleMaps(context, ref, l10n, place),
+                onPressed: () => _openInGoogleMaps(context, ref, l10n, place),
                 icon: const Icon(Icons.map_outlined),
-                label: Text(l10n.openInGoogleMaps),
+                label: _PillLabel(text: l10n.openInGoogleMaps),
               ),
             ),
             const SizedBox(width: 12),
@@ -137,7 +155,7 @@ class PlaceDetailScreen extends ConsumerWidget {
               child: OutlinedButton.icon(
                 onPressed: () => _openInWaze(context, ref, l10n, place),
                 icon: const Icon(Icons.near_me_outlined),
-                label: Text(l10n.openInWaze),
+                label: _PillLabel(text: l10n.openInWaze),
               ),
             ),
           ],
@@ -183,6 +201,7 @@ class PlaceDetailScreen extends ConsumerWidget {
     Place place,
   ) async {
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    Haptics.light();
     // Include the Plus Code so the pasted text works everywhere, even in apps
     // that only understand Open Location Codes.
     final String text =
@@ -208,6 +227,7 @@ class PlaceDetailScreen extends ConsumerWidget {
       );
       if (!allowed) return;
     }
+    Haptics.light();
     final bool launched = await ref
         .read(navigationServiceProvider)
         .navigate(place.latitude, place.longitude);
@@ -232,6 +252,7 @@ class PlaceDetailScreen extends ConsumerWidget {
       );
       if (!allowed) return;
     }
+    Haptics.light();
     await ref
         .read(navigationServiceProvider)
         .openInGoogleMaps(place.latitude, place.longitude);
@@ -253,6 +274,7 @@ class PlaceDetailScreen extends ConsumerWidget {
       );
       if (!allowed) return;
     }
+    Haptics.light();
     await ref
         .read(navigationServiceProvider)
         .navigateWithWaze(place.latitude, place.longitude);
@@ -300,5 +322,22 @@ class _MissingPlace extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(child: Text(l10n.errorGeneric));
+  }
+}
+
+/// A pill-button label that shrinks to fit rather than clipping or overflowing
+/// when the system accessibility font size is turned all the way up.
+class _PillLabel extends StatelessWidget {
+  const _PillLabel({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: Alignment.center,
+      child: Text(text, maxLines: 1),
+    );
   }
 }

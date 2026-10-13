@@ -689,10 +689,22 @@ class SettingsScreen extends ConsumerWidget {
               const SizedBox(width: 8),
               Text(l10n.version, style: theme.textTheme.bodyMedium),
               const Spacer(),
-              Text(
-                'v${AppConfig.appVersion}',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(
+                    color: theme.colorScheme.primary.withValues(alpha: 0.20),
+                  ),
+                ),
+                child: Text(
+                  'v${AppConfig.appVersion}',
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ],
@@ -777,9 +789,10 @@ class _SettingsSection extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 4),
             child: Text(
               title,
-              style: theme.textTheme.labelLarge?.copyWith(
-                color: theme.colorScheme.primary,
-                letterSpacing: 0.4,
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.8,
               ),
             ),
           ),

@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/place.dart';
 import '../../data/remote/auth_service.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import '../../core/theme/app_motion.dart';
+import '../../core/utils/haptics.dart';
 import '../../providers/app_providers.dart';
 import '../../services/app_logger.dart';
 import '../../services/location_parser.dart';
@@ -75,54 +77,61 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   /// Opens the "Add location" bottom sheet with the three capture options.
   Future<void> _showAddLocationOptions() async {
     final AppLocalizations l10n = AppLocalizations.of(context);
+    Haptics.light();
     await showModalBottomSheet<void>(
       context: context,
       // Defaults to half-screen; allow full height so the options never
       // overflow on small screens / large text scales.
       isScrollControlled: true,
       showDragHandle: true,
-      builder: (BuildContext sheetContext) => SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              Padding(
-                padding: const EdgeInsets.fromLTRB(24, 4, 24, 8),
-                child: Text(
-                  l10n.addLocation,
-                  style: Theme.of(sheetContext).textTheme.titleMedium,
+      // Design-system motion: a 250ms ease-out slide-up, or instant when the
+      // OS "Reduce Motion" setting is on.
+      sheetAnimationStyle: AppMotion.sheetAnimationStyle(context),
+      builder: (BuildContext sheetContext) => SheetEntrance(
+        child: SafeArea(
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 4, 24, 8),
+                  child: Text(
+                    l10n.addLocation,
+                    style: Theme.of(sheetContext).textTheme.titleLarge
+                        ?.copyWith(fontWeight: FontWeight.w700),
+                  ),
                 ),
-              ),
-              ListTile(
-                leading: const Icon(Icons.my_location),
-                title: Text(l10n.addCurrentLocation),
-                subtitle: Text(l10n.addCurrentLocationSubtitle),
-                onTap: () {
-                  Navigator.of(sheetContext).pop();
-                  _openAddPlace(mode: LocationEntryMode.gps);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.auto_awesome),
-                title: Text(l10n.aiSmartPaste),
-                subtitle: Text(l10n.aiSmartPasteSubtitle),
-                onTap: () {
-                  Navigator.of(sheetContext).pop();
-                  _handleSmartPaste();
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.edit_location_alt_outlined),
-                title: Text(l10n.enterCoordinates),
-                subtitle: Text(l10n.enterCoordinatesSubtitle),
-                onTap: () {
-                  Navigator.of(sheetContext).pop();
-                  _openAddPlace(mode: LocationEntryMode.manual);
-                },
-              ),
-              const SizedBox(height: 8),
-            ],
+                ListTile(
+                  leading: const Icon(Icons.my_location),
+                  title: Text(l10n.addCurrentLocation),
+                  subtitle: Text(l10n.addCurrentLocationSubtitle),
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    _openAddPlace(mode: LocationEntryMode.gps);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.auto_awesome),
+                  title: Text(l10n.aiSmartPaste),
+                  subtitle: Text(l10n.aiSmartPasteSubtitle),
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    _handleSmartPaste();
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.edit_location_alt_outlined),
+                  title: Text(l10n.enterCoordinates),
+                  subtitle: Text(l10n.enterCoordinatesSubtitle),
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    _openAddPlace(mode: LocationEntryMode.manual);
+                  },
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
           ),
         ),
       ),
@@ -205,6 +214,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       );
       if (!allowed) return;
     }
+    Haptics.light();
     final NavigationService nav = ref.read(navigationServiceProvider);
     final bool launched = await nav.navigate(place.latitude, place.longitude);
     if (!launched && mounted) {
@@ -222,6 +232,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   /// one requires identity verification first (same gate as navigate/edit).
   /// Unlocked places are shared directly, without any prompt.
   Future<void> _showPlaceActions(Place place) async {
+    Haptics.light();
     final PlaceActionResult? result = await showPlaceActionsSheet(
       context,
       place,
@@ -387,14 +398,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 96),
             itemCount: filtered.length,
             separatorBuilder: (BuildContext context, int index) =>
-                const SizedBox(height: 8),
+                const SizedBox(height: 10),
             itemBuilder: (BuildContext context, int index) {
               final Place place = filtered[index];
-              return PlaceCard(
-                place: place,
-                onTap: () => _openPlace(context, place),
-                onNavigate: () => _navigateToPlace(place),
-                onLongPress: () => _showPlaceActions(place),
+              // Staggered fade + rise so the list settles in instead of
+              // snapping into place.
+              return StaggeredReveal(
+                index: index,
+                child: PlaceCard(
+                  place: place,
+                  onTap: () => _openPlace(context, place),
+                  onNavigate: () => _navigateToPlace(place),
+                  onLongPress: () => _showPlaceActions(place),
+                ),
               );
             },
           ),
@@ -441,8 +457,27 @@ class _MessageView extends StatelessWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
-                    Icon(icon, size: 56, color: theme.colorScheme.outline),
-                    const SizedBox(height: 16),
+                    Container(
+                      width: 96,
+                      height: 96,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: theme.colorScheme.primary.withValues(
+                          alpha: 0.10,
+                        ),
+                        border: Border.all(
+                          color: theme.colorScheme.primary.withValues(
+                            alpha: 0.20,
+                          ),
+                        ),
+                      ),
+                      child: Icon(
+                        icon,
+                        size: 40,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
                     Text(
                       title,
                       textAlign: TextAlign.center,

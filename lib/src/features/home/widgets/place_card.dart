@@ -34,17 +34,28 @@ class PlaceCard extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         onLongPress: onLongPress,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 8, 4, 8),
+          padding: const EdgeInsets.fromLTRB(14, 10, 4, 10),
           child: Row(
             children: <Widget>[
-              CircleAvatar(
-                backgroundColor: theme.colorScheme.primaryContainer,
-                foregroundColor: theme.colorScheme.onPrimaryContainer,
-                child: const Icon(Icons.place_outlined),
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: theme.colorScheme.primary.withValues(alpha: 0.20),
+                  ),
+                ),
+                child: Icon(
+                  Icons.place_outlined,
+                  size: 22,
+                  color: theme.colorScheme.primary,
+                ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -102,14 +113,18 @@ class PlaceCard extends StatelessWidget {
                         children: <Widget>[
                           Text(
                             place.formattedCoordinates,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: theme.colorScheme.primary,
                             ),
                           ),
                           Text(
                             place.plusCode,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.outline,
+                              color: theme.colorScheme.onSurfaceVariant,
                             ),
                           ),
                         ],
@@ -120,7 +135,13 @@ class PlaceCard extends StatelessWidget {
               IconButton(
                 tooltip: l10n.navigate,
                 onPressed: onNavigate,
-                icon: const Icon(Icons.directions),
+                style: IconButton.styleFrom(
+                  backgroundColor: theme.colorScheme.primary.withValues(
+                    alpha: 0.10,
+                  ),
+                  foregroundColor: theme.colorScheme.primary,
+                ),
+                icon: const Icon(Icons.directions, size: 20),
               ),
             ],
           ),

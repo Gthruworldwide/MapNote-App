@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/models/place.dart';
+import '../../../core/theme/app_motion.dart';
+import '../../../core/utils/haptics.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../providers/app_providers.dart';
 import '../../../services/lock_gate.dart';
@@ -24,7 +26,10 @@ Future<PlaceActionResult?> showPlaceActionsSheet(
     // Lets the sheet grow taller than half the screen so the full action list
     // stays reachable on small screens / large text scales without overflow.
     isScrollControlled: true,
-    builder: (BuildContext context) => _PlaceActionsSheet(place: place),
+    // Design-system motion, or instant under the OS "Reduce Motion" setting.
+    sheetAnimationStyle: AppMotion.sheetAnimationStyle(context),
+    builder: (BuildContext context) =>
+        SheetEntrance(child: _PlaceActionsSheet(place: place)),
   );
 }
 
@@ -125,6 +130,7 @@ class _PlaceActionsSheet extends ConsumerWidget {
 
     // Verification only gates the action; when it passes, the navigation app
     // is always launched.
+    Haptics.light();
     final bool launched = await navigation.navigate(
       place.latitude,
       place.longitude,
@@ -261,6 +267,10 @@ class _ActionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(leading: Icon(icon), title: Text(label), onTap: onTap);
+    return ListTile(
+      leading: Icon(icon),
+      title: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+      onTap: onTap,
+    );
   }
 }
