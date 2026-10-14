@@ -87,7 +87,7 @@ class LocationTrackingService : Service() {
             PendingIntent.FLAG_IMMUTABLE,
         )
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_stat_tracking)
+            .setSmallIcon(R.mipmap.ic_launcher)
             // Compact single row (icon + title + subtext, one line, minimal
             // height). The standard title/text below stay as the fallback for
             // other surfaces and for accessibility services.
@@ -116,7 +116,9 @@ class LocationTrackingService : Service() {
      * speed" subtext on one row, all clamped to one line.
      */
     private fun compactContentView(): RemoteViews =
-        RemoteViews(packageName, R.layout.notification_tracking_compact)
+        RemoteViews(packageName, R.layout.notification_tracking_compact).apply {
+            setImageViewResource(R.id.tracking_notification_icon, R.mipmap.ic_launcher)
+          }
 
     private fun ensureNotificationChannel() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return

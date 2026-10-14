@@ -329,7 +329,16 @@
   "accountAndBackup": "Account & Cloud Backup",
   "sectionLocationTracking": "Location & Tracking",
   "aboutTitle": "About MapNote",
+  "bousla": "Compass",
+  "smartAutoMotionTitle": "Enable Smart AutoMotion",
+  "smartAutoMotionSubtitle": "Fuses GPS and motion sensors to track distance & speed while saving battery",
   "compassTitle": "Compass",
   "mapPreview": "Map preview",
-  "enableLocationForRoute": "Turn on location to see your distance"
+  "enableLocationForRoute": "Turn on location to see your distance",
+  "qiblaUnavailable": "No GPS fix available",
+  "qiblaDirectionAbbrev": "e.g. SE",
+  "qiblaAligned": "Aligned with Qibla",
+  "compassNorth": "North",
+  "headingInstruction": "Adjust phone direction to see Qibla",
+  "compassCalculating": "Calculating..."
 }

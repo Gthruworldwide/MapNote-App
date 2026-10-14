@@ -31,7 +31,7 @@
         android:layout_height="16dp"
         android:layout_marginEnd="10dp"
         android:contentDescription="@string/tracking_notification_title"
-        android:src="@drawable/ic_stat_tracking" />
+        android:src="@mipmap/ic_launcher" />
 
     <TextView
         android:id="@+id/tracking_notification_title"

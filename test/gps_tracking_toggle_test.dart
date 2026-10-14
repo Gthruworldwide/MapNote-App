@@ -84,14 +84,17 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
   }
 
-  testWidgets('settings shows the daily GPS toggle (off by default)', (
-    WidgetTester tester,
-  ) async {
+  testWidgets('settings shows the daily GPS toggle (off by default)',
+      (WidgetTester tester) async {
     await pumpSettings(tester);
 
-    expect(find.text('Enable daily GPS tracking'), findsOneWidget);
-    expect(find.text('Records distance and max speed while the app is open'),
-        findsOneWidget);
+    expect(find.text('Enable Smart AutoMotion'), findsOneWidget);
+    expect(
+      find.text(
+        'Fuses GPS and motion sensors to track distance & speed while saving battery',
+      ),
+      findsOneWidget,
+    );
 
     // Off by default: the report tile is hidden.
     expect(find.text('Distance today'), findsNothing);
@@ -100,7 +103,7 @@ void main() {
     final Finder gpsSwitch = find.descendant(
       of: find.widgetWithText(
         SwitchListTile,
-        'Enable daily GPS tracking',
+        'Enable Smart AutoMotion',
       ),
       matching: find.byType(Switch),
     );
@@ -121,7 +124,7 @@ void main() {
     final Finder gpsSwitch = find.descendant(
       of: find.widgetWithText(
         SwitchListTile,
-        'Enable daily GPS tracking',
+        'Enable Smart AutoMotion',
       ),
       matching: find.byType(Switch),
     );
@@ -141,14 +144,14 @@ void main() {
     final Finder gpsSwitch = find.descendant(
       of: find.widgetWithText(
         SwitchListTile,
-        'Enable daily GPS tracking',
+        'Enable Smart AutoMotion',
       ),
       matching: find.byType(Switch),
     );
 
     // The onChanged handler writes to real Hive: drive the tap through the
     // real event loop with runAsync so the write (and the follow-up provider
-    // updates) complete before we return to the FakeAsync zone.
+    // update) completes before we return to the FakeAsync zone.
     await tester.runAsync(() async {
       await tester.tap(gpsSwitch);
       await tester.pump();

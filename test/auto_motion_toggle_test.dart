@@ -161,15 +161,15 @@ void main() {
       (WidgetTester tester) async {
     await pumpSettings(tester);
 
-    expect(find.text('Enable AutoMotion'), findsOneWidget);
+    expect(find.text('Enable Smart AutoMotion'), findsOneWidget);
     expect(
       find.text(
-        'Automatically records distance and max speed while the app is open',
+        'Fuses GPS and motion sensors to track distance & speed while saving battery',
       ),
       findsOneWidget,
     );
     expect(
-      tester.widget<Switch>(switchFinder('Enable AutoMotion')).value,
+      tester.widget<Switch>(switchFinder('Enable Smart AutoMotion')).value,
       isFalse,
     );
   });
@@ -178,20 +178,20 @@ void main() {
       (WidgetTester tester) async {
     await pumpSettings(tester, locale: const Locale('ar'));
 
-    expect(find.text('تفعيل أوتوموشن'), findsOneWidget);
+    expect(find.text('تفعيل تتبع AutoMotion الذكي'), findsOneWidget);
     expect(find.text('أوتوموشن'), findsOneWidget);
   });
 
   testWidgets('flipping the AutoMotion toggle persists enable_auto_motion',
       (WidgetTester tester) async {
     await pumpSettings(tester);
-    expect(find.text('Enable AutoMotion'), findsOneWidget);
+    expect(find.text('Enable Smart AutoMotion'), findsOneWidget);
 
     // The onChanged handler writes to real Hive: drive the tap through the
     // real event loop with runAsync so the write (and the follow-up provider
     // update) completes before we return to the FakeAsync zone.
     await tester.runAsync(() async {
-      await tester.tap(switchFinder('Enable AutoMotion'));
+      await tester.tap(switchFinder('Enable Smart AutoMotion'));
       await tester.pump();
       await Future<void>.delayed(const Duration(milliseconds: 100));
       await tester.pump();
@@ -199,7 +199,7 @@ void main() {
     await tester.pump();
 
     expect(
-      tester.widget<Switch>(switchFinder('Enable AutoMotion')).value,
+      tester.widget<Switch>(switchFinder('Enable Smart AutoMotion')).value,
       isTrue,
     );
 

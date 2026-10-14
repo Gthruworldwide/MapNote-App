@@ -743,8 +743,39 @@ class AppLocalizationsAr extends AppLocalizations {
   String get aboutTitle => 'حول MapNote';
 
   @override
+  String get bousla => 'البوصلة';
+
+  @override
+  String get smartAutoMotionTitle => 'تفعيل تتبع AutoMotion الذكي';
+
+  @override
+  String get smartAutoMotionSubtitle =>
+      'دمج الـ GPS وحساسات الحركة لتتبع المسافة والسرعة تلقائياً وتوفير البطارية';
+
+  @override
+  String get compassTitle => 'البوصلة';
+
+  @override
   String get mapPreview => 'معاينة الخريطة';
 
   @override
   String get enableLocationForRoute => 'فعّل الموقع لرؤية المسافة';
+
+  @override
+  String get qiblaUnavailable => 'لا توجد قراءة GPS';
+
+  @override
+  String get qiblaDirectionAbbrev => 'مثلاً: SE';
+
+  @override
+  String get qiblaAligned => 'محاذاة مع القبلة';
+
+  @override
+  String get compassNorth => 'شمال';
+
+  @override
+  String get headingInstruction => 'عدل اتجاه الجهاز لرؤية القبلة';
+
+  @override
+  String get compassCalculating => 'جاري الحساب...';
 }

@@ -74,6 +74,7 @@ dependencies:
   # Wrapped by lib/src/core/utils/plus_code.dart.
   open_location_code: ^1.0.1
   geocoding: ^5.0.0
+  flutter_compass: ^0.8.1
 
 dev_dependencies:
   flutter_test:

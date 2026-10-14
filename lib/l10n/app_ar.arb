@@ -260,5 +260,15 @@
   "sectionLocationTracking": "الموقع والتتبع",
   "aboutTitle": "حول MapNote",
   "mapPreview": "معاينة الخريطة",
-  "enableLocationForRoute": "فعّل الموقع لرؤية المسافة"
+  "enableLocationForRoute": "فعّل الموقع لرؤية المسافة",
+  "bousla": "البوصلة",
+  "compassTitle": "البوصلة",
+  "smartAutoMotionTitle": "تفعيل تتبع AutoMotion الذكي",
+  "smartAutoMotionSubtitle": "دمج الـ GPS وحساسات الحركة لتتبع المسافة والسرعة تلقائياً وتوفير البطارية",
+  "qiblaUnavailable": "لا توجد قراءة GPS",
+  "qiblaDirectionAbbrev": "مثلاً: SE",
+  "qiblaAligned": "محاذاة مع القبلة",
+  "compassNorth": "شمال",
+  "headingInstruction": "عدل اتجاه الجهاز لرؤية القبلة",
+  "compassCalculating": "جاري الحساب..."
 }

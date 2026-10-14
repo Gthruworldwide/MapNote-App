@@ -749,8 +749,39 @@ class AppLocalizationsEn extends AppLocalizations {
   String get aboutTitle => 'About MapNote';
 
   @override
+  String get bousla => 'Compass';
+
+  @override
+  String get smartAutoMotionTitle => 'Enable Smart AutoMotion';
+
+  @override
+  String get smartAutoMotionSubtitle =>
+      'Fuses GPS and motion sensors to track distance & speed while saving battery';
+
+  @override
+  String get compassTitle => 'Compass';
+
+  @override
   String get mapPreview => 'Map preview';
 
   @override
   String get enableLocationForRoute => 'Turn on location to see your distance';
+
+  @override
+  String get qiblaUnavailable => 'No GPS fix available';
+
+  @override
+  String get qiblaDirectionAbbrev => 'e.g. SE';
+
+  @override
+  String get qiblaAligned => 'Aligned with Qibla';
+
+  @override
+  String get compassNorth => 'North';
+
+  @override
+  String get headingInstruction => 'Adjust phone direction to see Qibla';
+
+  @override
+  String get compassCalculating => 'Calculating...';
 }

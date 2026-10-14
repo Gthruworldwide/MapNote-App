@@ -173,8 +173,7 @@ void main() {
     // One shared report: never duplicated per engine.
     expect(find.text('Distance today'), findsOneWidget);
     expect(find.text('Max speed'), findsOneWidget);
-    expect(find.text('Enable AutoMotion'), findsOneWidget);
-    expect(find.text('Enable daily GPS tracking'), findsOneWidget);
+    expect(find.text('Enable Smart AutoMotion'), findsOneWidget);
   });
 
   testWidgets('with both engines off no report tile is shown',

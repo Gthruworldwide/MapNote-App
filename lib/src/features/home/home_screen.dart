@@ -39,6 +39,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   /// Guards the one-time "sync on open" check for a cached session.
   bool _checkedInitialSession = false;
 
+/// Dynamic Island expansion state toggles.
+  bool _isCompassExpanded = false;
+
   @override
   void initState() {
     super.initState();
@@ -288,10 +291,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             onPressed: _showAddLocationOptions,
             icon: const Icon(Icons.add),
           ),
-          IconButton(
-            tooltip: 'Compass',
-            onPressed: _openOfflineCompass,
-            icon: const Icon(Icons.explore_outlined),
+          // زر البوصلة المعدل ليعمل بالضغط المطول
+          GestureDetector(
+            onLongPress: () {
+              setState(() {
+                _isCompassExpanded = !_isCompassExpanded;
+              });
+            },
+            child: IconButton(
+              tooltip: l10n.compassTitle,
+              onPressed: _openOfflineCompass, // نقرة واحدة تفتح البوصلة العادية
+              icon: Icon(
+                _isCompassExpanded ? Icons.explore : Icons.explore_outlined,
+                color: _isCompassExpanded ? Theme.of(context).colorScheme.primary : null,
+              ),
+            ),
           ),
           IconButton(
             tooltip: l10n.settingsTitle,

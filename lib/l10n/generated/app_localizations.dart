@@ -1442,6 +1442,30 @@ abstract class AppLocalizations {
   /// **'About MapNote'**
   String get aboutTitle;
 
+  /// No description provided for @bousla.
+  ///
+  /// In en, this message translates to:
+  /// **'Compass'**
+  String get bousla;
+
+  /// No description provided for @smartAutoMotionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable Smart AutoMotion'**
+  String get smartAutoMotionTitle;
+
+  /// No description provided for @smartAutoMotionSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Fuses GPS and motion sensors to track distance & speed while saving battery'**
+  String get smartAutoMotionSubtitle;
+
+  /// No description provided for @compassTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Compass'**
+  String get compassTitle;
+
   /// No description provided for @mapPreview.
   ///
   /// In en, this message translates to:
@@ -1453,6 +1477,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Turn on location to see your distance'**
   String get enableLocationForRoute;
+
+  /// No description provided for @qiblaUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No GPS fix available'**
+  String get qiblaUnavailable;
+
+  /// No description provided for @qiblaDirectionAbbrev.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. SE'**
+  String get qiblaDirectionAbbrev;
+
+  /// No description provided for @qiblaAligned.
+  ///
+  /// In en, this message translates to:
+  /// **'Aligned with Qibla'**
+  String get qiblaAligned;
+
+  /// No description provided for @compassNorth.
+  ///
+  /// In en, this message translates to:
+  /// **'North'**
+  String get compassNorth;
+
+  /// No description provided for @headingInstruction.
+  ///
+  /// In en, this message translates to:
+  /// **'Adjust phone direction to see Qibla'**
+  String get headingInstruction;
+
+  /// No description provided for @compassCalculating.
+  ///
+  /// In en, this message translates to:
+  /// **'Calculating...'**
+  String get compassCalculating;
 }
 
 class _AppLocalizationsDelegate

@@ -318,20 +318,13 @@ class SettingsScreen extends ConsumerWidget {
               Icons.directions_walk,
               color: theme.colorScheme.primary,
             ),
-            title: Text(l10n.autoMotionToggle),
-            subtitle: Text(l10n.autoMotionToggleSubtitle),
-            value: autoMotionEnabled,
-            onChanged: (bool value) =>
-                _toggleAutoMotion(context, ref, l10n, value),
-          ),
-          const Divider(height: 1),
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            secondary: Icon(Icons.route, color: theme.colorScheme.primary),
-            title: Text(l10n.dailyGpsToggle),
-            subtitle: Text(l10n.dailyGpsToggleSubtitle),
-            value: gpsEnabled,
-            onChanged: (bool value) => _toggleGps(context, ref, l10n, value),
+            title: Text(l10n.smartAutoMotionTitle),
+            subtitle: Text(l10n.smartAutoMotionSubtitle),
+            value: autoMotionEnabled || gpsEnabled,
+            onChanged: (bool value) async {
+              await ref.read(autoMotionEnabledProvider.notifier).setEnabled(value);
+              await ref.read(gpsTrackingEnabledProvider.notifier).setEnabled(value);
+            },
           ),
           if (autoMotionEnabled || gpsEnabled) ...<Widget>[
             const SizedBox(height: 12),
@@ -354,49 +347,7 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _toggleGps(
-    BuildContext context,
-    WidgetRef ref,
-    AppLocalizations l10n,
-    bool value,
-  ) async {
-    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
-    await ref.read(gpsTrackingEnabledProvider.notifier).setEnabled(value);
-    if (value) {
-      // After enabling, surface a hint when GPS or the permission is missing;
-      // the tracker itself stays off until the user grants access.
-      await ref.read(locationStatusProvider.notifier).refresh();
-      final LocationStatus? status = ref.read(locationStatusProvider).value;
-      if (status != null && status.needsAction) {
-        messenger.showSnackBar(
-          SnackBar(content: Text(l10n.dailyGpsPermissionHint)),
-        );
-      }
-    }
-  }
-
-  Future<void> _toggleAutoMotion(
-    BuildContext context,
-    WidgetRef ref,
-    AppLocalizations l10n,
-    bool value,
-  ) async {
-    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
-    await ref.read(autoMotionEnabledProvider.notifier).setEnabled(value);
-    if (value) {
-      // After enabling, surface a hint when GPS or the permission is missing;
-      // the tracker itself stays off until the user grants access.
-      await ref.read(locationStatusProvider.notifier).refresh();
-      final LocationStatus? status = ref.read(locationStatusProvider).value;
-      if (status != null && status.needsAction) {
-        messenger.showSnackBar(
-          SnackBar(content: Text(l10n.autoMotionPermissionHint)),
-        );
-      }
-    }
-  }
-
-  // --- Sync & backup ---------------------------------------------------------
+// --- Sync & backup ---------------------------------------------------------
 
   Widget _buildSyncCard(
     BuildContext context,

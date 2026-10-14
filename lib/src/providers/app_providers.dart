@@ -274,8 +274,6 @@ final NotifierProvider<SmartInsightsController, bool>
 smartInsightsEnabledProvider = NotifierProvider<SmartInsightsController, bool>(
   SmartInsightsController.new,
 );
-
-/// Whether daily GPS tracking is enabled (Settings → GPS tracking).
 final NotifierProvider<GpsTrackingEnabledController, bool>
 gpsTrackingEnabledProvider =
     NotifierProvider<GpsTrackingEnabledController, bool>(
