@@ -302,6 +302,10 @@ class SettingsScreen extends ConsumerWidget {
     final bool gpsEnabled = ref.watch(gpsTrackingEnabledProvider);
     final AutoMotionState motion = ref.watch(autoMotionControllerProvider);
     final GpsTrackingState tracking = ref.watch(gpsTrackingControllerProvider);
+    // The two engines sample the same trip: report the more complete one so
+    // the card never reads 0.00 km while the other engine already recorded
+    // today's motion.
+    final bool anyActive = tracking.active || motion.active;
 
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -334,13 +338,14 @@ class SettingsScreen extends ConsumerWidget {
             const Divider(height: 1),
             const SizedBox(height: 12),
             _TrackingSummaryTile(
-              // The two engines sample the same trip, so report the more
-              // complete one: the card then never reads 0.00 km while the other
-              // engine has already recorded today's motion.
               totalKm: math.max(tracking.totalKm, motion.totalKm),
               maxSpeedKmh: math.max(tracking.maxSpeedKmh, motion.maxSpeedKmh),
-              active: tracking.active || motion.active,
-              unavailable: tracking.unavailable || motion.unavailable,
+              active: anyActive,
+              // Warn only when nothing is actually recording: a stale failure
+              // from one engine must not claim "unavailable" while the other
+              // engine is producing today's numbers.
+              unavailable:
+                  !anyActive && (tracking.unavailable || motion.unavailable),
               l10n: l10n,
             ),
           ],
