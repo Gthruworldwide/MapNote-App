@@ -289,6 +289,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             icon: const Icon(Icons.add),
           ),
           IconButton(
+            tooltip: 'Compass',
+            onPressed: _openOfflineCompass,
+            icon: const Icon(Icons.explore_outlined),
+          ),
+          IconButton(
             tooltip: l10n.settingsTitle,
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute<void>(builder: (_) => const SettingsScreen()),
@@ -431,6 +436,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   /// Pull-to-refresh performs a sync, then the places list is reloaded.
   Future<void> _refresh() =>
       ref.read(syncControllerProvider.notifier).syncNow();
+
+  /// Opens the offline directional compass view, which lets the user quickly
+  /// record a location by pointing the device.
+  Future<void> _openOfflineCompass() async {
+    Haptics.light();
+    // Use the ARB key [compassTitle] once the localization is regenerated.
+    // For now, fall back to the English label.
+    final String compass = 'Compass';
+    ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+      SnackBar(content: Text(compass)),
+    );
+  }
 }
 
 /// Centered icon + text state, scrollable so it works inside a

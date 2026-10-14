@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Foreground-service notification shown while a daily GPS tracker runs. -->
-    <string name="tracking_notification_title">MapNote</string>
-    <string name="tracking_notification_text">يتم تسجيل مسافة اليوم وأعلى سرعة</string>
+    <!-- Foreground-service notification shown while a daily GPS tracker runs.
+         Rendered as a compact single line (see notification_tracking_compact.xml). -->
+    <string name="tracking_notification_title">أوتوموشن يعمل</string>
+    <string name="tracking_notification_text">يسجل المسافة والسرعة</string>
     <string name="tracking_channel_name">تتبّع الموقع</string>
-    <string name="tracking_channel_description">يعمل أثناء تفعيل أوتوموشن أو التتبع اليومي.</string>
+    <string name="tracking_channel_description">إشعار صامت يظهر أثناء تفعيل أوتوموشن أو التتبع اليومي.</string>
 </resources>

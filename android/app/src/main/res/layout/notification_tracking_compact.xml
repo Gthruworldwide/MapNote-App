@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Compact single-line layout for the AutoMotion tracking notification.
+
+    One row, minimal height: leading status-bar icon, the "AutoMotion Active"
+    title, and the "Tracking distance & speed" subtext on the same line. Both
+    labels ellipsize to one line so the notification never grows past a single
+    row (no chips, actions, timestamp or expand affordance), and it stays silent
+    through its IMPORTANCE_LOW channel.
+
+    Used by LocationTrackingService via NotificationCompat.setCustomContentView.
+    The system still draws the notification background and ripple; the standard
+    title/text pair set by the builder is kept for accessibility services and
+    for surfaces (Wear, auto, API < 24) that fall back to the default template.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:baselineAligned="false"
+    android:gravity="center_vertical"
+    android:minHeight="32dp"
+    android:orientation="horizontal"
+    android:paddingStart="6dp"
+    android:paddingTop="4dp"
+    android:paddingEnd="6dp"
+    android:paddingBottom="4dp">
+
+    <ImageView
+        android:id="@+id/tracking_notification_icon"
+        android:layout_width="16dp"
+        android:layout_height="16dp"
+        android:layout_marginEnd="10dp"
+        android:contentDescription="@string/tracking_notification_title"
+        android:src="@drawable/ic_stat_tracking" />
+
+    <TextView
+        android:id="@+id/tracking_notification_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:text="@string/tracking_notification_title"
+        android:textColor="?android:attr/textColorPrimary"
+        android:textSize="13sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/tracking_notification_text"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="6dp"
+        android:layout_weight="1"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:text="@string/tracking_notification_text"
+        android:textColor="?android:attr/textColorSecondary"
+        android:textSize="12sp" />
+</LinearLayout>

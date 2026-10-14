@@ -7,6 +7,9 @@ class DailyGpsSummary {
     required this.date,
     this.totalKm = 0,
     this.maxSpeedKmh = 0,
+    this.lastLatitude,
+    this.lastLongitude,
+    this.lastFixAt,
   });
 
   /// The calendar day this summary belongs to, at local midnight.
@@ -18,15 +21,28 @@ class DailyGpsSummary {
   /// Highest measured speed that day, in km/h.
   final double maxSpeedKmh;
 
+  /// Last accepted fix of the day (null when nothing was recorded). Persisting
+  /// it lets a restarted service resume an in-progress trip instead of treating
+  /// the next fix as a brand new trip.
+  final double? lastLatitude;
+  final double? lastLongitude;
+  final DateTime? lastFixAt;
+
   DailyGpsSummary copyWith({
     DateTime? date,
     double? totalKm,
     double? maxSpeedKmh,
+    double? lastLatitude,
+    double? lastLongitude,
+    DateTime? lastFixAt,
   }) {
     return DailyGpsSummary(
       date: date ?? this.date,
       totalKm: totalKm ?? this.totalKm,
       maxSpeedKmh: maxSpeedKmh ?? this.maxSpeedKmh,
+      lastLatitude: lastLatitude ?? this.lastLatitude,
+      lastLongitude: lastLongitude ?? this.lastLongitude,
+      lastFixAt: lastFixAt ?? this.lastFixAt,
     );
   }
 
@@ -47,6 +63,9 @@ class DailyGpsSummary {
       'date': dayKey(date),
       'total_km': totalKm,
       'max_speed': maxSpeedKmh,
+      'last_lat': lastLatitude,
+      'last_lon': lastLongitude,
+      'last_fix_at': lastFixAt?.toIso8601String(),
     };
   }
 
@@ -57,7 +76,17 @@ class DailyGpsSummary {
       date: date,
       totalKm: (map['total_km'] as num?)?.toDouble() ?? 0,
       maxSpeedKmh: (map['max_speed'] as num?)?.toDouble() ?? 0,
+      lastLatitude: (map['last_lat'] as num?)?.toDouble(),
+      lastLongitude: (map['last_lon'] as num?)?.toDouble(),
+      lastFixAt: _parseInstant(map['last_fix_at']),
     );
+  }
+
+  static DateTime? _parseInstant(Object? value) {
+    if (value is DateTime) return value;
+    if (value is String) return DateTime.tryParse(value);
+    if (value is int) return DateTime.fromMillisecondsSinceEpoch(value);
+    return null;
   }
 
   static DateTime? _parseDay(Object? value) {
@@ -74,10 +103,20 @@ class DailyGpsSummary {
       other is DailyGpsSummary &&
       other.date == date &&
       other.totalKm == totalKm &&
-      other.maxSpeedKmh == maxSpeedKmh;
+      other.maxSpeedKmh == maxSpeedKmh &&
+      other.lastLatitude == lastLatitude &&
+      other.lastLongitude == lastLongitude &&
+      other.lastFixAt == lastFixAt;
 
   @override
-  int get hashCode => Object.hash(date, totalKm, maxSpeedKmh);
+  int get hashCode => Object.hash(
+        date,
+        totalKm,
+        maxSpeedKmh,
+        lastLatitude,
+        lastLongitude,
+        lastFixAt,
+      );
 
   @override
   String toString() =>

@@ -8,6 +8,28 @@ import 'package:hive_ce/hive.dart';
 import 'package:routenote/src/data/local/gps_daily_data_source.dart';
 import 'package:routenote/src/data/models/daily_gps_summary.dart';
 import 'package:routenote/src/services/gps_tracker_service.dart';
+import 'package:routenote/src/services/motion_signal.dart';
+
+/// A [MotionSignal] whose whole state is the timestamp the test hands it: the
+/// trackers only ask whether motion evidence is newer than the last fix.
+class _FakeMotion implements MotionSignal {
+  _FakeMotion(this.lastMotionAt);
+
+  @override
+  DateTime? lastMotionAt;
+
+  @override
+  bool get inTransit => lastMotionAt != null;
+
+  @override
+  Future<void> start() async {}
+
+  @override
+  Future<void> stop() async {}
+
+  @override
+  void observeSpeed(double metersPerSecond) {}
+}
 
 /// Builds a [Position] with the required fields for geolocator 14.
 Position _fix(
@@ -229,6 +251,76 @@ void main() {
       );
       await service.stop();
       await controller.close();
+    });
+  });
+
+  group('GpsTrackerService dead reckoning', () {
+    test('bridges a long outage when the motion signal saw the car moving',
+        () async {
+      final DateTime start = DateTime.now().subtract(const Duration(hours: 1));
+      final GpsTrackerService service = GpsTrackerService(
+        dailyStore: await openStore('bridge'),
+        motion: _FakeMotion(start.add(const Duration(minutes: 40))),
+      );
+
+      service.recordPosition(_fix(0, 0, at: start));
+      service.recordPosition(
+        _fix(0.27, 0, at: start.add(const Duration(minutes: 45))),
+      );
+
+      expect(service.totalDistanceKm, closeTo(30.0, 0.2));
+    });
+
+    test('refuses to bridge the same outage without motion evidence', () async {
+      final DateTime start = DateTime.now().subtract(const Duration(hours: 1));
+      final GpsTrackerService service =
+          GpsTrackerService(dailyStore: await openStore('parked'));
+
+      service.recordPosition(_fix(0, 0, at: start));
+      service.recordPosition(
+        _fix(0.27, 0, at: start.add(const Duration(minutes: 45))),
+      );
+
+      expect(service.totalDistanceKm, 0);
+    });
+
+    test('a step implying an impossible speed is a GPS jump, not travel',
+        () async {
+      final GpsTrackerService service =
+          GpsTrackerService(dailyStore: await openStore('jump'));
+      final DateTime start = DateTime.now();
+
+      service.recordPosition(_fix(0, 0, at: start));
+      service.recordPosition(
+        _fix(1.0, 0, at: start.add(const Duration(seconds: 5))),
+      );
+
+      expect(service.totalDistanceKm, 0);
+    });
+
+    test('resumes an in-progress trip after an app restart', () async {
+      final GpsDailyDataSource store = await openStore('resume');
+      final DateTime start = DateTime.now();
+
+      final GpsTrackerService service = GpsTrackerService(dailyStore: store);
+      service.recordPosition(_fix(0, 0, at: start));
+      service.recordPosition(
+        _fix(0.009, 0, at: start.add(const Duration(minutes: 2)), speed: 8),
+      );
+      await service.stop();
+
+      final GpsTrackerService restarted = GpsTrackerService(dailyStore: store);
+      await restarted.resyncFromStore();
+      expect(restarted.totalDistanceKm, closeTo(1.0, 0.05));
+
+      restarted.recordPosition(
+        _fix(0.018, 0, at: start.add(const Duration(minutes: 7)), speed: 12),
+      );
+      expect(restarted.totalDistanceKm, closeTo(2.0, 0.05));
+    });
+
+    test('the production flush cadence is ten seconds', () {
+      expect(GpsTrackerService.persistInterval, const Duration(seconds: 10));
     });
   });
 

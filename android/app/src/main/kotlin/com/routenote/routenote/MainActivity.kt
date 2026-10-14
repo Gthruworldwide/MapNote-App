@@ -16,6 +16,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodChannel
 
 // FlutterFragmentActivity (not FlutterActivity) is required by local_auth, which
@@ -23,6 +24,10 @@ import io.flutter.plugin.common.MethodChannel
 class MainActivity : FlutterFragmentActivity() {
     private var shortcutsChannel: MethodChannel? = null
     private var pendingPlaceId: String? = null
+
+    // Accelerometer bridge used by the dead-reckoning distance bridge while a
+    // daily tracker runs (see MotionSensorChannel / motion_signal.dart).
+    private var motionSensorChannel: MotionSensorChannel? = null
 
     // Foreground tracking service + its runtime permissions (see
     // LocationTrackingService and ForegroundTrackingService on the Dart side).
@@ -134,6 +139,15 @@ class MainActivity : FlutterFragmentActivity() {
                 else -> result.notImplemented()
             }
         }
+
+        // Accelerometer samples for the trackers' movement classifier. Only
+        // sampled while Dart is subscribed (i.e. while a tracker is running).
+        val motion = MotionSensorChannel(this)
+        EventChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            MOTION_CHANNEL,
+        ).setStreamHandler(motion)
+        motionSensorChannel = motion
 
         // The app may have been launched cold from a pinned shortcut.
         capturePlaceId(intent, notifyDart = false)
@@ -252,6 +266,10 @@ class MainActivity : FlutterFragmentActivity() {
 
         /** Must match [ForegroundTrackingService.channelName] in Dart. */
         private const val TRACKING_CHANNEL = "com.routenote.routenote/tracking"
+
+        /** Must match [SensorMotionSignal.channelName] in Dart. */
+        private const val MOTION_CHANNEL = "com.routenote.routenote/motion"
+
         private const val EXTRA_PLACE_ID = "com.routenote.routenote.PLACE_ID"
         private const val ACTION_OPEN_PLACE = "com.routenote.routenote.OPEN_PLACE"
     }

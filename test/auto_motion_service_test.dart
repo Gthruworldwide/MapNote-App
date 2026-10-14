@@ -9,6 +9,7 @@ import 'package:routenote/src/core/config/app_config.dart';
 import 'package:routenote/src/data/local/auto_motion_data_source.dart';
 import 'package:routenote/src/data/models/daily_gps_summary.dart';
 import 'package:routenote/src/services/auto_motion_service.dart';
+import 'package:routenote/src/services/motion_signal.dart';
 
 /// Builds a [Position] with the required fields for geolocator 14.
 Position _fix(
@@ -36,6 +37,40 @@ Position _fix(
   );
 }
 
+/// A [MotionSignal] whose whole state is the timestamp the test hands it: the
+/// trackers only ask whether motion evidence is newer than the last fix.
+class _FakeMotion implements MotionSignal {
+  _FakeMotion(this.lastMotionAt);
+
+  @override
+  DateTime? lastMotionAt;
+
+  @override
+  bool get inTransit => lastMotionAt != null;
+
+  @override
+  Future<void> start() async {}
+
+  @override
+  Future<void> stop() async {}
+
+  @override
+  void observeSpeed(double metersPerSecond) {}
+}
+
+/// Store that records every write instead of touching Hive, so the periodic
+/// flush can be observed without waiting on disk.
+class _RecordingStore extends AutoMotionDataSource {
+  _RecordingStore(super.box);
+
+  final List<DailyGpsSummary> saved = <DailyGpsSummary>[];
+
+  @override
+  Future<void> save(DailyGpsSummary summary) async {
+    saved.add(summary);
+  }
+}
+
 void main() {
   late Directory tempDir;
   final List<Box<dynamic>> openBoxes = <Box<dynamic>>[];
@@ -55,12 +90,15 @@ void main() {
 
   /// Opens the production box name (`auto_motion_box`) so the binary/storage
   /// wiring is pinned exactly as the app opens it in main().
-  Future<AutoMotionDataSource> openStore(String suffix) async {
+  Future<Box<dynamic>> openBox(String suffix) async {
     final Box<dynamic> box =
         await Hive.openBox<dynamic>('${AppConfig.autoMotionBoxName}$suffix');
     openBoxes.add(box);
-    return AutoMotionDataSource(box);
+    return box;
   }
+
+  Future<AutoMotionDataSource> openStore(String suffix) async =>
+      AutoMotionDataSource(await openBox(suffix));
 
   group('AutoMotionDataSource storage keys', () {
     test('stores each day under its YYYY-MM-DD key without a prefix', () async {
@@ -242,6 +280,135 @@ void main() {
       );
 
       expect(service.totalDistanceKm, 0);
+    });
+  });
+
+  group('AutoMotionService dead reckoning', () {
+    test('bridges a long outage when the motion signal saw the car moving',
+        () async {
+      final DateTime start = DateTime.now().subtract(const Duration(hours: 1));
+      final AutoMotionService service = AutoMotionService(
+        dailyStore: await openStore('_bridge'),
+        // Motion evidence 40 minutes in: the tunnel did not stop the car.
+        motion: _FakeMotion(start.add(const Duration(minutes: 40))),
+      );
+
+      service.recordPosition(_fix(0, 0, at: start));
+      // 45 minutes (and ~30 km) later the GPS comes back: the gap is bridged
+      // because the device demonstrably kept moving.
+      service.recordPosition(
+        _fix(0.27, 0, at: start.add(const Duration(minutes: 45))),
+      );
+
+      expect(service.totalDistanceKm, closeTo(30.0, 0.2));
+    });
+
+    test('refuses to bridge the same outage without motion evidence', () async {
+      final DateTime start = DateTime.now().subtract(const Duration(hours: 1));
+      final AutoMotionService service =
+          AutoMotionService(dailyStore: await openStore('_parked'));
+
+      service.recordPosition(_fix(0, 0, at: start));
+      service.recordPosition(
+        _fix(0.27, 0, at: start.add(const Duration(minutes: 45))),
+      );
+
+      expect(service.totalDistanceKm, 0);
+    });
+
+    test('never bridges an outage beyond the bridge window', () async {
+      final DateTime start = DateTime.now().subtract(const Duration(hours: 5));
+      final AutoMotionService service = AutoMotionService(
+        dailyStore: await openStore('_tooLong'),
+        motion: _FakeMotion(start.add(const Duration(minutes: 10))),
+      );
+
+      service.recordPosition(_fix(0, 0, at: start));
+      service.recordPosition(
+        _fix(0.27, 0, at: start.add(const Duration(hours: 3))),
+      );
+
+      expect(service.totalDistanceKm, 0);
+    });
+
+    test('a step implying an impossible speed is a GPS jump, not travel',
+        () async {
+      final AutoMotionService service =
+          AutoMotionService(dailyStore: await openStore('_jump'));
+      final DateTime start = DateTime.now();
+
+      service.recordPosition(_fix(0, 0, at: start));
+      // 111 km in five seconds (~80 000 km/h): a glitch, never a drive.
+      service.recordPosition(
+        _fix(1.0, 0, at: start.add(const Duration(seconds: 5))),
+      );
+
+      expect(service.totalDistanceKm, 0);
+    });
+
+    test('ignores a Doppler speed spike instead of poisoning the maximum',
+        () async {
+      final AutoMotionService service =
+          AutoMotionService(dailyStore: await openStore('_spike'));
+
+      service.recordPosition(_fix(0, 0, speed: 0));
+      // 200 m/s = 720 km/h: a GPS glitch, not a supercar.
+      service.recordPosition(_fix(0.001, 0, speed: 200));
+
+      expect(service.currentSpeedKmh, 0);
+      expect(service.maxSpeedKmh, 0);
+    });
+
+    test('resumes an in-progress trip after an app restart', () async {
+      final AutoMotionDataSource store = await openStore('_resume');
+      final DateTime start = DateTime.now();
+
+      final AutoMotionService service = AutoMotionService(dailyStore: store);
+      service.recordPosition(_fix(0, 0, at: start));
+      service.recordPosition(
+        _fix(0.009, 0, at: start.add(const Duration(minutes: 2)), speed: 8),
+      );
+      await service.stop();
+      expect(service.totalDistanceKm, closeTo(1.0, 0.05));
+
+      // A brand new instance (as after a crash) picks the persisted last fix
+      // back up and keeps accumulating the same trip.
+      final AutoMotionService restarted = AutoMotionService(dailyStore: store);
+      await restarted.resyncFromStore();
+      expect(restarted.totalDistanceKm, closeTo(1.0, 0.05));
+
+      restarted.recordPosition(
+        _fix(0.018, 0, at: start.add(const Duration(minutes: 7)), speed: 12),
+      );
+      expect(restarted.totalDistanceKm, closeTo(2.0, 0.05));
+    });
+  });
+
+  group('AutoMotionService crash resilience', () {
+    test('flushes today\'s metrics periodically while tracking', () async {
+      final _RecordingStore store = _RecordingStore(await openBox('_flush'));
+      final AutoMotionService service = AutoMotionService(
+        dailyStore: store,
+        flushEvery: const Duration(milliseconds: 20),
+      );
+      final StreamController<Position> controller =
+          StreamController<Position>();
+
+      expect(await service.start(positions: controller.stream), isTrue);
+      service.recordPosition(_fix(0, 0));
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      final int afterFirstFix = store.saved.length;
+
+      // No further fixes arrive, but the periodic flush keeps writing.
+      await Future<void>.delayed(const Duration(milliseconds: 70));
+      expect(store.saved.length, greaterThan(afterFirstFix));
+
+      await service.stop();
+      await controller.close();
+    });
+
+    test('the production flush cadence is ten seconds', () {
+      expect(AutoMotionService.persistInterval, const Duration(seconds: 10));
     });
   });
 

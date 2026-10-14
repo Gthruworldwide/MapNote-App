@@ -9,6 +9,7 @@ import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
+import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
 
 /**
@@ -19,8 +20,8 @@ import androidx.core.app.NotificationCompat
  * foreground service with the `location` type (declared in AndroidManifest
  * with `android:foregroundServiceType="location"`). The Dart trackers keep
  * owning the actual measurement logic — this service exists so the OS does not
- * freeze the process, and it posts the ongoing notification the platform
- * requires.
+ * freeze the process, and it posts the compact, silent notification the
+ * platform requires.
  *
  * Started/stopped from Dart through `ForegroundTrackingService`
  * (`com.routenote.routenote/tracking`).
@@ -51,6 +52,9 @@ class LocationTrackingService : Service() {
     }
 
     override fun onDestroy() {
+        // The toggles went off: the session is over, so the notification must
+        // be removed completely — never leave a stale "AutoMotion Active" row.
+        dismissNotification()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             stopForeground(STOP_FOREGROUND_REMOVE)
         } else {
@@ -58,6 +62,19 @@ class LocationTrackingService : Service() {
             stopForeground(true)
         }
         super.onDestroy()
+    }
+
+    /**
+     * Removes the tracking notification from the drawer.
+     *
+     * `stopForeground(STOP_FOREGROUND_REMOVE)` already detaches it from the
+     * service, but cancelling by id also covers the case where the service was
+     * stopped while the app process kept running.
+     */
+    private fun dismissNotification() {
+        val manager: NotificationManager =
+            getSystemService(NotificationManager::class.java) ?: return
+        manager.cancel(NOTIFICATION_ID)
     }
 
     private fun buildNotification(): Notification {
@@ -70,23 +87,45 @@ class LocationTrackingService : Service() {
             PendingIntent.FLAG_IMMUTABLE,
         )
         return NotificationCompat.Builder(this, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_stat_tracking)
+            // Compact single row (icon + title + subtext, one line, minimal
+            // height). The standard title/text below stay as the fallback for
+            // other surfaces and for accessibility services.
+            .setCustomContentView(compactContentView())
+            .setCustomBigContentView(compactContentView())
             .setContentTitle(getString(R.string.tracking_notification_title))
             .setContentText(getString(R.string.tracking_notification_text))
-            .setSmallIcon(R.drawable.ic_stat_tracking)
             .setContentIntent(openApp)
-            .setOngoing(true)
+            // Silent, one-alert-only, never a badge, never mirrored to other
+            // devices: tracking is a private, always-on hint, not an alert.
             .setSilent(true)
+            .setOnlyAlertOnce(true)
             .setShowWhen(false)
+            .setOngoing(true)
+            .setLocalOnly(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
+            .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
+            .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
             .build()
     }
+
+    /**
+     * The single-line layout from `notification_tracking_compact.xml`: a 16dp
+     * status icon, the "AutoMotion Active" title and the "Tracking distance &
+     * speed" subtext on one row, all clamped to one line.
+     */
+    private fun compactContentView(): RemoteViews =
+        RemoteViews(packageName, R.layout.notification_tracking_compact)
 
     private fun ensureNotificationChannel() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val manager: NotificationManager =
             getSystemService(NotificationManager::class.java) ?: return
         if (manager.getNotificationChannel(CHANNEL_ID) != null) return
+        // IMPORTANCE_LOW = silent (no sound, no heads-up) and, with the flags
+        // below, no vibration and no badge; VISIBILITY_PRIVATE keeps it off
+        // the lock screen.
         val channel = NotificationChannel(
             CHANNEL_ID,
             getString(R.string.tracking_channel_name),
@@ -94,6 +133,12 @@ class LocationTrackingService : Service() {
         ).apply {
             description = getString(R.string.tracking_channel_description)
             setShowBadge(false)
+            enableVibration(false)
+            enableLights(false)
+            setSound(null, null)
+            // Lock-screen visibility is set per notification (VISIBILITY_PRIVATE
+            // below) because NotificationChannel#setLockscreenVisibility only
+            // exists from API 28.
         }
         manager.createNotificationChannel(channel)
     }

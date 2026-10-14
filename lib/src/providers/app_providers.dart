@@ -33,6 +33,7 @@ import '../services/gps_tracker_service.dart';
 import '../services/home_shortcut_service.dart';
 import '../services/local_insight_engine.dart';
 import '../services/location_service.dart';
+import '../services/motion_signal.dart';
 import '../services/navigation_service.dart';
 import '../services/share_intent_service.dart';
 import '../services/smart_clipboard_service.dart';
@@ -85,11 +86,18 @@ final Provider<AutoMotionDataSource> autoMotionDataSourceProvider =
 final Provider<LocationService> locationServiceProvider =
     Provider<LocationService>((Ref ref) => const LocationService());
 
+/// Movement evidence shared by the two daily trackers: an accelerometer-backed
+/// sensor bridge on Android, inert elsewhere. The trackers refcount it, so the
+/// accelerometer only samples while one of them is actually running.
+final Provider<MotionSignal> motionSignalProvider =
+    Provider<MotionSignal>((Ref ref) => SensorMotionSignal());
+
 /// Phase-1 daily GPS tracker (distance + max speed while the app is open).
 final Provider<GpsTrackerService> gpsTrackerProvider =
     Provider<GpsTrackerService>((Ref ref) {
       return GpsTrackerService(
         dailyStore: ref.watch(gpsDailyDataSourceProvider),
+        motion: ref.watch(motionSignalProvider),
       );
     });
 
@@ -98,6 +106,7 @@ final Provider<AutoMotionService> autoMotionServiceProvider =
     Provider<AutoMotionService>((Ref ref) {
       return AutoMotionService(
         dailyStore: ref.watch(autoMotionDataSourceProvider),
+        motion: ref.watch(motionSignalProvider),
       );
     });
 

@@ -7,6 +7,7 @@ import '../core/utils/geo_distance.dart';
 import '../data/local/gps_daily_data_source.dart';
 import '../data/models/daily_gps_summary.dart';
 import 'location_service.dart';
+import 'motion_signal.dart';
 
 /// Phase-1 GPS tracker: measures today's total distance (km), current and
 /// maximum speed (km/h) while the app is open, and saves one
@@ -18,10 +19,18 @@ import 'location_service.dart';
 /// * [start] accepts an optional injected [positions] stream (or a
 ///   [LocationService]), keeping the geolocator platform channel out of tests.
 class GpsTrackerService {
-  GpsTrackerService({required this.dailyStore});
+  GpsTrackerService({
+    required this.dailyStore,
+    MotionSignal? motion,
+    this.flushEvery = persistInterval,
+  }) : _motion = motion ?? const NoMotionSignal();
 
   /// Persistence for daily summaries.
   final GpsDailyDataSource dailyStore;
+
+  /// Movement evidence for the dead-reckoning gap bridge (see [MotionSignal]);
+  /// the no-op default keeps unit tests channel-free.
+  final MotionSignal _motion;
 
   /// Fixes that moved less than this many metres are GPS jitter, not travel.
   static const int minStepMeters = 3;
@@ -34,11 +43,40 @@ class GpsTrackerService {
   /// two fixes must never be counted as distance.
   static const Duration maxFixGap = Duration(minutes: 30);
 
+  /// A longer outage may still be travel (a tunnel, a long underground
+  /// stretch), but it is only bridged up to this limit **and** only when the
+  /// motion signal proves the device kept moving through the blackout.
+  static const Duration maxBridgedGap = Duration(hours: 2);
+
+  /// Speeds above this (km/h) are GPS glitches, not travel: neither a reported
+  /// Doppler speed nor a step that implies such a speed may poison the day's
+  /// metrics.
+  static const double maxPlausibleSpeedKmh = 180;
+
+  /// A step is only judged by its implied speed when the fix interval is long
+  /// enough for that average to mean anything; below this (sub-second samples)
+  /// the receiver's own speed report is the only meaningful guard.
+  static const Duration minSpeedSampleWindow = Duration(seconds: 1);
+
+  /// While tracking, the day's metrics are flushed to disk on this cadence even
+  /// when no fix arrives, so a crash or a battery pull loses seconds at most.
+  static const Duration persistInterval = Duration(seconds: 10);
+
   double _dayKm = 0;
   double _dayMaxKmh = 0;
   double _currentKmh = 0;
   DateTime _day = DailyGpsSummary.dayOf(DateTime.now());
-  Position? _last;
+
+  /// Last accepted fix, kept as primitives so it can be persisted and restored
+  /// (see `DailyGpsSummary.lastLatitude`).
+  double _lastLat = 0;
+  double _lastLon = 0;
+  DateTime? _lastAt;
+
+  /// True once this run accepted at least one fix (i.e. there is something
+  /// worth writing back).
+  bool _dirty = false;
+
   StreamSubscription<Position>? _subscription;
   bool _tracking = false;
 
@@ -49,6 +87,12 @@ class GpsTrackerService {
   /// Backs up the local-midnight reset when no fix happens to cross it.
   Timer? _midnightTimer;
 
+  /// Periodic disk flush while tracking (crash resilience).
+  Timer? _persistTimer;
+
+  /// How often the periodic flush runs. Defaults to [persistInterval]; tests
+  /// pass a short value so the cadence can be observed without waiting 10 s.
+  final Duration flushEvery;
   /// True while the position stream is attached.
   bool get isTracking => _tracking;
 
@@ -80,6 +124,7 @@ class GpsTrackerService {
     final DailyGpsSummary? stored = dailyStore.summaryFor(today);
     _dayKm = stored?.totalKm ?? 0;
     _dayMaxKmh = stored?.maxSpeedKmh ?? 0;
+    _restoreLastPoint(stored);
   }
 
   /// Starts listening for GPS fixes.
@@ -126,7 +171,13 @@ class GpsTrackerService {
 
     _subscription = source.listen(recordPosition);
     _tracking = true;
+    try {
+      await _motion.start();
+    } catch (_) {
+      // Movement sensing is best-effort: plain fix-to-fix tracking continues.
+    }
     _scheduleMidnightRollover();
+    _startPersistTimer();
     return true;
   }
 
@@ -136,12 +187,12 @@ class GpsTrackerService {
   /// to zero; the next [start] re-seeds them from the store.
   Future<void> stop() async {
     final bool hasAnything =
-        _tracking || _last != null || _dayKm > 0 || _dayMaxKmh > 0;
+        _tracking || _dirty || _dayKm > 0 || _dayMaxKmh > 0;
     _tracking = false;
-    _midnightTimer?.cancel();
-    _midnightTimer = null;
+    _cancelTimers();
     await _subscription?.cancel();
     _subscription = null;
+    await _motion.stop();
     _notify();
     if (!hasAnything) return;
     await _saveDay(_day);
@@ -152,7 +203,8 @@ class GpsTrackerService {
   ///
   /// Each accepted fix is written to local storage straight away (best effort)
   /// and announced on [changes], so a crash loses at most one fix and the UI
-  /// never shows stale numbers.
+  /// never shows stale numbers. While tracking, a periodic flush also runs
+  /// (see [persistInterval]) so a long outage cannot stall persistence.
   void recordPosition(Position position) {
     // Only trust fixes with a real accuracy measurement that is good enough.
     if (!position.hasAccuracy || position.accuracy > maxAccuracyMeters) return;
@@ -165,41 +217,86 @@ class GpsTrackerService {
       final DailyGpsSummary? stored = dailyStore.summaryFor(_day);
       _dayKm = stored?.totalKm ?? 0;
       _dayMaxKmh = stored?.maxSpeedKmh ?? 0;
+      _restoreLastPoint(stored);
     }
 
-    _currentKmh = position.hasSpeed
-        ? math.max(0, position.speed * 3.6)
-        : 0;
-
-    final Position? last = _last;
-    _last = position;
-    if (last == null) {
-      // First fix of this run: nothing to accumulate distance against, but the
-      // speed still counts towards the day's maximum.
-      _dayMaxKmh = math.max(_dayMaxKmh, _currentKmh);
-      unawaited(_persistSafely());
-      _notify();
-      return;
+    // Doppler speed, with impossible spikes (a GPS glitch reports hundreds of
+    // km/h in a stationary car) ignored rather than trusted.
+    final double reportedKmh =
+        position.hasSpeed ? math.max(0, position.speed * 3.6) : 0;
+    final bool speedPlausible = reportedKmh <= maxPlausibleSpeedKmh;
+    if (speedPlausible) {
+      _currentKmh = reportedKmh;
+    }
+    // Every fix also fuses its speed as movement evidence for the bridge.
+    if (position.hasSpeed) {
+      _motion.observeSpeed(position.speed);
     }
 
-    // A long silence (device parked, OS suspended us, app restored from the
-    // background) is not travel: keep the speed but drop the jump.
-    final bool withinTrip =
-        position.timestamp.difference(last.timestamp).abs() <= maxFixGap;
-    if (withinTrip) {
+    final DateTime? lastAt = _lastAt;
+    final double lastLat = _lastLat;
+    final double lastLon = _lastLon;
+    _lastAt = position.timestamp;
+    _lastLat = position.latitude;
+    _lastLon = position.longitude;
+    _dirty = true;
+
+    if (lastAt != null) {
+      final Duration gap = position.timestamp.difference(lastAt).abs();
       final double stepKm = distanceKmBetween(
-        last.latitude,
-        last.longitude,
+        lastLat,
+        lastLon,
         position.latitude,
         position.longitude,
       );
-      if (stepKm * 1000 >= minStepMeters) {
+      if (stepKm * 1000 >= minStepMeters &&
+          _countsAsTravel(stepKm, gap, lastAt)) {
         _dayKm += stepKm;
       }
     }
-    _dayMaxKmh = math.max(_dayMaxKmh, _currentKmh);
+
+    if (speedPlausible) {
+      _dayMaxKmh = math.max(_dayMaxKmh, _currentKmh);
+    }
     unawaited(_persistSafely());
     _notify();
+  }
+
+  /// Whether the geometric step between the last accepted fix and this one is
+  /// travel that belongs in today's total.
+  ///
+  /// * A physically impossible step (one implying a speed above
+  ///   [maxPlausibleSpeedKmh]) is a GPS jump, never travel.
+  /// * A gap within [maxFixGap] is normal sampling — the fix-to-fix distance
+  ///   already bridges short tunnel outages, because the session is never
+  ///   paused or reset while the stream is silent.
+  /// * A longer gap is a real outage and is bridged only up to [maxBridgedGap]
+  ///   and only when the motion signal saw the device moving after [since].
+  bool _countsAsTravel(double stepKm, Duration gap, DateTime since) {
+    if (gap >= minSpeedSampleWindow) {
+      final double impliedKmh = stepKm / (gap.inMilliseconds / 3600000.0);
+      if (!impliedKmh.isFinite || impliedKmh > maxPlausibleSpeedKmh) {
+        return false;
+      }
+    }
+    if (gap <= maxFixGap) return true;
+    if (gap > maxBridgedGap) return false;
+    final DateTime? motionAt = _motion.lastMotionAt;
+    return motionAt != null && motionAt.isAfter(since);
+  }
+
+  /// Re-seeds the last accepted fix from [stored] so a restarted service can
+  /// resume an in-progress trip instead of starting the next fix from scratch.
+  /// A live fix always wins.
+  void _restoreLastPoint(DailyGpsSummary? stored) {
+    if (_lastAt != null) return;
+    final double? lat = stored?.lastLatitude;
+    final double? lon = stored?.lastLongitude;
+    final DateTime? at = stored?.lastFixAt;
+    if (lat == null || lon == null || at == null) return;
+    _lastLat = lat;
+    _lastLon = lon;
+    _lastAt = at;
   }
 
   /// Never throws: a failed write must not take down the position listener.
@@ -232,6 +329,23 @@ class GpsTrackerService {
     );
   }
 
+  /// Flushes the day's metrics on a fixed cadence while tracking, so an app
+  /// kill (or a battery pull) between fixes loses seconds of travel at most.
+  void _startPersistTimer() {
+    _persistTimer?.cancel();
+    _persistTimer = Timer.periodic(flushEvery, (_) {
+      if (!_dirty) return;
+      unawaited(_persistSafely());
+    });
+  }
+
+  void _cancelTimers() {
+    _midnightTimer?.cancel();
+    _midnightTimer = null;
+    _persistTimer?.cancel();
+    _persistTimer = null;
+  }
+
   /// Finalises the finished day and zeroes the counters for the new one.
   Future<void> _midnightRollover() async {
     final DateTime today = DailyGpsSummary.dayOf(DateTime.now());
@@ -249,7 +363,7 @@ class GpsTrackerService {
   /// fresh service's zeroes).
   Future<void> _rolloverTo(DateTime newDay) async {
     final bool hasLiveSession =
-        _tracking || _last != null || _dayKm > 0 || _dayMaxKmh > 0;
+        _tracking || _dirty || _dayKm > 0 || _dayMaxKmh > 0;
     if (hasLiveSession) {
       await _persistSafely(); // Best effort: never breaks the rollover.
     }
@@ -257,15 +371,20 @@ class GpsTrackerService {
     final DailyGpsSummary? stored = dailyStore.summaryFor(newDay);
     _dayKm = stored?.totalKm ?? 0;
     _dayMaxKmh = stored?.maxSpeedKmh ?? 0;
+    _restoreLastPoint(stored);
     _currentKmh = 0;
   }
 
   Future<void> _saveDay(DateTime day) {
+    final DateTime? lastAt = _lastAt;
     return dailyStore.save(
       DailyGpsSummary(
         date: day,
         totalKm: _dayKm,
         maxSpeedKmh: _dayMaxKmh,
+        lastLatitude: lastAt == null ? null : _lastLat,
+        lastLongitude: lastAt == null ? null : _lastLon,
+        lastFixAt: lastAt,
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 
 /// Result of a location request.
@@ -69,10 +70,31 @@ class LocationService {
 
   /// The stream settings every long-running tracker uses: best-available
   /// accuracy with a 10 m movement filter.
-  static const LocationSettings trackingLocationSettings = LocationSettings(
-    accuracy: LocationAccuracy.high,
-    distanceFilter: trackingDistanceFilterMeters,
-  );
+  ///
+  /// On Android this is [AndroidSettings] with `forceLocationManager: false`,
+  /// i.e. the **Fused Location Provider** (`FusedLocationProviderClient`) rather
+  /// than the raw `LocationManager`. The fused provider is the sensor-fusion
+  /// layer: it combines GPS, Wi-Fi, cell-tower and on-device motion/sensor
+  /// inputs, so while the GPS signal is obstructed (tunnel, dense city, indoor
+  /// car park) it still produces fixes from Wi-Fi/cell/sensors instead of
+  /// going silent. `intervalDuration` pins the fused request interval to 5 s
+  /// (the plugin's own default, made explicit here) and `distanceFilter` keeps
+  /// the 10 m movement threshold.
+  ///
+  /// Everywhere else (iOS CoreLocation fuses internally by default too) the
+  /// plain high-accuracy settings apply.
+  static final LocationSettings trackingLocationSettings =
+      defaultTargetPlatform == TargetPlatform.android
+          ? AndroidSettings(
+              accuracy: LocationAccuracy.high,
+              distanceFilter: trackingDistanceFilterMeters,
+              forceLocationManager: false,
+              intervalDuration: const Duration(seconds: 5),
+            )
+          : const LocationSettings(
+              accuracy: LocationAccuracy.high,
+              distanceFilter: trackingDistanceFilterMeters,
+            );
 
   /// Raw position stream (default settings: [trackingLocationSettings]).
   ///

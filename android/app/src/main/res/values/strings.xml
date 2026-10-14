@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Foreground-service notification shown while a daily GPS tracker runs. -->
-    <string name="tracking_notification_title">MapNote</string>
-    <string name="tracking_notification_text">Recording today\'s distance and max speed</string>
+    <!-- Foreground-service notification shown while a daily GPS tracker runs.
+         Rendered as a compact single line (see notification_tracking_compact.xml). -->
+    <string name="tracking_notification_title">AutoMotion Active</string>
+    <string name="tracking_notification_text">Tracking distance &amp; speed</string>
     <string name="tracking_channel_name">Location tracking</string>
-    <string name="tracking_channel_description">Active while AutoMotion or daily GPS tracking is on.</string>
+    <string name="tracking_channel_description">Silent notification shown while AutoMotion or daily GPS tracking is on.</string>
 </resources>

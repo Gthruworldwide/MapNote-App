@@ -329,6 +329,7 @@
   "accountAndBackup": "Account & Cloud Backup",
   "sectionLocationTracking": "Location & Tracking",
   "aboutTitle": "About MapNote",
+  "compassTitle": "Compass",
   "mapPreview": "Map preview",
   "enableLocationForRoute": "Turn on location to see your distance"
 }
