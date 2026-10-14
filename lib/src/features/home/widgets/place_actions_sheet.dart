@@ -270,7 +270,10 @@ class _ActionTile extends StatelessWidget {
     return ListTile(
       leading: Icon(icon),
       title: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
-      onTap: onTap,
+      onTap: () {
+        Haptics.light();
+        onTap();
+      },
     );
   }
 }

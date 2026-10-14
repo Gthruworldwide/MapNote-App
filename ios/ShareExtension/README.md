@@ -1,6 +1,6 @@
-# iOS Share Extension (RouteNote)
+# iOS Share Extension (MapNote)
 
-RouteNote already handles shared text/links on the Dart side (see
+MapNote already handles shared text/links on the Dart side (see
 `lib/src/services/share_intent_service.dart`) and its `ios/Runner/Info.plist`
 declares the `ShareMedia-$(PRODUCT_BUNDLE_IDENTIFIER)` URL scheme. iOS,
 however, requires a real **Share Extension target** for the app to appear in the
@@ -39,7 +39,7 @@ package. Follow its guide for the current version if anything below drifts.
 
 ## Notes
 
-- Only text and web URLs are activated, which is all RouteNote needs for
+- Only text and web URLs are activated, which is all MapNote needs for
   "share a location".
 - The `ShareMedia-$(PRODUCT_BUNDLE_IDENTIFIER)` scheme in `Runner/Info.plist`
   is what lets the extension hand the payload back to the main app.

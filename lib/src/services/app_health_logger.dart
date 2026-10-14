@@ -336,7 +336,7 @@ class AppHealthLogger {
         )
         .catchError((Object error, StackTrace stackTrace) {
           if (kDebugMode) {
-            debugPrint('RouteNote health log persist failed: $error');
+            debugPrint('MapNote health log persist failed: $error');
           }
         });
   }

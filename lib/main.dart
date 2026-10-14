@@ -18,7 +18,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // --- Firebase (Crashlytics + Analytics) ------------------------------------
-  // Best-effort: RouteNote is offline-first, so a missing or incomplete
+  // Best-effort: MapNote is offline-first, so a missing or incomplete
   // google-services.json must never stop the app from launching. Crashlytics is
   // only used once init succeeded.
   bool crashlyticsReady = false;
@@ -74,7 +74,7 @@ Future<void> main() async {
   runApp(
     ProviderScope(
       overrides: [hiveDatabaseProvider.overrideWithValue(database)],
-      child: const RouteNoteApp(),
+      child: const MapNoteApp(),
     ),
   );
 

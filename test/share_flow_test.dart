@@ -88,7 +88,7 @@ void main() {
           // See widget_test.dart: avoid real Hive writes inside FakeAsync.
           appHealthLoggerProvider.overrideWithValue(AppHealthLogger(null)),
         ],
-        child: const RouteNoteApp(),
+        child: const MapNoteApp(),
       ),
     );
     await tester.pumpAndSettle();

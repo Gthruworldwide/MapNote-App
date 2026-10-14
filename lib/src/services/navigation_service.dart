@@ -4,7 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../core/config/preferred_nav_app.dart';
 
 /// Delegates navigation to installed maps apps via intents / deep links
-/// (`url_launcher`). RouteNote deliberately has no in-app turn-by-turn engine.
+/// (`url_launcher`). MapNote deliberately has no in-app turn-by-turn engine.
 class NavigationService {
   const NavigationService({this.preferredApp = PreferredNavApp.system});
 

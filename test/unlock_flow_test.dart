@@ -154,7 +154,7 @@ void main() {
             PlaceRepository(dataSource),
           ),
         ],
-        child: const RouteNoteApp(),
+        child: const MapNoteApp(),
       ),
     );
     await tester.pumpAndSettle();

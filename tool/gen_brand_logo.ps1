@@ -1,30 +1,32 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    RouteNote brand-logo asset generator (vector mark + wordmark).
+    MapNote brand-mark asset generator (vector mark).
 
 .DESCRIPTION
-    The app renders the RouteNote lockup from *vector* assets, and the cold-start
-    splash animates the two halves independently, so the Figma lockup is split
-    into two SVGs:
+    The app renders the MapNote lockup from *vector* assets, and the cold-start
+    splash animates the two halves independently. This script regenerates the
+    mark half from the canonical Figma export:
 
         Brand mark / Location + Notebook  ->  assets/brand/route_note_mark.svg
-        RouteNote / Wordmark              ->  assets/brand/route_note_wordmark.svg
 
-    Both are derived from the canonical Figma export
-    assets/brand/src/figma_lockup_horizontal_light.svg. Its frame is 415x176 and
-    holds exactly those two layers, with ink boxes of:
+    The wordmark half (assets/brand/route_note_wordmark.svg) is *not* produced
+    here: the Figma source still spells the old wordmark, so the "MapNote"
+    wordmark is generated from the bundled Manrope font instead - run
+    `node tool/gen_wordmark.js` (see that file) to regenerate it. Keeping the two
+    generators separate means re-running this script can never silently revert
+    the wordmark.
+
+    The mark comes from assets/brand/src/figma_lockup_horizontal_light.svg. Its
+    frame is 415x176 and holds two layers; the mark's own ink box is:
 
         mark      x[ 32.000 .. 109.538]  y[ 32.000 .. 144.000]
-        wordmark  x[136.898 .. 380.5  ]  y[ 71.440 .. 106.720]
 
-    Each part is cropped to the shared vertical band 31.500 .. 144.500 (the
-    mark's box grown by a 0.5 unit bleed) plus its own horizontal band, also
-    with a 0.5 unit bleed, so both assets are exactly 113 units tall and the
-    horizontal gap between them is 26 units:
+    It is cropped to the shared vertical band 31.500 .. 144.500 (the mark's box
+    grown by a 0.5 unit bleed) plus its own horizontal band, also with a 0.5
+    unit bleed, so the asset is exactly 113 units tall:
 
         mark      viewBox "31.5  31.5  78.5 113"
-        wordmark  viewBox "136.0 31.5 245.0 113"
 
     lib/src/core/brand/brand_lockup.dart repeats those numbers as layout
     constants - keep the two in step.
@@ -56,15 +58,12 @@ $bandTop       = 31.5
 $bandHeight    = 113.0
 $markLeft      = 31.5
 $markWidth     = 78.5
-$wordmarkLeft  = 136.0
-$wordmarkWidth = 245.0
 
 if (-not (Test-Path -LiteralPath $source)) { throw "Missing Figma source: $source" }
 
 # --- split the Figma export into its two layers -----------------------------
 
 $markPaths     = New-Object 'System.Collections.Generic.List[string]'
-$wordmarkPaths = New-Object 'System.Collections.Generic.List[string]'
 $chevronD      = $null
 $chevronWidth  = $null
 $group         = $null
@@ -90,16 +89,12 @@ foreach ($line in (Get-Content -LiteralPath $source)) {
     if ($group -eq 'Brand mark / Location + Notebook') {
         $markPaths.Add($line.Trim())
     }
-    elseif ($group -eq 'RouteNote / Wordmark') {
-        $wordmarkPaths.Add($line.Trim())
-    }
 }
 
 if ($markPaths.Count -eq 0) { throw "No mark paths found in $source" }
-if ($wordmarkPaths.Count -eq 0) { throw "No wordmark paths found in $source" }
 if (-not $chevronD) { throw "No chevron stroke found in $source" }
 
-# --- emit the two runtime assets -------------------------------------------
+# --- emit the runtime asset --------------------------------------------------
 
 $mark = New-Object 'System.Collections.Generic.List[string]'
 $mark.Add(('<svg width="{0}" height="{1}" viewBox="{2} {3} {0} {1}" fill="none" xmlns="http://www.w3.org/2000/svg">' -f $markWidth, $bandHeight, $markLeft, $bandTop))
@@ -114,22 +109,12 @@ foreach ($path in $markPaths) { $mark.Add('    ' + $path) }
 $mark.Add('  </g>')
 $mark.Add('</svg>')
 
-$wordmark = New-Object 'System.Collections.Generic.List[string]'
-$wordmark.Add(('<svg width="{0}" height="{1}" viewBox="{2} {3} {0} {1}" fill="none" xmlns="http://www.w3.org/2000/svg">' -f $wordmarkWidth, $bandHeight, $wordmarkLeft, $bandTop))
-$wordmark.Add('  <g>')
-foreach ($path in $wordmarkPaths) { $wordmark.Add('    ' + $path) }
-$wordmark.Add('  </g>')
-$wordmark.Add('</svg>')
-
 # UTF-8 without a BOM: an XML BOM trips up some SVG consumers.
 $utf8 = New-Object System.Text.UTF8Encoding($false)
 $markFile = Join-Path $brandDir 'route_note_mark.svg'
-$wordmarkFile = Join-Path $brandDir 'route_note_wordmark.svg'
 [System.IO.File]::WriteAllLines($markFile, $mark, $utf8)
-[System.IO.File]::WriteAllLines($wordmarkFile, $wordmark, $utf8)
 
-Write-Host 'RouteNote brand assets'
+Write-Host 'MapNote brand mark'
 Write-Host ('  {0,-26} {1} paths   viewBox {2} {3} {4} {5}' -f 'route_note_mark.svg', $markPaths.Count, $markLeft, $bandTop, $markWidth, $bandHeight)
-Write-Host ('  {0,-26} {1} paths   viewBox {2} {3} {4} {5}' -f 'route_note_wordmark.svg', $wordmarkPaths.Count, $wordmarkLeft, $bandTop, $wordmarkWidth, $bandHeight)
-Write-Host ('  lockup: {0} x {1} units, gap {2}' -f ($markWidth + 26 + $wordmarkWidth), $bandHeight, 26)
+Write-Host '  (the "MapNote" wordmark is generated separately: node tool/gen_wordmark.js)'
 Write-Host 'Done.'

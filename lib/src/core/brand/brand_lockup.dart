@@ -3,7 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import 'brand_assets.dart';
 
-/// The RouteNote location-pin mark as vector, at an explicit size.
+/// The MapNote location-pin mark as vector, at an explicit size.
 class BrandMark extends StatelessWidget {
   const BrandMark({super.key, required this.width, required this.height});
 
@@ -16,7 +16,7 @@ class BrandMark extends StatelessWidget {
   }
 }
 
-/// The "RouteNote" wordmark as vector, at an explicit size.
+/// The "MapNote" wordmark as vector, at an explicit size.
 class BrandWordmark extends StatelessWidget {
   const BrandWordmark({super.key, required this.width, required this.height});
 
@@ -29,8 +29,9 @@ class BrandWordmark extends StatelessWidget {
   }
 }
 
-/// The horizontal RouteNote lockup: mark left, wordmark right, laid out with the
-/// exact geometry of the Figma frame (viewBox 415x176).
+/// The horizontal MapNote lockup: mark left, wordmark right, laid out from the
+/// brand geometry - the mark's Figma frame (415x176) plus the MapNote
+/// wordmark's own ink box.
 ///
 /// [width] is the lockup's *ink* width - the assets are cropped to their ink
 /// boxes - and the height follows from the design ratio. [markWrapper] and
@@ -60,7 +61,7 @@ class BrandLockup extends StatelessWidget {
   static const double markWidth = 78.5;
   static const double markHeight = 113;
   static const double gap = 26;
-  static const double wordmarkWidth = 245;
+  static const double wordmarkWidth = 205.5;
 
   /// Ink width / height of the whole lockup, in Figma user units.
   static const double designWidth = markWidth + gap + wordmarkWidth;

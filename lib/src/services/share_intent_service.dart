@@ -1,10 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 
-/// Bridges the platform "share" sheet into RouteNote.
+/// Bridges the platform "share" sheet into MapNote.
 ///
 /// Other apps (Google Maps, WhatsApp, browsers, ...) can share plain text or
-/// links with RouteNote; those arrive here as raw strings for
+/// links with MapNote; those arrive here as raw strings for
 /// `LocationParser` to interpret.
 class ShareIntentService {
   const ShareIntentService();

@@ -9,6 +9,7 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../providers/app_providers.dart';
 import '../../services/lock_gate.dart';
 import '../add_place/add_place_screen.dart';
+import 'widgets/route_preview_card.dart';
 
 /// Shows a saved location with navigation, copy, edit and delete actions.
 class PlaceDetailScreen extends ConsumerWidget {
@@ -60,17 +61,29 @@ class PlaceDetailScreen extends ConsumerWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: <Widget>[
+        // Interactive, offline route preview: current position → saved place,
+        // with the estimated distance. The primary Navigate action sits
+        // directly below it.
+        RoutePreviewCard(place: place),
+        const SizedBox(height: 20),
         Card(
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Text(place.name, style: theme.textTheme.headlineSmall),
+                Text(
+                  place.name,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.headlineSmall,
+                ),
                 if (place.notes.trim().isNotEmpty) ...<Widget>[
                   const SizedBox(height: 8),
                   Text(
                     place.notes,
+                    maxLines: 4,
+                    overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.bodyLarge?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
@@ -286,6 +299,7 @@ class PlaceDetailScreen extends ConsumerWidget {
     AppLocalizations l10n,
     Place place,
   ) async {
+    Haptics.light();
     final bool? confirmed = await showDialog<bool>(
       context: context,
       builder: (BuildContext dialogContext) => AlertDialog(

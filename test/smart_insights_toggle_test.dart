@@ -71,7 +71,7 @@ void main() {
           // The agent health log must stay in-memory inside the FakeAsync zone.
           appHealthLoggerProvider.overrideWithValue(AppHealthLogger(null)),
         ],
-        child: const RouteNoteApp(),
+        child: const MapNoteApp(),
       ),
     );
     await tester.pumpAndSettle();

@@ -27,7 +27,7 @@ class GoogleAuthService implements AuthService {
       _initialized = true;
     } on GoogleSignInException catch (e) {
       debugPrint(
-        'RouteNote GoogleSignIn.initialize failed: '
+        'MapNote GoogleSignIn.initialize failed: '
         'code=${e.code.name} description=${e.description}',
       );
       rethrow;
@@ -68,7 +68,7 @@ class GoogleAuthService implements AuthService {
       return _user;
     } on GoogleSignInException catch (e) {
       debugPrint(
-        'RouteNote GoogleSignIn.signInSilently failed: '
+        'MapNote GoogleSignIn.signInSilently failed: '
         'code=${e.code.name} description=${e.description}',
       );
       return null;
@@ -84,7 +84,7 @@ class GoogleAuthService implements AuthService {
       );
     } on GoogleSignInException catch (e) {
       debugPrint(
-        'RouteNote Drive token validation failed: '
+        'MapNote Drive token validation failed: '
         'code=${e.code.name} description=${e.description}',
       );
     }
@@ -102,7 +102,7 @@ class GoogleAuthService implements AuthService {
       return _user!;
     } on GoogleSignInException catch (e) {
       debugPrint(
-        'RouteNote GoogleSignIn.signIn failed: '
+        'MapNote GoogleSignIn.signIn failed: '
         'code=${e.code.name} description=${e.description}',
       );
       throw AuthException('${e.code.name}: ${e.description ?? ''}'.trim());

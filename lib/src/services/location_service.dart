@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:math' as math;
+
 import 'package:geolocator/geolocator.dart';
 
 /// Result of a location request.
@@ -59,6 +62,42 @@ class LocationStatus {
 class LocationService {
   const LocationService();
 
+  /// Horizontal distance, in metres, a device must move between two fixes of
+  /// [positionStream]. 10 m is coarse enough to keep the GPS duty cycle (and
+  /// therefore the battery) sane while still resolving a street-level path.
+  static const int trackingDistanceFilterMeters = 10;
+
+  /// The stream settings every long-running tracker uses: best-available
+  /// accuracy with a 10 m movement filter.
+  static const LocationSettings trackingLocationSettings = LocationSettings(
+    accuracy: LocationAccuracy.high,
+    distanceFilter: trackingDistanceFilterMeters,
+  );
+
+  /// Raw position stream (default settings: [trackingLocationSettings]).
+  ///
+  /// Use [trackingPositionStream] when the stream has to survive platform
+  /// failures — this raw stream closes for good when it errors.
+  Stream<Position> positionStream({LocationSettings? settings}) =>
+      Geolocator.getPositionStream(
+        locationSettings: settings ?? trackingLocationSettings,
+      );
+
+  /// The stream the daily trackers subscribe to: [positionStream] wrapped in
+  /// [reconnectingPositionStream], so a dropped or closed platform stream is
+  /// re-opened with capped backoff instead of silently freezing tracking.
+  ///
+  /// [onError] reports every failure that triggered a reconnect (never called
+  /// for fixes that were merely rejected by the accumulator's noise filters).
+  Stream<Position> trackingPositionStream({
+    LocationSettings? settings,
+    void Function(Object error, StackTrace stackTrace)? onError,
+  }) =>
+      reconnectingPositionStream(
+        () => positionStream(settings: settings),
+        onError: onError,
+      );
+
   Future<LocationResult> determinePosition() async {
     if (!await Geolocator.isLocationServiceEnabled()) {
       return const LocationServiceDisabled();
@@ -105,4 +144,113 @@ class LocationService {
   Future<bool> openAppSettings() => Geolocator.openAppSettings();
 
   Future<bool> openLocationSettings() => Geolocator.openLocationSettings();
+}
+
+/// Wraps [open] in a stream that survives the source failing.
+///
+/// `geolocator`'s stream can deliver an error and then close — the fused
+/// location provider restarts, the OS reclaims the receiver, the app gets
+/// throttled. The subscription then stays "open" while never delivering another
+/// fix, so tracking *looks* alive and records nothing. Every failure (an error
+/// **or** an unexpected completion) is reported through [onError] and re-opens
+/// the source with exponential backoff capped at [maxBackoff]; one real fix
+/// resets the backoff. Cancelling the returned stream cancels the pending
+/// reconnect too, so a test never leaks a timer.
+Stream<Position> reconnectingPositionStream(
+  Stream<Position> Function() open, {
+  Duration initialBackoff = const Duration(seconds: 2),
+  Duration maxBackoff = const Duration(minutes: 1),
+  void Function(Object error, StackTrace stackTrace)? onError,
+}) {
+  final _PositionReconnector reconnector = _PositionReconnector(
+    open: open,
+    initialBackoff: initialBackoff,
+    maxBackoff: maxBackoff,
+    onError: onError,
+  );
+
+  final StreamController<Position> controller = StreamController<Position>(
+    onListen: reconnector.connect,
+    onCancel: reconnector.cancel,
+  );
+  reconnector.sink = controller;
+  return controller.stream;
+}
+
+/// Owns one [reconnectingPositionStream] subscription: its backoff timer, the
+/// current inner subscription, and the teardown that stops both.
+class _PositionReconnector {
+  _PositionReconnector({
+    required this.open,
+    required this.initialBackoff,
+    required this.maxBackoff,
+    required this.onError,
+  });
+
+  final Stream<Position> Function() open;
+  final Duration initialBackoff;
+  final Duration maxBackoff;
+  final void Function(Object error, StackTrace stackTrace)? onError;
+
+  /// The outer controller this reconnector feeds; assigned right after the
+  /// controller is constructed (its `onListen` needs [connect]).
+  late final StreamController<Position> sink;
+
+  StreamSubscription<Position>? _subscription;
+  Timer? _reconnectTimer;
+  int _attempt = 0;
+  bool _cancelled = false;
+
+  /// Opens the source. Any synchronous failure counts as a failure too.
+  void connect() {
+    _reconnectTimer = null;
+    if (sink.isClosed || _cancelled) return;
+    try {
+      _subscription = open().listen(
+        (Position position) {
+          // A real fix proves the channel is healthy: restart the backoff so
+          // the next hiccup reconnects quickly instead of waiting a minute.
+          _attempt = 0;
+          sink.add(position);
+        },
+        onError: (Object error, StackTrace stackTrace) {
+          onError?.call(error, stackTrace);
+          scheduleReconnect();
+        },
+        // A stream that simply ended is just as dead as one that errored.
+        onDone: scheduleReconnect,
+        cancelOnError: true,
+      );
+    } catch (error, stackTrace) {
+      onError?.call(error, stackTrace);
+      scheduleReconnect();
+    }
+  }
+
+  /// Cancels the dead subscription and re-opens the source after a delay.
+  void scheduleReconnect() {
+    if (sink.isClosed) return;
+    _attempt += 1;
+    // 2s, 4s, 8s, 16s, 32s, then the 1 minute ceiling.
+    final int factor = 1 << (_attempt < 6 ? _attempt - 1 : 5);
+    final int delayMs = math.min<int>(
+      initialBackoff.inMilliseconds * factor,
+      maxBackoff.inMilliseconds,
+    );
+    _reconnectTimer?.cancel();
+    unawaited(_subscription?.cancel());
+    _subscription = null;
+    _reconnectTimer = Timer(Duration(milliseconds: delayMs), connect);
+  }
+
+  /// Tears everything down; called when the tracker unsubscribes.
+  Future<void> cancel() async {
+    _cancelled = true;
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
+    _attempt = 0;
+    final StreamSubscription<Position>? subscription = _subscription;
+    _subscription = null;
+    await subscription?.cancel();
+  }
 }

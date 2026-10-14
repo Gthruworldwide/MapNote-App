@@ -146,7 +146,7 @@ void main() {
           if (motion != null)
             autoMotionServiceProvider.overrideWithValue(motion),
         ],
-        child: const RouteNoteApp(),
+        child: const MapNoteApp(),
       ),
     );
     await tester.pumpAndSettle();

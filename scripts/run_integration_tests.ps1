@@ -1,11 +1,11 @@
-# Runs RouteNote's end-to-end integration tests (integration_test/app_test.dart).
+# Runs MapNote's end-to-end integration tests (integration_test/app_test.dart).
 #
 # Integration tests build, install and drive the real app, so they need a
 # connected Android device or a running emulator (unlike `flutter test`, which
 # runs the unit/widget tests on the host). The test stubs the external platform
 # channels (Google sign-in, biometrics, geolocator) so the flows are repeatable.
 #
-# NOTE: RouteNote's launcher role lives on an <activity-alias> (the dynamic
+# NOTE: MapNote's launcher role lives on an <activity-alias> (the dynamic
 # light/dark icon). `flutter test` only scans <activity> elements of the *source*
 # manifest and would fail with "package identifier or launch activity not
 # found"; when the debug APK already exists it reads the launch activity from

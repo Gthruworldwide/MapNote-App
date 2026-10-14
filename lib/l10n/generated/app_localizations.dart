@@ -1309,6 +1309,150 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sync now'**
   String get insightActionSyncNow;
+
+  /// No description provided for @coordinateDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Latitude & longitude'**
+  String get coordinateDetails;
+
+  /// No description provided for @aiSmartPasteTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'AI Smart Paste'**
+  String get aiSmartPasteTooltip;
+
+  /// No description provided for @categoryWork.
+  ///
+  /// In en, this message translates to:
+  /// **'Work'**
+  String get categoryWork;
+
+  /// No description provided for @categoryHome.
+  ///
+  /// In en, this message translates to:
+  /// **'Home'**
+  String get categoryHome;
+
+  /// No description provided for @categorySchool.
+  ///
+  /// In en, this message translates to:
+  /// **'School'**
+  String get categorySchool;
+
+  /// No description provided for @categoryPersonal.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal'**
+  String get categoryPersonal;
+
+  /// No description provided for @plusCodeDetected.
+  ///
+  /// In en, this message translates to:
+  /// **'Plus Code detected in the clipboard'**
+  String get plusCodeDetected;
+
+  /// No description provided for @plusCodeImport.
+  ///
+  /// In en, this message translates to:
+  /// **'Import'**
+  String get plusCodeImport;
+
+  /// No description provided for @plusCodeInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid Plus Code'**
+  String get plusCodeInvalid;
+
+  /// No description provided for @plusCodeOrCoordinatesRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a Plus Code, or latitude and longitude'**
+  String get plusCodeOrCoordinatesRequired;
+
+  /// No description provided for @plusCodeShortNeedsReference.
+  ///
+  /// In en, this message translates to:
+  /// **'This short Plus Code needs a nearby location. Enable GPS, or paste the full code.'**
+  String get plusCodeShortNeedsReference;
+
+  /// No description provided for @foundPlace.
+  ///
+  /// In en, this message translates to:
+  /// **'Found: {name}'**
+  String foundPlace(String name);
+
+  /// No description provided for @autoFillNameNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-fill Name & Notes'**
+  String get autoFillNameNotes;
+
+  /// No description provided for @dismissSuggestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss suggestion'**
+  String get dismissSuggestion;
+
+  /// No description provided for @suggestionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Nearby place'**
+  String get suggestionTitle;
+
+  /// No description provided for @routePreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Route preview'**
+  String get routePreview;
+
+  /// No description provided for @currentLocationMarker.
+  ///
+  /// In en, this message translates to:
+  /// **'Current location'**
+  String get currentLocationMarker;
+
+  /// No description provided for @savedLocationMarker.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved place'**
+  String get savedLocationMarker;
+
+  /// No description provided for @distanceAway.
+  ///
+  /// In en, this message translates to:
+  /// **'{distance} away'**
+  String distanceAway(String distance);
+
+  /// No description provided for @accountAndBackup.
+  ///
+  /// In en, this message translates to:
+  /// **'Account & Cloud Backup'**
+  String get accountAndBackup;
+
+  /// No description provided for @sectionLocationTracking.
+  ///
+  /// In en, this message translates to:
+  /// **'Location & Tracking'**
+  String get sectionLocationTracking;
+
+  /// No description provided for @aboutTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'About MapNote'**
+  String get aboutTitle;
+
+  /// No description provided for @mapPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Map preview'**
+  String get mapPreview;
+
+  /// No description provided for @enableLocationForRoute.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on location to see your distance'**
+  String get enableLocationForRoute;
 }
 
 class _AppLocalizationsDelegate

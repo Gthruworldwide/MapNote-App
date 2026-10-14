@@ -26,13 +26,16 @@ import '../services/auto_motion_service.dart';
 import '../services/background_sync_scheduler.dart';
 import '../services/biometric_service.dart';
 import '../services/dynamic_icon_service.dart';
+import '../services/foreground_tracking_service.dart';
 import '../services/gemini_client.dart';
+import '../services/geocoding_service.dart';
 import '../services/gps_tracker_service.dart';
 import '../services/home_shortcut_service.dart';
 import '../services/local_insight_engine.dart';
 import '../services/location_service.dart';
 import '../services/navigation_service.dart';
 import '../services/share_intent_service.dart';
+import '../services/smart_clipboard_service.dart';
 
 // ---------------------------------------------------------------------------
 // Storage & repositories
@@ -98,6 +101,13 @@ final Provider<AutoMotionService> autoMotionServiceProvider =
       );
     });
 
+/// Android foreground service + runtime permissions that keep the daily
+/// trackers alive while MapNote is backgrounded.
+final Provider<ForegroundTrackingService> foregroundTrackingServiceProvider =
+    Provider<ForegroundTrackingService>(
+  (Ref ref) => ForegroundTrackingService(),
+);
+
 final Provider<NavigationService> navigationServiceProvider =
     Provider<NavigationService>((Ref ref) {
       // Rebuilt whenever the preferred-app setting changes, so every
@@ -109,6 +119,17 @@ final Provider<NavigationService> navigationServiceProvider =
 
 final Provider<ShareIntentService> shareIntentServiceProvider =
     Provider<ShareIntentService>((Ref ref) => const ShareIntentService());
+
+/// Spots raw Plus Codes in the clipboard so the app can offer a one-tap import.
+final Provider<SmartClipboardService> smartClipboardServiceProvider =
+    Provider<SmartClipboardService>((Ref ref) => const SmartClipboardService());
+
+/// Reverse/forward geocoding used to suggest a name and notes for a location.
+///
+/// Constructed lazily and best-effort: [GeocodingService] never touches the
+/// platform geocoder until it is asked to, and returns `null` offline.
+final Provider<GeocodingService> geocodingServiceProvider =
+    Provider<GeocodingService>((Ref ref) => GeocodingService());
 
 final Provider<BiometricService> biometricServiceProvider =
     Provider<BiometricService>((Ref ref) => const BiometricService());
@@ -425,7 +446,7 @@ class AuthNotifier extends AsyncNotifier<AuthUser?> {
     }
     final Object? error = state.error;
     if (error != null) {
-      debugPrint('RouteNote sign-in error: $error');
+      debugPrint('MapNote sign-in error: $error');
     }
   }
 
@@ -889,6 +910,18 @@ class GpsTrackingController extends Notifier<GpsTrackingState> {
         // Best-effort persistence on disposal.
       }
     });
+    // Real-time readout: every accepted fix (and the midnight rollover) lands
+    // here, so distance / max speed move while tracking instead of only when
+    // the toggle is flipped.
+    final StreamSubscription<void> updates = tracker.changes.listen((_) {
+      if (!ref.mounted) return;
+      state = _snapshot(
+        tracker,
+        enabled: enabled,
+        active: tracker.isTracking,
+      ).copyWith(unavailable: state.unavailable);
+    });
+    ref.onDispose(updates.cancel);
     if (enabled) {
       scheduleMicrotask(start);
     } else {
@@ -906,6 +939,7 @@ class GpsTrackingController extends Notifier<GpsTrackingState> {
     if (!ref.mounted) return;
     state = _snapshot(tracker, enabled: true, active: started)
         .copyWith(unavailable: !started);
+    await _syncForegroundTracking();
   }
 
   /// Stops the tracker and persists today's summary (toggle turned off).
@@ -914,6 +948,18 @@ class GpsTrackingController extends Notifier<GpsTrackingState> {
     await tracker.stop();
     if (!ref.mounted) return;
     state = _snapshot(tracker, enabled: false);
+    await _syncForegroundTracking();
+  }
+
+  /// Runs the native foreground service for exactly as long as one of the two
+  /// trackers is live, so backgrounding MapNote never freezes the counters.
+  Future<void> _syncForegroundTracking() async {
+    if (!ref.mounted) return;
+    await syncTrackingForegroundService(
+      ref.read(gpsTrackerProvider),
+      ref.read(autoMotionServiceProvider),
+      ref.read(foregroundTrackingServiceProvider),
+    );
   }
 
   GpsTrackingState _snapshot(
@@ -930,6 +976,29 @@ class GpsTrackingController extends Notifier<GpsTrackingState> {
       unavailable: false,
     );
   }
+}
+
+/// Brings the native foreground service in line with the live trackers: it
+/// runs while either engine is recording and stops once both are off.
+Future<void> syncTrackingForegroundService(
+  GpsTrackerService gps,
+  AutoMotionService motion,
+  ForegroundTrackingService service,
+) {
+  return service.sync(needed: gps.isTracking || motion.isTracking);
+}
+
+/// Re-asserts the foreground service from the widget layer (app resume).
+///
+/// Android can refuse a foreground-service start while the app is backgrounded;
+/// retrying as soon as MapNote is visible keeps long trips recording with the
+/// screen off instead of silently degrading to in-app-only tracking.
+Future<void> resyncTrackingForegroundService(WidgetRef ref) {
+  return syncTrackingForegroundService(
+    ref.read(gpsTrackerProvider),
+    ref.read(autoMotionServiceProvider),
+    ref.read(foregroundTrackingServiceProvider),
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -1013,6 +1082,17 @@ class AutoMotionController extends Notifier<AutoMotionState> {
         // Best-effort persistence on disposal.
       }
     });
+    // Real-time readout: every accepted fix (and the midnight rollover) lands
+    // here, so the dashboard / Settings numbers move while tracking.
+    final StreamSubscription<void> updates = tracker.changes.listen((_) {
+      if (!ref.mounted) return;
+      state = _snapshot(
+        tracker,
+        enabled: enabled,
+        active: tracker.isTracking,
+      ).copyWith(unavailable: state.unavailable);
+    });
+    ref.onDispose(updates.cancel);
     if (enabled) {
       scheduleMicrotask(start);
     } else {
@@ -1034,6 +1114,7 @@ class AutoMotionController extends Notifier<AutoMotionState> {
     if (!ref.mounted) return;
     state = _snapshot(tracker, enabled: true, active: started)
         .copyWith(unavailable: !started);
+    await _syncForegroundTracking();
   }
 
   /// Called while AutoMotion is switched off. Persists anything still in
@@ -1045,6 +1126,18 @@ class AutoMotionController extends Notifier<AutoMotionState> {
     await tracker.resyncFromStore();
     if (!ref.mounted) return;
     state = _snapshot(tracker, enabled: false);
+    await _syncForegroundTracking();
+  }
+
+  /// Runs the native foreground service for exactly as long as one of the two
+  /// trackers is live, so backgrounding MapNote never freezes the counters.
+  Future<void> _syncForegroundTracking() async {
+    if (!ref.mounted) return;
+    await syncTrackingForegroundService(
+      ref.read(gpsTrackerProvider),
+      ref.read(autoMotionServiceProvider),
+      ref.read(foregroundTrackingServiceProvider),
+    );
   }
 
   AutoMotionState _snapshot(

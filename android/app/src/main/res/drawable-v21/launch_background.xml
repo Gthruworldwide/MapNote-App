@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Launch splash: a plain brand-coloured background. The RouteNote lockup is
+<!-- Launch splash: a plain brand-coloured background. The MapNote lockup is
      not drawn here - the in-app entrance animation builds it from scratch in the
      first Flutter frame, and painting it first would make it blink out as the
      animation restarts from invisible. ?android:colorBackground follows the

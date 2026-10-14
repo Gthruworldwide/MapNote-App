@@ -21,7 +21,7 @@ import 'package:routenote/src/services/app_health_logger.dart';
 import 'package:routenote/src/services/biometric_service.dart';
 import 'package:routenote/src/services/location_service.dart';
 
-/// End-to-end UI flow tests for RouteNote.
+/// End-to-end UI flow tests for MapNote.
 ///
 /// Run them against a device/emulator with:
 ///
@@ -84,7 +84,7 @@ void main() {
             const _FakeLocationService(),
           ),
         ],
-        child: const RouteNoteApp(),
+        child: const MapNoteApp(),
       ),
     );
     await tester.pumpAndSettle();

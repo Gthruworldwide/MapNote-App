@@ -295,5 +295,40 @@
   },
   "insightOptimizationTitle": "Keep MapNote tidy",
   "insightOptimizationBody": "A large list loads slower. Review duplicate or unused places and remove what you no longer need.",
-  "insightActionSyncNow": "Sync now"
+  "insightActionSyncNow": "Sync now",
+
+  "coordinateDetails": "Latitude & longitude",
+  "aiSmartPasteTooltip": "AI Smart Paste",
+  "categoryWork": "Work",
+  "categoryHome": "Home",
+  "categorySchool": "School",
+  "categoryPersonal": "Personal",
+  "plusCodeDetected": "Plus Code detected in the clipboard",
+  "plusCodeImport": "Import",
+  "plusCodeInvalid": "Enter a valid Plus Code",
+  "plusCodeOrCoordinatesRequired": "Enter a Plus Code, or latitude and longitude",
+  "plusCodeShortNeedsReference": "This short Plus Code needs a nearby location. Enable GPS, or paste the full code.",
+  "foundPlace": "Found: {name}",
+  "@foundPlace": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "autoFillNameNotes": "Auto-fill Name & Notes",
+  "dismissSuggestion": "Dismiss suggestion",
+  "suggestionTitle": "Nearby place",
+  "routePreview": "Route preview",
+  "currentLocationMarker": "Current location",
+  "savedLocationMarker": "Saved place",
+  "distanceAway": "{distance} away",
+  "@distanceAway": {
+    "placeholders": {
+      "distance": { "type": "String" }
+    }
+  },
+  "accountAndBackup": "Account & Cloud Backup",
+  "sectionLocationTracking": "Location & Tracking",
+  "aboutTitle": "About MapNote",
+  "mapPreview": "Map preview",
+  "enableLocationForRoute": "Turn on location to see your distance"
 }

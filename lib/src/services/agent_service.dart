@@ -148,11 +148,11 @@ class AgentService {
       );
       return insights;
     } on AgentException catch (error) {
-      if (kDebugMode) debugPrint('RouteNote agent cloud failure: $error');
+      if (kDebugMode) debugPrint('MapNote agent cloud failure: $error');
       logger.log(HealthEventType.agentFailure, message: error.message);
       return const <AgentInsight>[];
     } catch (error) {
-      if (kDebugMode) debugPrint('RouteNote agent cloud failure: $error');
+      if (kDebugMode) debugPrint('MapNote agent cloud failure: $error');
       logger.log(HealthEventType.agentFailure, message: error.toString());
       return const <AgentInsight>[];
     }

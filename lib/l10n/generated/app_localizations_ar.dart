@@ -669,4 +669,82 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get insightActionSyncNow => 'زامن الآن';
+
+  @override
+  String get coordinateDetails => 'خط العرض وخط الطول';
+
+  @override
+  String get aiSmartPasteTooltip => 'اللصق الذكي';
+
+  @override
+  String get categoryWork => 'العمل';
+
+  @override
+  String get categoryHome => 'المنزل';
+
+  @override
+  String get categorySchool => 'الدراسة';
+
+  @override
+  String get categoryPersonal => 'شخصي';
+
+  @override
+  String get plusCodeDetected => 'تم رصد رمز Plus في الحافظة';
+
+  @override
+  String get plusCodeImport => 'استيراد';
+
+  @override
+  String get plusCodeInvalid => 'أدخل رمز Plus صالحًا';
+
+  @override
+  String get plusCodeOrCoordinatesRequired =>
+      'أدخل رمز Plus أو خط العرض وخط الطول';
+
+  @override
+  String get plusCodeShortNeedsReference =>
+      'يحتاج رمز Plus المختصر إلى موقع قريب. فعّل GPS أو الصق الرمز الكامل.';
+
+  @override
+  String foundPlace(String name) {
+    return 'تم العثور على: $name';
+  }
+
+  @override
+  String get autoFillNameNotes => 'تعبئة الاسم والملاحظات تلقائيًا';
+
+  @override
+  String get dismissSuggestion => 'تجاهل الاقتراح';
+
+  @override
+  String get suggestionTitle => 'مكان قريب';
+
+  @override
+  String get routePreview => 'معاينة المسار';
+
+  @override
+  String get currentLocationMarker => 'الموقع الحالي';
+
+  @override
+  String get savedLocationMarker => 'المكان المحفوظ';
+
+  @override
+  String distanceAway(String distance) {
+    return 'يبعد $distance';
+  }
+
+  @override
+  String get accountAndBackup => 'الحساب والنسخ السحابي';
+
+  @override
+  String get sectionLocationTracking => 'الموقع والتتبع';
+
+  @override
+  String get aboutTitle => 'حول MapNote';
+
+  @override
+  String get mapPreview => 'معاينة الخريطة';
+
+  @override
+  String get enableLocationForRoute => 'فعّل الموقع لرؤية المسافة';
 }

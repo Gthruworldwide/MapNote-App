@@ -675,4 +675,82 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get insightActionSyncNow => 'Sync now';
+
+  @override
+  String get coordinateDetails => 'Latitude & longitude';
+
+  @override
+  String get aiSmartPasteTooltip => 'AI Smart Paste';
+
+  @override
+  String get categoryWork => 'Work';
+
+  @override
+  String get categoryHome => 'Home';
+
+  @override
+  String get categorySchool => 'School';
+
+  @override
+  String get categoryPersonal => 'Personal';
+
+  @override
+  String get plusCodeDetected => 'Plus Code detected in the clipboard';
+
+  @override
+  String get plusCodeImport => 'Import';
+
+  @override
+  String get plusCodeInvalid => 'Enter a valid Plus Code';
+
+  @override
+  String get plusCodeOrCoordinatesRequired =>
+      'Enter a Plus Code, or latitude and longitude';
+
+  @override
+  String get plusCodeShortNeedsReference =>
+      'This short Plus Code needs a nearby location. Enable GPS, or paste the full code.';
+
+  @override
+  String foundPlace(String name) {
+    return 'Found: $name';
+  }
+
+  @override
+  String get autoFillNameNotes => 'Auto-fill Name & Notes';
+
+  @override
+  String get dismissSuggestion => 'Dismiss suggestion';
+
+  @override
+  String get suggestionTitle => 'Nearby place';
+
+  @override
+  String get routePreview => 'Route preview';
+
+  @override
+  String get currentLocationMarker => 'Current location';
+
+  @override
+  String get savedLocationMarker => 'Saved place';
+
+  @override
+  String distanceAway(String distance) {
+    return '$distance away';
+  }
+
+  @override
+  String get accountAndBackup => 'Account & Cloud Backup';
+
+  @override
+  String get sectionLocationTracking => 'Location & Tracking';
+
+  @override
+  String get aboutTitle => 'About MapNote';
+
+  @override
+  String get mapPreview => 'Map preview';
+
+  @override
+  String get enableLocationForRoute => 'Turn on location to see your distance';
 }

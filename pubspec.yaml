@@ -1,5 +1,5 @@
 name: routenote
-description: "RouteNote - offline-first saved places with Google Drive sync."
+description: "MapNote - offline-first saved places with Google Drive sync."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.3+4
+version: 1.0.4+5
 
 environment:
   sdk: ^3.12.2
@@ -59,7 +59,7 @@ dependencies:
   # Android plugin broke the Gradle build). Drives the light/dark launcher-icon
   # switch in lib/src/services/dynamic_icon_service.dart.
   flutter_dynamic_icon_plus: ^1.2.1
-  # Draws the RouteNote lockup (assets/brand/route_note_*.svg) as real vector, so
+  # Draws the MapNote lockup (assets/brand/route_note_*.svg) as real vector, so
   # the cold-start splash can scale the mark up without any raster softness, and
   # the same assets serve iOS and Android. See lib/src/core/brand/.
   flutter_svg: ^2.3.0
@@ -73,6 +73,7 @@ dependencies:
   # on-device so capturing or pasting a location never needs a network call.
   # Wrapped by lib/src/core/utils/plus_code.dart.
   open_location_code: ^1.0.1
+  geocoding: ^5.0.0
 
 dev_dependencies:
   flutter_test:
@@ -108,7 +109,7 @@ flutter:
   # Bundled assets. The animated launcher-icon source is consumed at build time
   # by flutter_launcher_icons and does not need to be listed here.
   #
-  # assets/brand/ holds the transparent RouteNote lockup, split into its two
+  # assets/brand/ holds the transparent MapNote lockup, split into its two
   # vector parts (assets/brand/route_note_mark.svg and route_note_wordmark.svg)
   # because the cold-start splash animates them independently. Subdirectories
   # (assets/brand/src/) are not bundled, so the Figma sources stay out of the

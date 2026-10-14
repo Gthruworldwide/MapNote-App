@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,6 +11,7 @@ import '../../data/models/place.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../providers/app_providers.dart';
 import '../../services/app_logger.dart';
+import '../../services/geocoding_service.dart';
 import '../../services/location_parser.dart';
 import '../../services/location_service.dart';
 
@@ -24,11 +27,24 @@ enum LocationEntryMode {
 /// Captures the current GPS position — or a manually entered / pasted one — and
 /// lets the user name it.
 ///
+/// The form is laid out top-to-bottom the way a place is actually described:
+///
+/// 1. **Name** plus one-tap category tags (`#Work`, `#Home`, …).
+/// 2. **Coordinates** — the "Smart Plus Code" field up front, an "AI Smart
+///    Paste" button, and an expandable latitude/longitude pair for anyone who
+///    would rather type the numbers.
+/// 3. **Notes** and the save button.
+///
+/// A place can be saved with *only* a Plus Code, *only* a latitude/longitude
+/// pair, or all three. Plus Codes are resolved entirely on-device (see
+/// [PlusCode]), so nothing here needs a network round-trip.
+///
 /// When [place] is provided the screen edits that existing location instead of
 /// capturing a new one. When [initialLatitude]/[initialLongitude] are provided
 /// (for example from a shared map link) the screen opens in manual mode with
-/// those coordinates pre-filled. [initialMode] forces a starting mode (used by
-/// the home "Add location" menu).
+/// those coordinates pre-filled. [initialPlusCode] seeds the Smart Plus Code
+/// field (used by the clipboard import). [initialMode] forces a starting mode
+/// (used by the home "Add location" menu).
 class AddPlaceScreen extends ConsumerStatefulWidget {
   const AddPlaceScreen({
     super.key,
@@ -36,6 +52,7 @@ class AddPlaceScreen extends ConsumerStatefulWidget {
     this.initialLatitude,
     this.initialLongitude,
     this.initialName,
+    this.initialPlusCode,
     this.initialMode,
   });
 
@@ -43,6 +60,7 @@ class AddPlaceScreen extends ConsumerStatefulWidget {
   final double? initialLatitude;
   final double? initialLongitude;
   final String? initialName;
+  final String? initialPlusCode;
   final LocationEntryMode? initialMode;
 
   @override
@@ -52,6 +70,10 @@ class AddPlaceScreen extends ConsumerStatefulWidget {
 class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
   static const Uuid _uuid = Uuid();
   static const LocationParser _parser = LocationParser();
+
+  /// How long the coordinate fields must sit still before a reverse-geocode is
+  /// attempted, so typing `30.0444` fires one lookup rather than six.
+  static const Duration _geocodeDebounce = Duration(milliseconds: 600);
 
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameController;
@@ -66,7 +88,39 @@ class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
   bool _pasting = false;
   bool _saving = false;
 
+  /// Whether the latitude/longitude pair is expanded. Defaults to open so the
+  /// numbers are always visible for a manual coordinate, and can be folded
+  /// away once a Plus Code has been entered.
+  bool _coordinatesExpanded = true;
+
+  /// The reverse-geocoded suggestion awaiting the user's decision.
+  PlaceSuggestion? _suggestion;
+
+  /// The rounded coordinate the current/attempted suggestion belongs to, so
+  /// unchanged coordinates are never looked up twice.
+  String? _suggestionKey;
+
+  /// Set once the user accepts or dismisses a suggestion, so it is not offered
+  /// again for the same place.
+  bool _suggestionDismissed = false;
+
+  Timer? _geocodeTimer;
+
   bool get _isEditing => widget.place != null;
+
+  bool get _reduceMotion => MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+
+  /// The last GPS fix as a Plus Code reference point, if there is one.
+  PlusCodePoint? get _gpsReference {
+    final LocationResult? location = _location;
+    if (location is LocationSuccess) {
+      return PlusCodePoint(
+        latitude: location.latitude,
+        longitude: location.longitude,
+      );
+    }
+    return null;
+  }
 
   @override
   void initState() {
@@ -82,6 +136,7 @@ class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
     final Place? place = widget.place;
     final bool hasInitial =
         widget.initialLatitude != null && widget.initialLongitude != null;
+    final String? initialPlusCode = widget.initialPlusCode;
 
     if (place != null) {
       // Editing: start from the stored coordinates, but let the user change
@@ -94,6 +149,14 @@ class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
       _mode = LocationEntryMode.manual;
       _latitudeController.text = widget.initialLatitude!.toString();
       _longitudeController.text = widget.initialLongitude!.toString();
+    } else if (initialPlusCode != null && initialPlusCode.trim().isNotEmpty) {
+      // Imported from the clipboard: the code is the only thing we have, so
+      // decode it offline straight away.
+      _mode = LocationEntryMode.manual;
+      _plusCodeController.text =
+          PlusCode.extract(initialPlusCode) ??
+          initialPlusCode.trim().toUpperCase();
+      _applyPlusCode(_plusCodeController.text);
     } else if (widget.initialMode == LocationEntryMode.manual) {
       // Opened straight into manual entry (e.g. from the Add location menu).
       _mode = LocationEntryMode.manual;
@@ -111,6 +174,7 @@ class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
 
   @override
   void dispose() {
+    _geocodeTimer?.cancel();
     _nameController.dispose();
     _notesController.dispose();
     _latitudeController.dispose();
@@ -128,6 +192,10 @@ class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
       _location = result;
       _capturing = false;
     });
+    if (result is LocationSuccess) {
+      _refreshPlusCode();
+      _scheduleGeocode(result.latitude, result.longitude);
+    }
   }
 
   void _setMode(LocationEntryMode mode) {
@@ -149,13 +217,24 @@ class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
     if (_location is! LocationSuccess) _captureLocation();
   }
 
-  /// Recomputes the Plus Code whenever the manual latitude/longitude change.
+  /// Recomputes the Plus Code whenever the coordinates that are the source of
+  /// truth change.
   ///
-  /// The field is a live preview, refreshed from the coordinates that are the
-  /// source of truth; it is never saved itself.
+  /// The field is a live preview, never the source itself. It is *not* cleared
+  /// when the coordinates are blank, because a Plus Code can be the only thing
+  /// the user provided and must survive until save.
   void _refreshPlusCode() {
-    final double? latitude = double.tryParse(_latitudeController.text.trim());
-    final double? longitude = double.tryParse(_longitudeController.text.trim());
+    final double? latitude;
+    final double? longitude;
+    if (_mode == LocationEntryMode.gps) {
+      final PlusCodePoint? fix = _gpsReference;
+      latitude = fix?.latitude;
+      longitude = fix?.longitude;
+    } else {
+      latitude = double.tryParse(_latitudeController.text.trim());
+      longitude = double.tryParse(_longitudeController.text.trim());
+    }
+
     if (latitude != null &&
         longitude != null &&
         latitude.abs() <= 90 &&
@@ -164,18 +243,34 @@ class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
       if (_plusCodeController.text != next) {
         _plusCodeController.text = next;
       }
-    } else if (_plusCodeController.text.isNotEmpty) {
-      _plusCodeController.text = '';
     }
   }
 
-  /// Decodes a Plus Code typed or pasted into the manual field and fills the
-  /// latitude/longitude fields with its centre point.
+  /// Handles the Smart Plus Code field: decodes what is typed or pasted into
+  /// latitude/longitude and asks for a name suggestion.
   ///
   /// Programmatic `controller.text =` writes do not re-trigger the text fields'
   /// `onChanged`, so this cannot loop back into the Plus Code field.
+  void _onPlusCodeChanged(String value) {
+    _applyPlusCode(value);
+    if (_latitudeController.text.isNotEmpty) {
+      _scheduleGeocode(
+        double.tryParse(_latitudeController.text.trim()) ?? 0,
+        double.tryParse(_longitudeController.text.trim()) ?? 0,
+      );
+    }
+  }
+
+  /// Decodes [value] (full or short) into the coordinate fields.
+  ///
+  /// A short code uses the last GPS fix as its reference when one is available;
+  /// otherwise the code is left in place for [save][_save] to resolve against
+  /// the locality the user typed after a comma.
   void _applyPlusCode(String value) {
-    final PlusCodePoint? decoded = PlusCode.decode(value);
+    final PlusCodePoint? decoded = PlusCode.decodeFlexible(
+      value,
+      reference: _gpsReference,
+    );
     if (decoded == null) return;
     // Five decimals is the precision the app already shows for coordinates and
     // is far finer than the ~13.5 m cell a ten-digit code describes, so this
@@ -184,7 +279,8 @@ class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
     _longitudeController.text = decoded.longitude.toStringAsFixed(5);
   }
 
-  /// Reads the clipboard and fills in any coordinates (and name) it finds.
+  /// Reads the clipboard and fills in any coordinates, map link, name or raw
+  /// Plus Code it finds.
   Future<void> _pasteFromClipboard() async {
     final AppLocalizations l10n = AppLocalizations.of(context);
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
@@ -199,6 +295,7 @@ class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
     }
 
     ParsedLocation? parsed;
+    String? plusCode;
     if (text.isNotEmpty) {
       parsed = _parser.parse(text);
       if (parsed == null && _parser.looksLikeShortMapLink(text)) {
@@ -206,9 +303,23 @@ class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
         parsed = await _parser.resolveShortLink(text);
         if (mounted) setState(() => _pasting = false);
       }
+      plusCode ??= ref.read(smartClipboardServiceProvider).extractPlusCode(text);
     }
 
     if (!mounted) return;
+
+    if (parsed == null && plusCode != null) {
+      // A raw Plus Code: hand it to the Smart field, which decodes it offline.
+      Haptics.light();
+      setState(() {
+        _mode = LocationEntryMode.manual;
+        _plusCodeController.text = plusCode!;
+      });
+      _onPlusCodeChanged(plusCode);
+      messenger.showSnackBar(SnackBar(content: Text(l10n.clipboardPasted)));
+      return;
+    }
+
     if (parsed == null) {
       AppLogger.log(
         category: 'LOCATION_PARSER',
@@ -227,37 +338,142 @@ class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
     }
 
     final ParsedLocation location = parsed;
+    Haptics.light();
     setState(() {
       _mode = LocationEntryMode.manual;
+      _coordinatesExpanded = true;
       _latitudeController.text = location.latitude.toString();
       _longitudeController.text = location.longitude.toString();
       final String? name = location.name ?? _parser.guessName(text);
       if (name != null && name.isNotEmpty) _nameController.text = name;
     });
+    _scheduleGeocode(location.latitude, location.longitude);
     messenger.showSnackBar(SnackBar(content: Text(l10n.clipboardPasted)));
   }
 
+  // --- Reverse-geocoded suggestion -------------------------------------------
+
+  /// Schedules a best-effort reverse geocode for [latitude]/[longitude].
+  void _scheduleGeocode(double latitude, double longitude) {
+    if (_suggestionDismissed) return;
+    if (_nameController.text.trim().isNotEmpty) return;
+
+    final String key =
+        '${latitude.toStringAsFixed(4)},${longitude.toStringAsFixed(4)}';
+    if (key == _suggestionKey) return;
+    _suggestionKey = key;
+
+    _geocodeTimer?.cancel();
+    _geocodeTimer = Timer(_geocodeDebounce, () {
+      _geocodeTimer = null;
+      unawaited(_geocode(latitude, longitude, key));
+    });
+  }
+
+  Future<void> _geocode(double latitude, double longitude, String key) async {
+    if (!mounted || key != _suggestionKey) return;
+    final PlaceSuggestion? suggestion = await ref
+        .read(geocodingServiceProvider)
+        .reverse(latitude: latitude, longitude: longitude);
+    if (!mounted || key != _suggestionKey) return;
+    if (suggestion == null || suggestion.isEmpty) return;
+    if (_nameController.text.trim().isNotEmpty) return;
+    setState(() => _suggestion = suggestion);
+  }
+
+  void _autoFillFromSuggestion() {
+    final PlaceSuggestion? suggestion = _suggestion;
+    if (suggestion == null) return;
+    Haptics.light();
+    setState(() {
+      final String? title = suggestion.title;
+      if (title != null) _nameController.text = title;
+      final String? detail = suggestion.detail;
+      if (detail != null && _notesController.text.trim().isEmpty) {
+        _notesController.text = detail;
+      }
+      _suggestion = null;
+      _suggestionDismissed = true;
+    });
+  }
+
+  void _dismissSuggestion() {
+    setState(() {
+      _suggestion = null;
+      _suggestionDismissed = true;
+    });
+  }
+
+  void _onNameChanged(String value) {
+    if (_suggestion == null) return;
+    setState(() => _suggestion = null);
+  }
+
+  // --- Category tags ---------------------------------------------------------
+
+  static const List<String> _categories = <String>[
+    'categoryWork',
+    'categoryHome',
+    'categorySchool',
+    'categoryPersonal',
+  ];
+
+  String _categoryLabel(AppLocalizations l10n, String key) => switch (key) {
+    'categoryWork' => l10n.categoryWork,
+    'categoryHome' => l10n.categoryHome,
+    'categorySchool' => l10n.categorySchool,
+    _ => l10n.categoryPersonal,
+  };
+
+  bool _hasCategory(String tag) =>
+      RegExp('(^|\\s)${RegExp.escape(tag)}(?=\\s|\$)').hasMatch(
+        _notesController.text,
+      );
+
+  void _toggleCategory(String tag) {
+    Haptics.light();
+    setState(() {
+      final String current = _notesController.text;
+      if (_hasCategory(tag)) {
+        _notesController.text = current
+            .replaceAll(RegExp('\\s*${RegExp.escape(tag)}'), '')
+            .trim();
+      } else {
+        _notesController.text = current.trim().isEmpty
+            ? tag
+            : '${current.trim()} $tag';
+      }
+    });
+  }
+
+  // --- Saving -----------------------------------------------------------------
+
   Future<void> _save() async {
+    final AppLocalizations l10n = AppLocalizations.of(context);
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    final NavigatorState navigator = Navigator.of(context);
+
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
     Haptics.light();
 
-    final double? latitude;
-    final double? longitude;
-    if (_mode == LocationEntryMode.gps) {
-      final LocationResult? location = _location;
-      if (location is! LocationSuccess) return;
-      latitude = location.latitude;
-      longitude = location.longitude;
-    } else {
-      latitude = double.tryParse(_latitudeController.text.trim());
-      longitude = double.tryParse(_longitudeController.text.trim());
-      if (latitude == null || longitude == null) return;
+    final PlusCodePoint? resolved = await _resolveCoordinates();
+    if (!mounted) return;
+    if (resolved == null) {
+      final String? code = PlusCode.extract(_plusCodeController.text);
+      final bool shortUnresolved =
+          code != null && PlusCode.isShortPlusCode(code);
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            shortUnresolved
+                ? l10n.plusCodeShortNeedsReference
+                : l10n.plusCodeOrCoordinatesRequired,
+          ),
+        ),
+      );
+      return;
     }
-
-    final AppLocalizations l10n = AppLocalizations.of(context);
-    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
-    final NavigatorState navigator = Navigator.of(context);
 
     final Place? original = widget.place;
     final Place place = original == null
@@ -265,15 +481,15 @@ class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
             id: _uuid.v4(),
             name: _nameController.text.trim(),
             notes: _notesController.text.trim(),
-            latitude: latitude,
-            longitude: longitude,
+            latitude: resolved.latitude,
+            longitude: resolved.longitude,
             timestamp: DateTime.now().toUtc(),
           )
         : original.copyWith(
             name: _nameController.text.trim(),
             notes: _notesController.text.trim(),
-            latitude: latitude,
-            longitude: longitude,
+            latitude: resolved.latitude,
+            longitude: resolved.longitude,
           );
 
     setState(() => _saving = true);
@@ -283,10 +499,62 @@ class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
     if (mounted) navigator.pop();
   }
 
+  /// Resolves the coordinates to save from whatever the user provided: a GPS
+  /// fix, a latitude/longitude pair, and/or a Plus Code.
+  Future<PlusCodePoint?> _resolveCoordinates() async {
+    final double? latitude = double.tryParse(_latitudeController.text.trim());
+    final double? longitude = double.tryParse(_longitudeController.text.trim());
+    if (latitude != null &&
+        longitude != null &&
+        latitude.abs() <= 90 &&
+        longitude.abs() <= 180) {
+      return PlusCodePoint(latitude: latitude, longitude: longitude);
+    }
+
+    final String plusText = _plusCodeController.text;
+    final PlusCodePoint? decoded = PlusCode.decodeFlexible(
+      plusText,
+      reference: _gpsReference,
+    );
+    if (decoded != null) return decoded;
+
+    // A short code with a locality after the comma ("9G8F+6W, Cairo") is
+    // resolved by forward-geocoding the locality, so the import still works
+    // with no GPS fix.
+    final String? code = PlusCode.extract(plusText);
+    if (code != null && PlusCode.isShortPlusCode(code)) {
+      final String locality = plusText
+          .split(',')
+          .skip(1)
+          .join(',')
+          .trim();
+      if (locality.isNotEmpty) {
+        final PlusCodePoint? reference = await ref
+            .read(geocodingServiceProvider)
+            .forward(locality);
+        final PlusCodePoint? resolved = PlusCode.decodeFlexible(
+          code,
+          reference: reference,
+        );
+        if (resolved != null) return resolved;
+      }
+    }
+
+    final LocationResult? location = _location;
+    if (location is LocationSuccess) {
+      return PlusCodePoint(
+        latitude: location.latitude,
+        longitude: location.longitude,
+      );
+    }
+    return null;
+  }
+
   String? _validateLatitude(String? value) {
     final AppLocalizations l10n = AppLocalizations.of(context);
     final String text = value?.trim() ?? '';
-    if (text.isEmpty) return l10n.coordinateRequired;
+    // Blank is fine: a Plus Code alone is enough to save.
+    if (text.isEmpty) return null;
     final double? parsed = double.tryParse(text);
     if (parsed == null) return l10n.coordinateInvalid;
     if (parsed < -90 || parsed > 90) return l10n.latitudeRange;
@@ -296,12 +564,22 @@ class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
   String? _validateLongitude(String? value) {
     final AppLocalizations l10n = AppLocalizations.of(context);
     final String text = value?.trim() ?? '';
-    if (text.isEmpty) return l10n.coordinateRequired;
+    if (text.isEmpty) return null;
     final double? parsed = double.tryParse(text);
     if (parsed == null) return l10n.coordinateInvalid;
     if (parsed < -180 || parsed > 180) return l10n.longitudeRange;
     return null;
   }
+
+  String? _validatePlusCode(String? value) {
+    final AppLocalizations l10n = AppLocalizations.of(context);
+    final String text = value?.trim() ?? '';
+    if (text.isEmpty) return null;
+    if (PlusCode.extract(text) == null) return l10n.plusCodeInvalid;
+    return null;
+  }
+
+  // --- Build ------------------------------------------------------------------
 
   @override
   Widget build(BuildContext context) {
@@ -316,25 +594,7 @@ class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: <Widget>[
-            _buildModeSelector(l10n),
-            const SizedBox(height: 12),
-            OutlinedButton.icon(
-              onPressed: (_pasting || _saving) ? null : _pasteFromClipboard,
-              icon: _pasting
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.content_paste_go),
-              label: Text(l10n.pasteFromClipboard),
-            ),
-            const SizedBox(height: 16),
-            if (_mode == LocationEntryMode.gps)
-              _buildLocationCard(l10n)
-            else
-              _buildManualCoordinates(l10n),
-            const SizedBox(height: 16),
+            // 1. Name and quick category tags.
             TextFormField(
               controller: _nameController,
               textInputAction: TextInputAction.next,
@@ -347,8 +607,19 @@ class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
                   (value == null || value.trim().isEmpty)
                   ? l10n.nameRequired
                   : null,
+              onChanged: _onNameChanged,
             ),
+            const SizedBox(height: 12),
+            _buildCategoryTags(l10n),
+
             const SizedBox(height: 16),
+
+            // 2. Coordinates: Smart Plus Code, AI Smart Paste, lat/long.
+            _buildCoordinatesCard(l10n),
+
+            const SizedBox(height: 16),
+
+            // 3. Notes and save.
             TextFormField(
               controller: _notesController,
               maxLines: 3,
@@ -358,8 +629,15 @@ class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
                 prefixIcon: const Icon(Icons.notes),
               ),
             ),
+
+            if (_suggestion != null) ...<Widget>[
+              const SizedBox(height: 16),
+              _buildSuggestionCard(l10n),
+            ],
+
             const SizedBox(height: 24),
             FilledButton.icon(
+              style: FilledButton.styleFrom(shape: const StadiumBorder()),
               onPressed: _canSave ? _save : null,
               icon: _saving
                   ? const SizedBox(
@@ -376,12 +654,22 @@ class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
     );
   }
 
-  bool get _canSave {
-    if (_saving || _pasting) return false;
-    if (_mode == LocationEntryMode.gps) {
-      return !_capturing && _location is LocationSuccess;
-    }
-    return true;
+  bool get _canSave => !_saving && !_pasting && !_capturing;
+
+  Widget _buildCategoryTags(AppLocalizations l10n) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: <Widget>[
+        for (final String key in _categories)
+          FilterChip(
+            label: Text('#${_categoryLabel(l10n, key)}'),
+            selected: _hasCategory('#${_categoryLabel(l10n, key)}'),
+            onSelected: (_) =>
+                _toggleCategory('#${_categoryLabel(l10n, key)}'),
+          ),
+      ],
+    );
   }
 
   Widget _buildModeSelector(AppLocalizations l10n) {
@@ -402,7 +690,7 @@ class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
     );
   }
 
-  Widget _buildManualCoordinates(AppLocalizations l10n) {
+  Widget _buildCoordinatesCard(AppLocalizations l10n) {
     final ThemeData theme = Theme.of(context);
     return Card(
       child: Padding(
@@ -410,45 +698,24 @@ class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Text(
-              l10n.customCoordinates,
-              style: theme.textTheme.labelMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.8,
-              ),
+            Row(
+              children: <Widget>[
+                Icon(
+                  Icons.place_outlined,
+                  size: 20,
+                  color: theme.colorScheme.primary,
+                ),
+                const SizedBox(width: 8),
+                Text(l10n.locationCoordinates, style: theme.textTheme.titleSmall),
+              ],
             ),
             const SizedBox(height: 12),
-            TextFormField(
-              controller: _latitudeController,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-                signed: true,
-              ),
-              decoration: InputDecoration(
-                labelText: l10n.latitude,
-                hintText: '30.044400',
-                prefixIcon: const Icon(Icons.pin_drop_outlined),
-              ),
-              validator: (String? value) => _validateLatitude(value),
-              onChanged: (_) => _refreshPlusCode(),
-            ),
+            _buildModeSelector(l10n),
             const SizedBox(height: 12),
-            TextFormField(
-              controller: _longitudeController,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-                signed: true,
-              ),
-              decoration: InputDecoration(
-                labelText: l10n.longitude,
-                hintText: '31.235700',
-                prefixIcon: const Icon(Icons.pin_drop_outlined),
-              ),
-              validator: (String? value) => _validateLongitude(value),
-              onChanged: (_) => _refreshPlusCode(),
-            ),
-            const SizedBox(height: 12),
+            if (_mode == LocationEntryMode.gps) ...<Widget>[
+              _buildGpsStatus(l10n),
+              const SizedBox(height: 12),
+            ],
             TextFormField(
               controller: _plusCodeController,
               textCapitalization: TextCapitalization.characters,
@@ -457,7 +724,184 @@ class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
                 hintText: l10n.plusCodeHint,
                 prefixIcon: const Icon(Icons.grid_on),
               ),
-              onChanged: _applyPlusCode,
+              validator: _validatePlusCode,
+              onChanged: _onPlusCodeChanged,
+            ),
+            const SizedBox(height: 12),
+            Tooltip(
+              message: l10n.aiSmartPasteTooltip,
+              child: OutlinedButton.icon(
+                onPressed: (_pasting || _saving) ? null : _pasteFromClipboard,
+                icon: _pasting
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.auto_awesome),
+                label: Text(l10n.aiSmartPaste),
+              ),
+            ),
+            const SizedBox(height: 4),
+            _buildCoordinateExpander(l10n),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCoordinateExpander(AppLocalizations l10n) {
+    final ThemeData theme = Theme.of(context);
+    final Duration duration = _reduceMotion
+        ? Duration.zero
+        : const Duration(milliseconds: 200);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        InkWell(
+          onTap: () {
+            Haptics.light();
+            setState(() => _coordinatesExpanded = !_coordinatesExpanded);
+          },
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Row(
+              children: <Widget>[
+                Icon(Icons.tune, size: 18, color: theme.colorScheme.primary),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    l10n.coordinateDetails,
+                    style: theme.textTheme.labelLarge,
+                  ),
+                ),
+                AnimatedRotation(
+                  turns: _coordinatesExpanded ? 0.5 : 0,
+                  duration: duration,
+                  child: const Icon(Icons.expand_more),
+                ),
+              ],
+            ),
+          ),
+        ),
+        AnimatedSize(
+          duration: duration,
+          curve: Curves.easeOut,
+          alignment: Alignment.topCenter,
+          child: _coordinatesExpanded
+              ? Column(
+                  children: <Widget>[
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _latitudeController,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                        signed: true,
+                      ),
+                      decoration: InputDecoration(
+                        labelText: l10n.latitude,
+                        hintText: '30.044400',
+                        prefixIcon: const Icon(Icons.pin_drop_outlined),
+                      ),
+                      validator: _validateLatitude,
+                      onChanged: (_) {
+                        _refreshPlusCode();
+                        _scheduleGeocodeFromFields();
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _longitudeController,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                        signed: true,
+                      ),
+                      decoration: InputDecoration(
+                        labelText: l10n.longitude,
+                        hintText: '31.235700',
+                        prefixIcon: const Icon(Icons.pin_drop_outlined),
+                      ),
+                      validator: _validateLongitude,
+                      onChanged: (_) {
+                        _refreshPlusCode();
+                        _scheduleGeocodeFromFields();
+                      },
+                    ),
+                  ],
+                )
+              : const SizedBox(width: double.infinity),
+        ),
+      ],
+    );
+  }
+
+  void _scheduleGeocodeFromFields() {
+    final double? latitude = double.tryParse(_latitudeController.text.trim());
+    final double? longitude = double.tryParse(_longitudeController.text.trim());
+    if (latitude == null || longitude == null) return;
+    if (latitude.abs() > 90 || longitude.abs() > 180) return;
+    _scheduleGeocode(latitude, longitude);
+  }
+
+  Widget _buildSuggestionCard(AppLocalizations l10n) {
+    final ThemeData theme = Theme.of(context);
+    final PlaceSuggestion suggestion = _suggestion!;
+    final String? title = suggestion.title;
+    final String? detail = suggestion.detail;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Row(
+              children: <Widget>[
+                Icon(
+                  Icons.auto_awesome,
+                  size: 20,
+                  color: theme.colorScheme.primary,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    l10n.suggestionTitle,
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  onPressed: _dismissSuggestion,
+                  tooltip: l10n.dismissSuggestion,
+                  icon: const Icon(Icons.close, size: 20),
+                ),
+              ],
+            ),
+            if (title != null)
+              Text(
+                l10n.foundPlace(title),
+                style: theme.textTheme.titleSmall,
+              ),
+            if (detail != null) ...<Widget>[
+              const SizedBox(height: 4),
+              Text(
+                detail,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+            const SizedBox(height: 8),
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: FilledButton.tonalIcon(
+                onPressed: _autoFillFromSuggestion,
+                icon: const Icon(Icons.auto_fix_high, size: 18),
+                label: Text(l10n.autoFillNameNotes),
+              ),
             ),
           ],
         ),
@@ -465,25 +909,22 @@ class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
     );
   }
 
-  Widget _buildLocationCard(AppLocalizations l10n) {
+  /// The GPS status shown above the Smart Plus Code field while the current
+  /// position is the source of truth.
+  Widget _buildGpsStatus(AppLocalizations l10n) {
     final ThemeData theme = Theme.of(context);
 
     if (_capturing) {
-      return Card(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: <Widget>[
-              const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-              const SizedBox(width: 16),
-              Expanded(child: Text(l10n.fetchingLocation)),
-            ],
+      return Row(
+        children: <Widget>[
+          const SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(strokeWidth: 2),
           ),
-        ),
+          const SizedBox(width: 16),
+          Expanded(child: Text(l10n.fetchingLocation)),
+        ],
       );
     }
 
@@ -491,48 +932,37 @@ class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
       case null:
         return const SizedBox.shrink();
       case LocationSuccess(:final latitude, :final longitude, :final accuracy):
-        return Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  l10n.currentLocation,
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.8,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                _CoordRow(
-                  icon: Icons.pin_drop_outlined,
-                  label: l10n.latitude,
-                  value: latitude.toStringAsFixed(6),
-                ),
-                const SizedBox(height: 4),
-                _CoordRow(
-                  icon: Icons.pin_drop_outlined,
-                  label: l10n.longitude,
-                  value: longitude.toStringAsFixed(6),
-                ),
-                const SizedBox(height: 4),
-                _CoordRow(
-                  icon: Icons.grid_on,
-                  label: l10n.plusCode,
-                  value: PlusCode.encode(latitude, longitude),
-                ),
-                if (accuracy != null) ...<Widget>[
-                  const SizedBox(height: 4),
-                  Text(
-                    '±${accuracy.toStringAsFixed(0)} m',
-                    style: theme.textTheme.bodySmall,
-                  ),
-                ],
-              ],
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text(
+              l10n.currentLocation,
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.8,
+              ),
             ),
-          ),
+            const SizedBox(height: 8),
+            _CoordRow(
+              icon: Icons.pin_drop_outlined,
+              label: l10n.latitude,
+              value: latitude.toStringAsFixed(6),
+            ),
+            const SizedBox(height: 4),
+            _CoordRow(
+              icon: Icons.pin_drop_outlined,
+              label: l10n.longitude,
+              value: longitude.toStringAsFixed(6),
+            ),
+            if (accuracy != null) ...<Widget>[
+              const SizedBox(height: 4),
+              Text(
+                '±${accuracy.toStringAsFixed(0)} m',
+                style: theme.textTheme.bodySmall,
+              ),
+            ],
+          ],
         );
       case LocationServiceDisabled():
         return _LocationMessageCard(
@@ -620,37 +1050,39 @@ class _LocationMessageCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Row(
           children: <Widget>[
-            Row(
-              children: <Widget>[
-                Icon(icon, color: theme.colorScheme.error),
-                const SizedBox(width: 12),
-                Expanded(child: Text(title, style: theme.textTheme.titleSmall)),
-              ],
-            ),
-            if (message != null) ...<Widget>[
-              const SizedBox(height: 8),
-              Text(
-                message!,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
+            Icon(icon, color: theme.colorScheme.error),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: theme.textTheme.titleSmall,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
-            ],
-            const SizedBox(height: 8),
-            TextButton.icon(
-              onPressed: onAction,
-              icon: const Icon(Icons.open_in_new),
-              label: Text(actionLabel),
             ),
           ],
         ),
-      ),
+        if (message != null) ...<Widget>[
+          const SizedBox(height: 8),
+          Text(
+            message!,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+        const SizedBox(height: 8),
+        TextButton.icon(
+          onPressed: onAction,
+          icon: const Icon(Icons.open_in_new),
+          label: Text(actionLabel),
+        ),
+      ],
     );
   }
 }

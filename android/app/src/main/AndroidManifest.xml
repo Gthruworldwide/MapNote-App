@@ -7,10 +7,13 @@
     <!-- Daily GPS tracking (Phase 1) reads locations while the app is open. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION"/>
-    <!-- Declared for the future background-tracking phase (today's tracker only
-         runs while the app is in the foreground; the permission is never
-         requested at runtime yet). -->
+    <!-- Background tracking: the trackers keep receiving fixes through the
+         LocationTrackingService foreground service, which needs the background
+         location permission on Android 10+ and a visible notification
+         (POST_NOTIFICATIONS) on Android 13+. Both are requested at runtime,
+         the moment a tracker is switched on. -->
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <!-- Re-register the periodic backup task after a device reboot. -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <!-- Biometric / device-credential verification for locked locations. -->
@@ -95,6 +98,13 @@
         <service
             android:name="com.solusibejo.flutter_dynamic_icon_plus.FlutterDynamicIconPlusService"
             android:stopWithTask="false"/>
+        <!-- Keeps the daily GPS trackers alive while MapNote is backgrounded.
+             Started/stopped from Dart (ForegroundTrackingService). -->
+        <service
+            android:name=".LocationTrackingService"
+            android:exported="false"
+            android:stopWithTask="true"
+            android:foregroundServiceType="location"/>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

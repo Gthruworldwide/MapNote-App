@@ -1,4 +1,4 @@
-# Runs RouteNote with the real Google OAuth client IDs (routenote-app project).
+# Runs MapNote with the real Google OAuth client IDs (routenote-app project).
 # Client IDs are public identifiers, not secrets.
 #
 # Usage from the project root:

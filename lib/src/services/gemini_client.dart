@@ -135,7 +135,7 @@ class GeminiClient {
         'parts': <Object?>[
           <String, Object?>{
             'text':
-                'You are the in-app assistant of "RouteNote", an offline-first '
+                'You are the in-app assistant of "MapNote", an offline-first '
                 'location saving app. You receive anonymous aggregate metrics '
                 'about the user\'s local data and app health. Respond ONLY with '
                 'a JSON array (no markdown, no prose) of at most '
@@ -288,7 +288,7 @@ class GeminiClient {
         // Give the model a terse, non-sensitive failure marker; log details
         // locally so a weird input can still be debugged.
         if (kDebugMode) {
-          debugPrint('RouteNote agent tool "$name" failed: $error');
+          debugPrint('MapNote agent tool "$name" failed: $error');
         }
         results.add(<String, Object?>{
           'name': name,

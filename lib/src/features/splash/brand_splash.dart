@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/brand/brand_lockup.dart';
 
-/// Plays the approved RouteNote entrance animation over the app on cold start,
+/// Plays the approved MapNote entrance animation over the app on cold start,
 /// then cross-fades to it.
 ///
 /// Mounted from [MaterialApp.builder], so it sits *above* the navigator: the
@@ -24,7 +24,7 @@ class BrandSplash extends StatefulWidget {
   final Widget child;
 
   /// Length of the entrance, from the motion reference
-  /// (`RouteNote / Motion / Horizontal / 2s`).
+  /// (`MapNote / Motion / Horizontal / 2s`).
   ///
   /// The reference file runs for 2.0 s, but its last 1.15 s is the final hold -
   /// the stretch where the finished lockup is simply held. The entrance itself

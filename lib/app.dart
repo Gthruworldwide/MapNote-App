@@ -1,11 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'l10n/generated/app_localizations.dart';
 import 'src/core/navigation/app_navigator.dart';
 import 'src/core/theme/app_theme.dart';
+import 'src/core/utils/haptics.dart';
 import 'src/data/models/place.dart';
 import 'src/features/add_place/add_place_screen.dart';
 import 'src/features/home/home_screen.dart';
@@ -19,24 +21,29 @@ import 'src/services/location_parser.dart';
 import 'src/services/lock_gate.dart';
 import 'src/services/share_intent_service.dart';
 
-/// Root widget of RouteNote.
+/// Root widget of MapNote.
 ///
 /// Watches the app lifecycle and triggers a silent, throttled Drive sync
 /// whenever the app returns to the foreground (sync on resume). It also
-/// listens for text/links shared into RouteNote from other apps.
-class RouteNoteApp extends ConsumerStatefulWidget {
-  const RouteNoteApp({super.key});
+/// listens for text/links shared into MapNote from other apps, and offers to
+/// import a Plus Code it finds on the clipboard.
+class MapNoteApp extends ConsumerStatefulWidget {
+  const MapNoteApp({super.key});
 
   @override
-  ConsumerState<RouteNoteApp> createState() => _RouteNoteAppState();
+  ConsumerState<MapNoteApp> createState() => _MapNoteAppState();
 }
 
-class _RouteNoteAppState extends ConsumerState<RouteNoteApp>
+class _MapNoteAppState extends ConsumerState<MapNoteApp>
     with WidgetsBindingObserver {
   static const LocationParser _parser = LocationParser();
 
   StreamSubscription<String>? _shareSubscription;
   StreamSubscription<String>? _shortcutSubscription;
+
+  /// The last Plus Code the clipboard import was offered for, so a code the
+  /// user ignored is not offered again on every resume.
+  String? _lastOfferedPlusCode;
 
   @override
   void initState() {
@@ -46,6 +53,8 @@ class _RouteNoteAppState extends ConsumerState<RouteNoteApp>
     _listenForSharedLocations();
     _listenForShortcuts();
     _listenForThemeIconChanges();
+    // A Plus Code can already be on the clipboard at cold start.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkClipboard());
   }
 
   @override
@@ -67,6 +76,12 @@ class _RouteNoteAppState extends ConsumerState<RouteNoteApp>
       // The user may have toggled GPS or granted permission in the system
       // settings while the app was backgrounded.
       ref.read(locationStatusProvider.notifier).refresh();
+      // Retry the native tracking foreground service now that MapNote is
+      // visible: Android refuses foreground-service starts from the background,
+      // so an earlier attempt may have been dropped.
+      resyncTrackingForegroundService(ref);
+      // They may also have copied a Plus Code from Maps or a chat app.
+      _checkClipboard();
     } else if (state == AppLifecycleState.paused) {
       health.log(HealthEventType.appPause);
     }
@@ -101,7 +116,62 @@ class _RouteNoteAppState extends ConsumerState<RouteNoteApp>
         .apply(DynamicIconService.isDark(mode, brightness));
   }
 
-  /// Handles text/links shared into RouteNote from other apps (share target).
+  // --- Clipboard Plus Code import ---------------------------------------------
+
+  /// Looks for a raw Plus Code on the clipboard and offers a one-tap import.
+  ///
+  /// Best-effort: reading the clipboard can fail (no permission, an empty
+  /// clipboard, or a platform without the channel), and none of that is worth
+  /// interrupting the user for.
+  Future<void> _checkClipboard() async {
+    if (!mounted) return;
+    String? text;
+    try {
+      final ClipboardData? data = await Clipboard.getData(Clipboard.kTextPlain);
+      text = data?.text;
+    } catch (_) {
+      return;
+    }
+    if (!mounted) return;
+
+    final String? code = ref
+        .read(smartClipboardServiceProvider)
+        .extractPlusCode(text);
+    if (code == null || code == _lastOfferedPlusCode) return;
+    _lastOfferedPlusCode = code;
+
+    final BuildContext? context = appNavigatorKey.currentContext;
+    if (context == null || !context.mounted) return;
+    final AppLocalizations l10n = AppLocalizations.of(context);
+    final ScaffoldMessengerState? messenger = ScaffoldMessenger.maybeOf(context);
+    if (messenger == null) return;
+
+    Haptics.light();
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(l10n.plusCodeDetected),
+        action: SnackBarAction(
+          label: l10n.plusCodeImport,
+          onPressed: () => _importPlusCode(code),
+        ),
+      ),
+    );
+  }
+
+  void _importPlusCode(String code) {
+    final NavigatorState? navigator = appNavigatorKey.currentState;
+    if (navigator == null) return;
+    navigator.push(
+      MaterialPageRoute<void>(
+        builder: (_) =>
+            AddPlaceScreen(initialPlusCode: code, initialMode: LocationEntryMode.manual),
+      ),
+    );
+  }
+
+  // --- Share target -----------------------------------------------------------
+
+  /// Handles text/links shared into MapNote from other apps (share target).
   void _listenForSharedLocations() {
     final ShareIntentService service = ref.read(shareIntentServiceProvider);
     _shareSubscription = service.textStream().listen(_handleSharedText);
@@ -120,6 +190,29 @@ class _RouteNoteAppState extends ConsumerState<RouteNoteApp>
     }
     if (!mounted) return;
 
+    // A raw Plus Code shared from Maps has no lat/lng, but can be decoded
+    // offline — hand it straight to the Add Place screen.
+    if (parsed == null) {
+      final String? code = ref
+          .read(smartClipboardServiceProvider)
+          .extractPlusCode(raw);
+      if (code != null) {
+        final NavigatorState? navigator = appNavigatorKey.currentState;
+        if (navigator == null) {
+          WidgetsBinding.instance.addPostFrameCallback(
+            (_) => _handleSharedText(raw),
+          );
+          return;
+        }
+        navigator.push(
+          MaterialPageRoute<void>(
+            builder: (_) => AddPlaceScreen(initialPlusCode: code),
+          ),
+        );
+        return;
+      }
+    }
+
     if (parsed == null) {
       AppLogger.log(
         category: 'LOCATION_PARSER',
@@ -137,12 +230,14 @@ class _RouteNoteAppState extends ConsumerState<RouteNoteApp>
       return;
     }
 
-    parsed = ParsedLocation(
-      latitude: parsed.latitude,
-      longitude: parsed.longitude,
-      name: parsed.name ?? _parser.guessName(raw),
+    final ParsedLocation location = parsed;
+    _openSharedLocation(
+      ParsedLocation(
+        latitude: location.latitude,
+        longitude: location.longitude,
+        name: location.name ?? _parser.guessName(raw),
+      ),
     );
-    _openSharedLocation(parsed);
   }
 
   void _openSharedLocation(ParsedLocation location) {
@@ -233,6 +328,7 @@ class _RouteNoteAppState extends ConsumerState<RouteNoteApp>
       }
     }
 
+    Haptics.light();
     final bool launched = await ref
         .read(navigationServiceProvider)
         .navigate(place.latitude, place.longitude);
@@ -240,7 +336,9 @@ class _RouteNoteAppState extends ConsumerState<RouteNoteApp>
       final BuildContext? rootContext2 = appNavigatorKey.currentContext;
       if (rootContext2 != null && rootContext2.mounted) {
         ScaffoldMessenger.maybeOf(rootContext2)?.showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(rootContext2).locationUnavailable)),
+          SnackBar(
+            content: Text(AppLocalizations.of(rootContext2).locationUnavailable),
+          ),
         );
       }
     }

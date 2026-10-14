@@ -73,13 +73,13 @@ void main() {
           // tearDown). Keep the health log in memory for these tests.
           appHealthLoggerProvider.overrideWithValue(AppHealthLogger(null)),
         ],
-        child: const RouteNoteApp(),
+        child: const MapNoteApp(),
       ),
     );
     await tester.pumpAndSettle();
   }
 
-  testWidgets('RouteNoteApp renders the empty home screen', (
+  testWidgets('MapNoteApp renders the empty home screen', (
     WidgetTester tester,
   ) async {
     await pumpApp(tester);

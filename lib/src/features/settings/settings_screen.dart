@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
@@ -7,17 +9,17 @@ import '../../core/brand/brand_lockup.dart';
 import '../../core/config/app_config.dart';
 import '../../core/config/preferred_nav_app.dart';
 import '../../core/utils/date_formats.dart';
+import '../../core/utils/haptics.dart';
 import '../../data/models/place.dart';
 import '../../data/remote/auth_service.dart';
 import '../../data/repositories/sync_repository.dart';
 import '../../providers/app_providers.dart';
 import '../../services/location_service.dart';
 import '../../services/lock_gate.dart';
-import '../home/widgets/smart_insights_card.dart';
 import 'hidden_vault_screen.dart';
 
-/// Settings, grouped into cards: account, location services, sync & backup,
-/// preferences and about.
+/// Settings, consolidated into four Apple-style grouped cards:
+/// account & cloud backup, location & tracking, preferences, and about.
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
@@ -68,50 +70,78 @@ class SettingsScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: <Widget>[
+          // 1. Account & Cloud Backup: profile, sign out, Drive sync, vault.
           _SettingsSection(
-            title: l10n.sectionAccount,
-            child: _buildAccountCard(context, ref, l10n, auth),
+            title: l10n.accountAndBackup,
+            child: _grouped(<Widget>[
+              _buildAccountCard(context, ref, l10n, auth),
+              _buildSyncCard(context, ref, l10n, sync),
+              _buildPrivacyCard(context, ref, l10n, hiddenCount),
+            ]),
           ),
+          // 2. Location & Tracking: permissions, then the single merged
+          //    AutoMotion + Daily GPS tracking card and its today report.
           _SettingsSection(
-            title: l10n.sectionLocationServices,
-            child: _buildLocationCard(context, ref, l10n, location),
+            title: l10n.sectionLocationTracking,
+            child: _grouped(<Widget>[
+              _buildLocationCard(context, ref, l10n, location),
+              _subHeader(context, l10n.autoMotionSection),
+              _buildTrackingCard(context, ref, l10n),
+            ]),
           ),
-          _SettingsSection(
-            title: l10n.dailyGpsSection,
-            child: _buildGpsCard(context, ref, l10n),
-          ),
-          _SettingsSection(
-            title: l10n.autoMotionSection,
-            child: _buildAutoMotionCard(context, ref, l10n),
-          ),
-          _SettingsSection(
-            title: l10n.sectionSync,
-            child: _buildSyncCard(context, ref, l10n, sync),
-          ),
-          _SettingsSection(
-            title: l10n.sectionPrivacy,
-            child: _buildPrivacyCard(context, ref, l10n, hiddenCount),
-          ),
+          // 3. Preferences: navigation app, language, theme, Smart Insights.
           _SettingsSection(
             title: l10n.sectionPreferences,
-            child: _buildPreferencesCard(
-              context,
-              ref,
-              l10n,
-              locale,
-              themeMode,
-              navApp,
-            ),
+            child: _grouped(<Widget>[
+              _buildPreferencesCard(
+                context,
+                ref,
+                l10n,
+                locale,
+                themeMode,
+                navApp,
+              ),
+              _buildAgentCard(context, ref, l10n),
+            ]),
           ),
+          // 4. About MapNote.
           _SettingsSection(
-            title: l10n.sectionSmartInsights,
-            child: _buildAgentCard(context, ref, l10n),
-          ),
-          _SettingsSection(
-            title: l10n.about,
+            title: l10n.aboutTitle,
             child: _buildAboutCard(context, l10n),
           ),
         ],
+      ),
+    );
+  }
+
+  /// Stacks the sub-cards of a consolidated settings card, separated by a
+  /// hairline divider rather than another full section header.
+  Widget _grouped(List<Widget> parts) {
+    final List<Widget> children = <Widget>[];
+    for (int i = 0; i < parts.length; i++) {
+      if (i > 0) {
+        children.add(const Divider(height: 1, indent: 16, endIndent: 16));
+      }
+      children.add(parts[i]);
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: children,
+    );
+  }
+
+  /// A sub-header inside a consolidated card, e.g. "AutoMotion".
+  Widget _subHeader(BuildContext context, String title) {
+    final ThemeData theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      child: Text(
+        title,
+        style: theme.textTheme.labelMedium?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.8,
+        ),
       ),
     );
   }
@@ -257,16 +287,22 @@ class SettingsScreen extends ConsumerWidget {
     };
   }
 
-  // --- Daily GPS tracking ---------------------------------------------------
+  // --- Daily tracking (AutoMotion + Daily GPS tracking) ----------------------
 
-  Widget _buildGpsCard(
+  /// One merged tracking card: the AutoMotion and Daily-GPS switches, followed
+  /// by a single "today" report. Keeping exactly one report block means no
+  /// metric is ever rendered twice — the block covers whichever engines are on.
+  Widget _buildTrackingCard(
     BuildContext context,
     WidgetRef ref,
     AppLocalizations l10n,
   ) {
     final ThemeData theme = Theme.of(context);
-    final bool enabled = ref.watch(gpsTrackingEnabledProvider);
+    final bool autoMotionEnabled = ref.watch(autoMotionEnabledProvider);
+    final bool gpsEnabled = ref.watch(gpsTrackingEnabledProvider);
+    final AutoMotionState motion = ref.watch(autoMotionControllerProvider);
     final GpsTrackingState tracking = ref.watch(gpsTrackingControllerProvider);
+
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -274,17 +310,39 @@ class SettingsScreen extends ConsumerWidget {
         children: <Widget>[
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
+            secondary: Icon(
+              Icons.directions_walk,
+              color: theme.colorScheme.primary,
+            ),
+            title: Text(l10n.autoMotionToggle),
+            subtitle: Text(l10n.autoMotionToggleSubtitle),
+            value: autoMotionEnabled,
+            onChanged: (bool value) =>
+                _toggleAutoMotion(context, ref, l10n, value),
+          ),
+          const Divider(height: 1),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
             secondary: Icon(Icons.route, color: theme.colorScheme.primary),
             title: Text(l10n.dailyGpsToggle),
             subtitle: Text(l10n.dailyGpsToggleSubtitle),
-            value: enabled,
+            value: gpsEnabled,
             onChanged: (bool value) => _toggleGps(context, ref, l10n, value),
           ),
-          if (enabled) ...<Widget>[
+          if (autoMotionEnabled || gpsEnabled) ...<Widget>[
             const SizedBox(height: 12),
             const Divider(height: 1),
             const SizedBox(height: 12),
-            _DailyGpsSummaryTile(state: tracking, l10n: l10n),
+            _TrackingSummaryTile(
+              // The two engines sample the same trip, so report the more
+              // complete one: the card then never reads 0.00 km while the other
+              // engine has already recorded today's motion.
+              totalKm: math.max(tracking.totalKm, motion.totalKm),
+              maxSpeedKmh: math.max(tracking.maxSpeedKmh, motion.maxSpeedKmh),
+              active: tracking.active || motion.active,
+              unavailable: tracking.unavailable || motion.unavailable,
+              l10n: l10n,
+            ),
           ],
         ],
       ),
@@ -310,32 +368,6 @@ class SettingsScreen extends ConsumerWidget {
         );
       }
     }
-  }
-
-  // --- AutoMotion ------------------------------------------------------------
-
-  Widget _buildAutoMotionCard(
-    BuildContext context,
-    WidgetRef ref,
-    AppLocalizations l10n,
-  ) {
-    final ThemeData theme = Theme.of(context);
-    final bool enabled = ref.watch(autoMotionEnabledProvider);
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: SwitchListTile(
-        contentPadding: EdgeInsets.zero,
-        secondary: Icon(
-          Icons.directions_walk,
-          color: theme.colorScheme.primary,
-        ),
-        title: Text(l10n.autoMotionToggle),
-        subtitle: Text(l10n.autoMotionToggleSubtitle),
-        value: enabled,
-        onChanged: (bool value) =>
-            _toggleAutoMotion(context, ref, l10n, value),
-      ),
-    );
   }
 
   Future<void> _toggleAutoMotion(
@@ -598,9 +630,11 @@ class SettingsScreen extends ConsumerWidget {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          // Master switch: hide or show the whole Smart Insights feature.
+          // Master switch: hide or show the whole Smart Insights feature. The
+          // suggestions themselves live on the Home screen, so they are not
+          // duplicated here — this card only carries the switches.
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
             secondary: Icon(
@@ -614,44 +648,17 @@ class SettingsScreen extends ConsumerWidget {
                 .read(smartInsightsEnabledProvider.notifier)
                 .setEnabled(value),
           ),
-          if (insightsEnabled) ...<Widget>[
-            const SizedBox(height: 8),
-            Row(
-              children: <Widget>[
-                Icon(
-                  Icons.auto_awesome,
-                  size: 20,
-                  color: theme.colorScheme.primary,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    l10n.smartInsightsTitle,
-                    style: theme.textTheme.titleSmall,
-                  ),
-                ),
-                IconButton(
-                  tooltip: l10n.smartInsightsRefresh,
-                  onPressed: () => ref.read(agentProvider.notifier).refresh(),
-                  icon: const Icon(Icons.refresh, size: 20),
-                  visualDensity: VisualDensity.compact,
-                ),
-              ],
+          if (cloudAvailable) ...<Widget>[
+            const Divider(height: 24),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              secondary: const Icon(Icons.cloud_outlined),
+              title: Text(l10n.smartInsightsCloudAi),
+              subtitle: Text(l10n.smartInsightsCloudAiSubtitle),
+              value: cloudEnabled,
+              onChanged: (bool value) =>
+                  ref.read(cloudAiEnabledProvider.notifier).setEnabled(value),
             ),
-            const SizedBox(height: 4),
-            const SmartInsightsList(showWhenEmpty: true),
-            if (cloudAvailable) ...<Widget>[
-              const Divider(height: 24),
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                secondary: const Icon(Icons.cloud_outlined),
-                title: Text(l10n.smartInsightsCloudAi),
-                subtitle: Text(l10n.smartInsightsCloudAiSubtitle),
-                value: cloudEnabled,
-                onChanged: (bool value) =>
-                    ref.read(cloudAiEnabledProvider.notifier).setEnabled(value),
-              ),
-            ],
           ],
         ],
       ),
@@ -747,6 +754,7 @@ class SettingsScreen extends ConsumerWidget {
     WidgetRef ref,
     AppLocalizations l10n,
   ) async {
+    Haptics.light();
     final bool? confirmed = await showDialog<bool>(
       context: context,
       builder: (BuildContext dialogContext) => AlertDialog(
@@ -868,11 +876,23 @@ class _ThemeChoice extends StatelessWidget {
   }
 }
 
-/// Today's distance / max-speed report shown under the GPS tracking toggle.
-class _DailyGpsSummaryTile extends StatelessWidget {
-  const _DailyGpsSummaryTile({required this.state, required this.l10n});
+/// Today's distance / max-speed report shown under the merged tracking card.
+///
+/// Takes plain values (not a single controller's state) because it summarises
+/// both engines in one place.
+class _TrackingSummaryTile extends StatelessWidget {
+  const _TrackingSummaryTile({
+    required this.totalKm,
+    required this.maxSpeedKmh,
+    required this.active,
+    required this.unavailable,
+    required this.l10n,
+  });
 
-  final GpsTrackingState state;
+  final double totalKm;
+  final double maxSpeedKmh;
+  final bool active;
+  final bool unavailable;
   final AppLocalizations l10n;
 
   @override
@@ -881,7 +901,7 @@ class _DailyGpsSummaryTile extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        if (state.unavailable)
+        if (unavailable)
           Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: Row(
@@ -909,15 +929,14 @@ class _DailyGpsSummaryTile extends StatelessWidget {
               child: _DailyGpsMetric(
                 icon: Icons.straighten,
                 label: l10n.dailyDistance,
-                value: '${state.totalKm.toStringAsFixed(2)} ${l10n.kmUnit}',
+                value: '${totalKm.toStringAsFixed(2)} ${l10n.kmUnit}',
               ),
             ),
             Expanded(
               child: _DailyGpsMetric(
                 icon: Icons.speed,
                 label: l10n.dailyMaxSpeed,
-                value: '${state.maxSpeedKmh.toStringAsFixed(1)} '
-                    '${l10n.kmhUnit}',
+                value: '${maxSpeedKmh.toStringAsFixed(1)} ${l10n.kmhUnit}',
               ),
             ),
           ],
@@ -926,15 +945,15 @@ class _DailyGpsSummaryTile extends StatelessWidget {
         Row(
           children: <Widget>[
             Icon(
-              state.active ? Icons.gps_fixed : Icons.pause_circle_outline,
+              active ? Icons.gps_fixed : Icons.pause_circle_outline,
               size: 16,
-              color: state.active
+              color: active
                   ? theme.colorScheme.primary
                   : theme.colorScheme.onSurfaceVariant,
             ),
             const SizedBox(width: 6),
             Text(
-              state.active ? l10n.dailyTrackingActive : l10n.dailyTrackingPaused,
+              active ? l10n.dailyTrackingActive : l10n.dailyTrackingPaused,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),

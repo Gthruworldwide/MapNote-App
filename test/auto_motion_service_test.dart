@@ -191,6 +191,60 @@ void main() {
     });
   });
 
+  group('AutoMotionService live updates', () {
+    test('emits on every accepted fix so the UI never waits for a toggle',
+        () async {
+      final AutoMotionService service =
+          AutoMotionService(dailyStore: await openStore('_changes'));
+      final List<int> notifications = <int>[];
+      final StreamSubscription<void> subscription =
+          service.changes.listen((_) => notifications.add(1));
+
+      service.recordPosition(_fix(0, 0));
+      service.recordPosition(_fix(0.009, 0, speed: 10));
+      await Future<void>.delayed(Duration.zero);
+      expect(notifications, hasLength(2));
+
+      // A rejected fix is not an update.
+      service.recordPosition(_fix(0.02, 0, accuracy: 80));
+      await Future<void>.delayed(Duration.zero);
+      expect(notifications, hasLength(2));
+
+      await subscription.cancel();
+    });
+
+    test('persists each accepted fix instead of only on stop', () async {
+      final AutoMotionDataSource store = await openStore('_eager');
+      final AutoMotionService service = AutoMotionService(dailyStore: store);
+
+      service.recordPosition(_fix(0, 0));
+      service.recordPosition(_fix(0.009, 0, speed: 10));
+      // Let the fire-and-forget writes land (no stop() call yet).
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+
+      final DailyGpsSummary? saved =
+          store.summaryFor(DailyGpsSummary.dayOf(DateTime.now()));
+      expect(saved, isNotNull);
+      expect(saved!.totalKm, closeTo(1.0, 0.05));
+      expect(saved.maxSpeedKmh, closeTo(36.0, 0.001));
+      expect(service.isTracking, isFalse); // still never started
+    });
+
+    test('a long silence between fixes is not counted as travel', () async {
+      final AutoMotionService service =
+          AutoMotionService(dailyStore: await openStore('_gap'));
+      final DateTime start = DateTime.now();
+
+      service.recordPosition(_fix(0, 0, at: start));
+      // Three hours later the phone is 20 km away: parked, not travelled.
+      service.recordPosition(
+        _fix(0.18, 0, at: start.add(const Duration(hours: 3)), speed: 0),
+      );
+
+      expect(service.totalDistanceKm, 0);
+    });
+  });
+
   group('AutoMotionService midnight roll-over', () {
     test('saves the finished day and starts the next one', () async {
       final AutoMotionDataSource store = await openStore('_roll');

@@ -152,21 +152,21 @@ void main() {
     final _Raster raster = await _rasterSvg(
       tester,
       svg: _read(wordmark),
-      width: 245 * 4,
+      width: 205.5 * 4,
       height: 113 * 4,
     );
 
-    expect(raster.width, 980);
+    expect(raster.width, 822);
     expect(raster.height, 452);
 
-    // "Route" in blue, "Note" in cyan - both render, neither is an outline.
-    expect(raster.count('145cff'), greaterThan(20000));
-    expect(raster.count('00cfff'), greaterThan(20000));
+    // "Map" in blue, "Note" in cyan - both render, neither is an outline.
+    expect(raster.count('145cff'), greaterThan(18000));
+    expect(raster.count('00cfff'), greaterThan(18000));
 
     // The crop leaves the whole wordmark inside the asset: the first glyph
-    // starts at x = 136.898 and the last ends at x = 380.25.
+    // starts at x = 136.898 and the last ends at x = 340.989.
     final List<int> bounds = raster.inkBounds();
     expect(bounds[0], closeTo(3.6, 1));
-    expect(bounds[2], closeTo(977, 2));
+    expect(bounds[2], closeTo(819, 2));
   });
 }

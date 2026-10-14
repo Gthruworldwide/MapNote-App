@@ -6,7 +6,7 @@ import 'app_logger.dart';
 
 /// Keeps the Android launcher icon in sync with the effective app theme.
 ///
-/// RouteNote ships a light launcher icon (`.ic_launcher`, white backdrop +
+/// MapNote ships a light launcher icon (`.ic_launcher`, white backdrop +
 /// blue pin) and a dark variant (`.ic_launcher_dark`, AMOLED-black backdrop).
 /// Both are declared as a pair of `<activity-alias>` entries in
 /// AndroidManifest.xml; [apply] enables the alias matching the requested

@@ -71,6 +71,68 @@ void main() {
     });
   });
 
+  group('PlusCode.isShortPlusCode', () {
+    test('accepts locality-relative codes only', () {
+      expect(PlusCode.isShortPlusCode('9G8F+6W'), isTrue);
+      expect(PlusCode.isShortPlusCode(' 9g8f + 6w '), isTrue);
+      expect(PlusCode.isShortPlusCode('8FVC9G8F+6X'), isFalse,
+          reason: 'a full code is not short');
+      expect(PlusCode.isShortPlusCode('hello'), isFalse);
+      expect(PlusCode.isShortPlusCode(''), isFalse);
+    });
+  });
+
+  group('PlusCode.extract', () {
+    test('carves a full code out of surrounding text', () {
+      expect(
+        PlusCode.extract('Meet at 8FVC9G8F+6X near the lake'),
+        '8FVC9G8F+6X',
+      );
+    });
+
+    test('carves a short code and the locality next to it', () {
+      expect(PlusCode.extract('9G8F+6W, Cairo'), '9G8F+6W');
+    });
+
+    test('returns null when there is no code at all', () {
+      expect(PlusCode.extract('just a plain note'), isNull);
+      expect(PlusCode.extract('30.0444, 31.2357'), isNull);
+      expect(PlusCode.extract(''), isNull);
+    });
+  });
+
+  group('PlusCode.decodeFlexible', () {
+    test('resolves a full code without any reference', () {
+      final PlusCodePoint? point =
+          PlusCode.decodeFlexible('see 8FVC9G8F+6W on the map');
+      expect(point, isNotNull);
+      expect(point!.latitude, closeTo(47.3655625, 1e-9));
+    });
+
+    test('resolves a short code against a nearby reference', () {
+      // Cairo-ish reference. A short code only pins the *last* characters of
+      // the full code, so the recovered point must sit near the reference and
+      // re-encode to a full code with the same tail.
+      final PlusCodePoint? point = PlusCode.decodeFlexible(
+        '9G8F+6W',
+        reference: const PlusCodePoint(latitude: 30.0459, longitude: 31.2243),
+      );
+      expect(point, isNotNull);
+      expect(point!.latitude, closeTo(30.0459, 2.0));
+      expect(point.longitude, closeTo(31.2243, 2.0));
+      expect(
+        PlusCode.encode(point.latitude, point.longitude).endsWith('9G8F+6W'),
+        isTrue,
+      );
+    });
+
+    test('refuses a short code with no reference and any invalid text', () {
+      expect(PlusCode.decodeFlexible('9G8F+6W'), isNull);
+      expect(PlusCode.decodeFlexible('not a code'), isNull);
+      expect(PlusCode.decodeFlexible(''), isNull);
+    });
+  });
+
   group('Place.plusCode', () {
     test('is derived from the coordinates, never stored', () {
       final Place place = Place(

@@ -1,4 +1,4 @@
-# Generates RouteNote's launcher-icon layers from the Figma "Location Notebook"
+# Generates MapNote's launcher-icon layers from the Figma "Location Notebook"
 # masters.
 #
 # Committed sources:

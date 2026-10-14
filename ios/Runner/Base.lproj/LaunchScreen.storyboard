@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!--
-    Static launch screen, handed over untouched to the in-app RouteNote entrance
+    Static launch screen, handed over untouched to the in-app MapNote entrance
     animation. It paints only the brand background (LaunchBackground: white in
     light, AMOLED black in dark), never the lockup: the animation builds the
     lockup from invisible in the first Flutter frame, so drawing it here would

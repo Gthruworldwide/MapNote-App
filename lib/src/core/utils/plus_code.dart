@@ -29,6 +29,22 @@ class PlusCode {
     caseSensitive: false,
   );
 
+  /// A short (locality-relative) code such as `9G8F+6W`: fewer than eight
+  /// characters before the `+`, so it only means something next to a reference
+  /// location.
+  static final RegExp _shortCode = RegExp(
+    '^[$_alphabet]{2,7}\\s*\\+\\s*[$_alphabet]{2,3}\$',
+    caseSensitive: false,
+  );
+
+  /// A Plus Code fragment anywhere inside a longer string (a shared link, a
+  /// pasted address), full or short. Used by [extract] to carve a code out of
+  /// the surrounding text.
+  static final RegExp _codePattern = RegExp(
+    '[$_alphabet]{2,8}\\s*\\+\\s*[$_alphabet]{2,7}',
+    caseSensitive: false,
+  );
+
   /// Encodes [latitude]/[longitude] into a global Plus Code.
   ///
   /// The encoder clips latitude to ±90 and normalises longitude to ±180, so an
@@ -46,13 +62,25 @@ class PlusCode {
 
   /// Whether [value] is a *full* Plus Code.
   ///
-  /// Short codes (e.g. `9G8F+6W`) are rejected: they only mean something
-  /// relative to a reference location, which a raw paste does not carry.
-  static bool isPlusCode(String value) {
-    final String normalized = _normalize(value);
-    if (!_globalCode.hasMatch(normalized)) return false;
-    final olc.PlusCode code = olc.PlusCode.unverified(normalized);
-    return code.isValid && code.isFull();
+  /// Short codes (e.g. `9G8F+6W`) are rejected here: they only mean something
+  /// relative to a reference location. Use [isShortPlusCode] or the tolerant
+  /// [decodeFlexible] for those.
+  static bool isPlusCode(String value) => _isFullCode(_normalize(value));
+
+  /// Whether [value] is a *short* (locality-relative) Plus Code.
+  static bool isShortPlusCode(String value) => _isShortCode(_normalize(value));
+
+  /// The first Plus Code (full or short) found anywhere in [value], normalised
+  /// to upper case, or `null` when the text contains no valid code.
+  ///
+  /// This is what lets `9G8F+6W, Cairo` or a chunk of shared text be understood
+  /// without asking the user to trim it first.
+  static String? extract(String value) {
+    for (final RegExpMatch match in _codePattern.allMatches(value)) {
+      final String code = _normalize(match.group(0)!);
+      if (_isFullCode(code) || _isShortCode(code)) return code;
+    }
+    return null;
   }
 
   /// Decodes a full Plus Code into its centre point, or `null` when [value] is
@@ -61,14 +89,48 @@ class PlusCode {
   /// The centre is returned rather than a corner so a round-trip
   /// [encode] → [decode] lands back in the same cell.
   static PlusCodePoint? decode(String value) {
-    if (!isPlusCode(value)) return null;
-    final olc.CodeArea area = olc.PlusCode.unverified(
-      _normalize(value),
-    ).decode();
+    final String normalized = _normalize(value);
+    if (!_isFullCode(normalized)) return null;
+    final olc.CodeArea area = olc.PlusCode.unverified(normalized).decode();
     return PlusCodePoint(
       latitude: area.center.latitude,
       longitude: area.center.longitude,
     );
+  }
+
+  /// Decodes a full **or** short Plus Code.
+  ///
+  /// A full code is resolved on its own. A short code (`9G8F+6W`) needs a
+  /// [reference] — the device's current fix, or the city the user typed next to
+  /// it — which is used to recover the nearest full code; without a reference
+  /// `null` is returned so the caller can ask for one.
+  static PlusCodePoint? decodeFlexible(
+    String value, {
+    PlusCodePoint? reference,
+  }) {
+    final String? code = extract(value);
+    if (code == null) return null;
+    if (_isFullCode(code)) return decode(code);
+    if (reference == null) return null;
+    final olc.CodeArea area = olc.PlusCode.unverified(code)
+        .recoverNearest(olc.LatLng(reference.latitude, reference.longitude))
+        .decode();
+    return PlusCodePoint(
+      latitude: area.center.latitude,
+      longitude: area.center.longitude,
+    );
+  }
+
+  static bool _isFullCode(String normalized) {
+    if (!_globalCode.hasMatch(normalized)) return false;
+    final olc.PlusCode code = olc.PlusCode.unverified(normalized);
+    return code.isValid && code.isFull();
+  }
+
+  static bool _isShortCode(String normalized) {
+    if (!_shortCode.hasMatch(normalized)) return false;
+    final olc.PlusCode code = olc.PlusCode.unverified(normalized);
+    return code.isValid && code.isShort();
   }
 
   /// Uppercases the code and strips whitespace, so `8fvc 9g8f+6w` decodes the

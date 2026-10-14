@@ -1,7 +1,7 @@
-/// Compile-time configuration for RouteNote.
+/// Compile-time configuration for MapNote.
 ///
 /// None of these values are secrets. OAuth *client* ids are public identifiers
-/// (the client *secret* is never used by the app). They default to the RouteNote
+/// (the client *secret* is never used by the app). They default to the MapNote
 /// Google Cloud project so the app works however it is launched (IDE, adb, or
 /// the run script), and can be overridden at build time:
 ///
@@ -15,7 +15,7 @@ class AppConfig {
 
   /// Web / server OAuth client id. Required on Android for `google_sign_in`.
   ///
-  /// Defaults to the RouteNote Web client; override with
+  /// Defaults to the MapNote Web client; override with
   /// `--dart-define=GOOGLE_SERVER_CLIENT_ID=...`.
   static const String googleServerClientId = String.fromEnvironment(
     'GOOGLE_SERVER_CLIENT_ID',
@@ -34,7 +34,7 @@ class AppConfig {
   /// Human-readable version shown in Settings → About.
   ///
   /// Keep in sync with the `version` field in `pubspec.yaml`.
-  static const String appVersion = '1.0.1';
+  static const String appVersion = '1.0.4';
 
   /// Drive scope that grants access to the hidden, app-specific
   /// `appDataFolder` only. The user's other Drive files are never visible.

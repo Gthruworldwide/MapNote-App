@@ -16,7 +16,7 @@ enum AppIssueCategory { sync, parsing, ui, performance }
 /// truncated message.
 ///
 /// Raw [error] text is truncated, and [stackTrace] is **never persisted** — it
-/// is surfaced only in debug builds via [debugPrint] (RouteNote security
+/// is surfaced only in debug builds via [debugPrint] (MapNote security
 /// standard, AGENT_SKILLS.md §2.3): raw transport errors can embed request
 /// URIs/headers, and stack traces embed file paths, so neither belongs on
 /// disk.
@@ -40,7 +40,7 @@ class AppObserverService {
     Map<String, dynamic>? contextData,
   }) {
     if (kDebugMode && stackTrace != null && stackTrace.isNotEmpty) {
-      debugPrint('RouteNote issue [${category.name}]: $stackTrace');
+      debugPrint('MapNote issue [${category.name}]: $stackTrace');
     }
 
     _logger.log(
