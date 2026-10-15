@@ -308,14 +308,17 @@ class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
 
     if (!mounted) return;
 
-    if (parsed == null && plusCode != null) {
+    // The short-link `await` above means a non-null `plusCode` is not promoted
+    // inside the setState closure, so capture it in a final local first.
+    final String? code = plusCode;
+    if (parsed == null && code != null) {
       // A raw Plus Code: hand it to the Smart field, which decodes it offline.
       Haptics.light();
       setState(() {
         _mode = LocationEntryMode.manual;
-        _plusCodeController.text = plusCode!;
+        _plusCodeController.text = code;
       });
-      _onPlusCodeChanged(plusCode);
+      _onPlusCodeChanged(code);
       messenger.showSnackBar(SnackBar(content: Text(l10n.clipboardPasted)));
       return;
     }
@@ -630,9 +633,9 @@ class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
               ),
             ),
 
-            if (_suggestion != null) ...<Widget>[
+            if (_suggestion case final PlaceSuggestion suggestion) ...<Widget>[
               const SizedBox(height: 16),
-              _buildSuggestionCard(l10n),
+              _buildSuggestionCard(l10n, suggestion),
             ],
 
             const SizedBox(height: 24),
@@ -844,9 +847,11 @@ class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
     _scheduleGeocode(latitude, longitude);
   }
 
-  Widget _buildSuggestionCard(AppLocalizations l10n) {
+  Widget _buildSuggestionCard(
+    AppLocalizations l10n,
+    PlaceSuggestion suggestion,
+  ) {
     final ThemeData theme = Theme.of(context);
-    final PlaceSuggestion suggestion = _suggestion!;
     final String? title = suggestion.title;
     final String? detail = suggestion.detail;
     return Card(

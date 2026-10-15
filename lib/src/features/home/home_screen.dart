@@ -292,19 +292,30 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             onPressed: _showAddLocationOptions,
             icon: const Icon(Icons.add),
           ),
-          // زر البوصلة المعدل ليعمل بالضغط المطول
+          // Single tap opens the full compass sheet; long press toggles the
+          // Dynamic Island slot above the search bar.
           GestureDetector(
             onLongPress: () {
               setState(() {
                 _isCompassExpanded = !_isCompassExpanded;
               });
             },
-            child: IconButton(
-              tooltip: l10n.compassTitle,
-              onPressed: _openOfflineCompass, // نقرة واحدة تفتح البوصلة العادية
-              icon: Icon(
-                _isCompassExpanded ? Icons.explore : Icons.explore_outlined,
-                color: _isCompassExpanded ? Theme.of(context).colorScheme.primary : null,
+            // The tooltip uses a manual trigger so it never competes for the
+            // long press (a default long-press tooltip would swallow it and the
+            // island would never expand). Hover on desktop/web still shows it,
+            // and the icon keeps the accessible label either way.
+            child: Tooltip(
+              message: l10n.compassTitle,
+              triggerMode: TooltipTriggerMode.manual,
+              child: IconButton(
+                onPressed: _openOfflineCompass,
+                icon: Icon(
+                  _isCompassExpanded ? Icons.explore : Icons.explore_outlined,
+                  semanticLabel: l10n.compassTitle,
+                  color: _isCompassExpanded
+                      ? Theme.of(context).colorScheme.primary
+                      : null,
+                ),
               ),
             ),
           ),
@@ -468,6 +479,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   /// which fuses the magnetometer heading with the GPS position.
   Future<void> _openOfflineCompass() async {
     Haptics.light();
+    // The Dynamic Island slot above the search bar renders its own
+    // QiblaIndicator. Mounting this sheet on top would leave both alive at once
+    // — two magnetometer streams and two GPS subscriptions — so collapse the
+    // slot for the sheet's lifetime and restore it afterwards. That keeps
+    // exactly one live sensor subscription at any time.
+    final bool wasExpanded = _isCompassExpanded;
+    if (wasExpanded) {
+      setState(() => _isCompassExpanded = false);
+    }
     await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
@@ -489,6 +509,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
       ),
     );
+    if (!mounted || !wasExpanded) return;
+    setState(() => _isCompassExpanded = true);
   }
 }
 

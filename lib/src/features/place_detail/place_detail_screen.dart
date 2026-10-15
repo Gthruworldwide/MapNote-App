@@ -22,15 +22,10 @@ class PlaceDetailScreen extends ConsumerWidget {
     final AppLocalizations l10n = AppLocalizations.of(context);
     final List<Place>? places = ref.watch(placesProvider).value;
 
-    Place? place;
-    if (places != null) {
-      for (final Place candidate in places) {
-        if (candidate.id == placeId) {
-          place = candidate;
-          break;
-        }
-      }
-    }
+    // Resolve through a helper so `place` stays `final`: Dart preserves a final
+    // local's non-null promotion inside the edit callback below, which a
+    // reassigned local would lose.
+    final Place? place = _placeById(places);
 
     return Scaffold(
       appBar: AppBar(
@@ -39,7 +34,7 @@ class PlaceDetailScreen extends ConsumerWidget {
           if (place != null)
             IconButton(
               tooltip: l10n.edit,
-              onPressed: () => _openEdit(context, ref, place!),
+              onPressed: () => _openEdit(context, ref, place),
               icon: const Icon(Icons.edit_outlined),
             ),
         ],
@@ -48,6 +43,16 @@ class PlaceDetailScreen extends ConsumerWidget {
           ? _MissingPlace(l10n: l10n)
           : _buildBody(context, ref, l10n, place),
     );
+  }
+
+  /// Finds the place matching [placeId] in the loaded list, or null while the
+  /// list is still loading / the id no longer exists.
+  Place? _placeById(List<Place>? places) {
+    if (places == null) return null;
+    for (final Place candidate in places) {
+      if (candidate.id == placeId) return candidate;
+    }
+    return null;
   }
 
   Widget _buildBody(

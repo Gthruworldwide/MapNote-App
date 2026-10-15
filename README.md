@@ -620,6 +620,32 @@ Already committed — the notes below explain what is in place.
   `android/app/build.gradle.kts`): `com.google.gms.google-services` and
   `com.google.firebase.crashlytics` (**3.0.8**) are applied for the
   `routenote-app` project, with the SDKs pinned by the Firebase **BoM 35.0.0**.
+- **Android / Kotlin build notes (KGP & built-in Kotlin):** the app builds
+  through AGP 9's *legacy* Kotlin path (`android.builtInKotlin=false` and
+  `android.newDsl=false` in `android/gradle.properties`), so every
+  `flutter build apk` prints Flutter's "plugins that apply Kotlin Gradle Plugin
+  (KGP)" notice. The notice is **non-fatal** — the build exits `0` — but Flutter
+  will remove the legacy path in a future release. Two dependencies block the
+  switch to built-in Kotlin today:
+  - `flutter_dynamic_icon_plus` **1.4.1** (latest release) applies
+    `kotlin-android` unconditionally and fails to configure under built-in
+    Kotlin (`Failed to apply plugin 'kotlin-android'`).
+  - `receive_sharing_intent` **1.8.1** does the same; **1.9.0** drops KGP but
+    requires AGP 9.2+ / Gradle 9.4 / compileSdk 37 plus SwiftPM + SceneDelegate
+    iOS changes.
+
+  The other four flagged plugins (`firebase_core`, `firebase_analytics`,
+  `firebase_crashlytics`, `workmanager_android`) are already
+  built-in-Kotlin-aware: they apply KGP only while `android.builtInKotlin=false`.
+  Flutter detects KGP by *textually scanning* each plugin's `build.gradle`, so it
+  keeps naming those four even after the switch — that part of the notice is a
+  false positive.
+
+  To finish the migration: bump `gradle-wrapper.properties` to **9.4.1**, AGP to
+  **9.2.1** and `compileSdk` to **37**, upgrade `receive_sharing_intent` to
+  **1.9.0**, replace `flutter_dynamic_icon_plus` with a migrated release or a
+  locally patched copy, then set `android.builtInKotlin=true`. See
+  <https://docs.flutter.dev/release/breaking-changes/migrate-to-built-in-kotlin>.
 - **Debug test-crash button** (`MainActivity.kt`): the Crashlytics guide's
   "Test Crash" button is added only when the activity is debuggable, so it never
   appears in a release or profile build.

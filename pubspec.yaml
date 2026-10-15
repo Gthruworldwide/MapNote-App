@@ -49,17 +49,21 @@ dependencies:
   googleapis: ^17.0.0
   googleapis_auth: ^2.3.4
   workmanager: ^0.10.10
-  # 1.9.0 requires AGP 9.2+ / Kotlin 2.4 / Gradle 9.4 / compileSdk 37 + breaking
-  # iOS changes (SwiftPM + SceneDelegate). This project is pinned to Gradle
-  # 9.1.0 / AGP 9.0.1 and only SDK 34-36 platforms are installed, so stay on
-  # the last same-Dart-API 1.8.x release.
+  # 1.8.1 still applies the legacy Kotlin Gradle Plugin unconditionally; 1.9.0
+  # drops it, but that release needs AGP 9.2+ / Kotlin 2.4 / Gradle 9.4 /
+  # compileSdk 37 and brings breaking iOS changes (SwiftPM + SceneDelegate).
+  # This project builds on Gradle 9.1.0 / AGP 9.0.1, so stay on the last
+  # same-Dart-API 1.8.x release. See README > "Android / Kotlin build notes".
   receive_sharing_intent: 1.8.1
   local_auth: ^3.0.2
   qr_flutter: ^4.1.0
   quick_actions: ^1.1.0
   # Modern replacement for the removed `flutter_dynamic_icon` (whose legacy
   # Android plugin broke the Gradle build). Drives the light/dark launcher-icon
-  # switch in lib/src/services/dynamic_icon_service.dart.
+  # switch in lib/src/services/dynamic_icon_service.dart. Its Android build still
+  # applies the legacy Kotlin Gradle Plugin unconditionally (latest release is
+  # 1.4.1), so it is one of the two plugins that keep
+  # `android.builtInKotlin=false` — see README > "Android / Kotlin build notes".
   flutter_dynamic_icon_plus: ^1.2.1
   # Draws the MapNote lockup (assets/brand/route_note_*.svg) as real vector, so
   # the cold-start splash can scale the mark up without any raster softness, and

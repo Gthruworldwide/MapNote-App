@@ -97,9 +97,12 @@ class GoogleAuthService implements AuthService {
       final GoogleSignInAccount account = await GoogleSignIn.instance
           .authenticate(scopeHint: AppConfig.driveScopes);
       _account = account;
-      _user = _toUser(account);
+      // Build the user into a final local before the `await` below so the
+      // non-null value cannot be lost to a concurrent mutation of `_user`.
+      final AuthUser user = _toUser(account);
+      _user = user;
       await _ensureAuthorized(account);
-      return _user!;
+      return user;
     } on GoogleSignInException catch (e) {
       debugPrint(
         'MapNote GoogleSignIn.signIn failed: '
