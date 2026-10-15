@@ -38,10 +38,10 @@ jobs:
       - name: Run OpenCode
         uses: anomalyco/opencode/github@latest
         env:
-          # Provider key for the model below. Add it in
-          # Settings → Secrets and variables → Actions.
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Provider key for the model below. Add GEMINI_API_KEY under
+          # Settings → Secrets and variables → Actions. Never inline a key here.
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          model: anthropic/claude-sonnet-4-20250514   # set your preferred provider/model
+          model: google/gemini-2.5-flash
           use_github_token: true
