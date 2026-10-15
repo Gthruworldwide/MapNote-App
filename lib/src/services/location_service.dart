@@ -133,6 +133,16 @@ class LocationService {
         onError: onError,
       );
 
+  /// The most recent position the OS has cached for this app, or `null` when
+  /// there is none.
+  ///
+  /// This is the cheap, non-blocking counterpart to [determinePosition]:
+  /// `Geolocator.getLastKnownPosition` returns the platform's cached fix
+  /// immediately instead of powering up the receiver, so UI that only needs an
+  /// approximate location (for example the Qibla bearing) can render the moment
+  /// it opens and then refine itself from [trackingPositionStream].
+  Future<Position?> lastKnownPosition() => Geolocator.getLastKnownPosition();
+
   Future<LocationResult> determinePosition() async {
     if (!await Geolocator.isLocationServiceEnabled()) {
       return const LocationServiceDisabled();

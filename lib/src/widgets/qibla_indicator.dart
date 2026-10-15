@@ -17,6 +17,10 @@ import 'package:routenote/src/utils/qibla_calculator.dart';
 ///   with the phone, and
 /// - the **GPS position stream** (`geolocator`), which fixes where Qibla is.
 ///
+/// So that opening the sheet never shows a blank dial while the receiver powers
+/// up, the bearing is first seeded from the OS's **last known position** and
+/// then refined by the live stream as fresh fixes arrive.
+///
 /// The magnetometer reports a **magnetic** heading while the Qibla bearing is
 /// measured from **true** north, so the two are reconciled with the local
 /// magnetic declination (see [MagneticDeclination]) before the needle is drawn.
@@ -158,6 +162,16 @@ class _QiblaIndicatorState extends State<QiblaIndicator> {
         return;
       }
 
+      // Seed from the OS's cached fix first: `getLastKnownPosition` returns
+      // immediately (it does not power up the receiver), so the sheet shows a
+      // Qibla bearing at once instead of waiting for a fresh live fix. The live
+      // stream below then refines it.
+      final Position? lastKnown = await _lastKnownPosition();
+      if (!mounted || attempt != _locationAttempt) return;
+      if (lastKnown != null) {
+        _updateQiblaFromPosition(lastKnown);
+      }
+
       // Use the shared reconnecting stream so a dropped/closed platform stream
       // is re-opened (with capped backoff) instead of silently freezing the
       // compass — the same resilience the daily trackers rely on.
@@ -191,6 +205,17 @@ class _QiblaIndicatorState extends State<QiblaIndicator> {
       // Platform channel unavailable (tests / unsupported platform).
       if (!mounted || attempt != _locationAttempt) return;
       _setFixState(_FixState.unavailable);
+    }
+  }
+
+  /// Reads the OS-cached fix, treating an unavailable platform channel (or any
+  /// other failure) as "no cached fix" rather than an error: without one we
+  /// simply fall straight through to the live stream.
+  Future<Position?> _lastKnownPosition() async {
+    try {
+      return await widget.locationService.lastKnownPosition();
+    } catch (_) {
+      return null;
     }
   }
 

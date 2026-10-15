@@ -74,6 +74,13 @@ class _FakeLocationService extends LocationService {
     opened.add(controller);
     return controller.stream;
   }
+
+  /// The OS-cached fix returned by [lastKnownPosition]; null by default so the
+  /// other tests keep exercising the pure live-stream path.
+  Position? lastKnown;
+
+  @override
+  Future<Position?> lastKnownPosition() async => lastKnown;
 }
 
 Widget _host(QiblaIndicator child) {
@@ -416,6 +423,76 @@ void main() {
 
       expect(find.textContaining('Location permission needed'), findsOneWidget);
       expect(locations.opened, isEmpty);
+
+      await compass.close();
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('renders the bearing from the last known fix before any live fix',
+        (WidgetTester tester) async {
+      final _FakeLocationService locations = _FakeLocationService()
+        ..lastKnown = _fix(30.0444, 31.2357);
+      final StreamController<CompassEvent> compass =
+          StreamController<CompassEvent>.broadcast();
+
+      await tester.pumpWidget(
+        _host(
+          QiblaIndicator(
+            locationService: locations,
+            compassEvents: compass.stream,
+            declination: _zeroDeclination,
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      // The cached fix seeds the bearing without the live stream emitting once.
+      final double bearing = QiblaCalculator.bearingFrom(30.0444, 31.2357)!;
+      expect(find.textContaining('${bearing.round() % 360}°'), findsOneWidget);
+      expect(find.text('No GPS fix available'), findsNothing);
+
+      // The live stream is still subscribed so the seeded bearing can refine.
+      expect(locations.opened, hasLength(1));
+      expect(locations.opened.single.hasListener, isTrue);
+
+      await compass.close();
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('a live fix refines the bearing seeded by the last known fix',
+        (WidgetTester tester) async {
+      final _FakeLocationService locations = _FakeLocationService()
+        ..lastKnown = _fix(0, 0);
+      final StreamController<CompassEvent> compass =
+          StreamController<CompassEvent>.broadcast();
+
+      await tester.pumpWidget(
+        _host(
+          QiblaIndicator(
+            locationService: locations,
+            compassEvents: compass.stream,
+            declination: _zeroDeclination,
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      final double seededBearing = QiblaCalculator.bearingFrom(0, 0)!;
+      expect(find.textContaining('${seededBearing.round() % 360}°'), findsOneWidget);
+
+      // A fresh Cairo fix replaces the seeded bearing.
+      locations.opened.single.add(_fix(30.0444, 31.2357));
+      await tester.pump();
+      await tester.pump();
+
+      final double liveBearing = QiblaCalculator.bearingFrom(30.0444, 31.2357)!;
+      expect(find.textContaining('${liveBearing.round() % 360}°'), findsOneWidget);
+      expect(
+        find.textContaining('${seededBearing.round() % 360}°'),
+        findsNothing,
+      );
 
       await compass.close();
       await tester.pumpWidget(const SizedBox());
