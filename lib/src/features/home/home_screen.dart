@@ -12,6 +12,7 @@ import '../../services/app_logger.dart';
 import '../../services/location_parser.dart';
 import '../../services/lock_gate.dart';
 import '../../services/navigation_service.dart';
+import '../../widgets/qibla_indicator.dart';
 import '../add_place/add_place_screen.dart';
 import '../place_detail/place_detail_screen.dart';
 import '../settings/settings_screen.dart';
@@ -318,6 +319,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
       body: Column(
         children: <Widget>[
+          // Dynamic Island expansion slot: long-pressing the compass action in
+          // the app bar toggles the live Qibla indicator above the search bar.
+          AnimatedSize(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            child: _isCompassExpanded
+                ? const Padding(
+                    padding: EdgeInsetsDirectional.fromSTEB(16, 8, 16, 0),
+                    child: QiblaIndicator(),
+                  )
+                : const SizedBox.shrink(),
+          ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
             child: TextField(
@@ -451,15 +464,30 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Future<void> _refresh() =>
       ref.read(syncControllerProvider.notifier).syncNow();
 
-  /// Opens the offline directional compass view, which lets the user quickly
-  /// record a location by pointing the device.
+  /// Opens the offline compass: a full sheet with the live Qibla indicator,
+  /// which fuses the magnetometer heading with the GPS position.
   Future<void> _openOfflineCompass() async {
     Haptics.light();
-    // Use the ARB key [compassTitle] once the localization is regenerated.
-    // For now, fall back to the English label.
-    final String compass = 'Compass';
-    ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-      SnackBar(content: Text(compass)),
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (BuildContext sheetContext) => SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Text(
+                AppLocalizations.of(sheetContext).compassTitle,
+                style: Theme.of(sheetContext).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 16),
+              const QiblaIndicator(),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../providers/app_providers.dart';
+import '../../../services/auto_motion_service.dart';
 import 'auto_motion_badge.dart';
 
 /// The AutoMotion dashboard card for the Home screen.
@@ -69,11 +70,58 @@ class AutoMotionCard extends ConsumerWidget {
                 ),
               ],
             ),
+            // A refused start is never silent: explain why tracking is down and
+            // offer a one-tap fix that re-reads status and restarts the tracker.
+            if (state.unavailable) ...<Widget>[
+              const SizedBox(height: 12),
+              Text(
+                _failureMessage(l10n, state.failure),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.error,
+                ),
+              ),
+              Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: TextButton.icon(
+                  onPressed: () async {
+                    await ref
+                        .read(locationStatusProvider.notifier)
+                        .requestAccessFromUser();
+                    if (!context.mounted) return;
+                    if (ref.read(autoMotionEnabledProvider)) {
+                      await ref
+                          .read(autoMotionControllerProvider.notifier)
+                          .start();
+                    }
+                  },
+                  icon: const Icon(Icons.location_on_outlined, size: 18),
+                  label: Text(l10n.manageLocation),
+                ),
+              ),
+            ],
           ],
         ),
       ),
     );
   }
+}
+
+/// Human-readable reason AutoMotion could not start, matching the failure that
+/// [AutoMotionService.start] reported.
+String _failureMessage(
+  AppLocalizations l10n,
+  AutoMotionStartFailure failure,
+) {
+  return switch (failure) {
+    AutoMotionStartFailure.locationServiceDisabled =>
+      l10n.locationChipServiceOff,
+    AutoMotionStartFailure.permissionDenied =>
+      l10n.locationChipPermissionDenied,
+    AutoMotionStartFailure.permissionDeniedForever =>
+      l10n.locationChipDeniedForever,
+    AutoMotionStartFailure.platformError => l10n.locationUnavailable,
+    AutoMotionStartFailure.none => l10n.autoMotionPermissionHint,
+  };
 }
 
 /// A single labelled number in the AutoMotion card (distance / max speed).

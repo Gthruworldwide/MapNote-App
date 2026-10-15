@@ -301,6 +301,40 @@ autoMotionControllerProvider =
       AutoMotionController.new,
     );
 
+/// Serialized lifecycle queue for [GpsTrackingController]. Held in a provider
+/// (not a controller field) so the chain survives the controller being rebuilt
+/// every time the toggle flips.
+final Provider<_LifecycleQueue> _gpsLifecycleQueueProvider =
+    Provider<_LifecycleQueue>((Ref ref) => _LifecycleQueue());
+
+/// Serialized lifecycle queue for [AutoMotionController].
+final Provider<_LifecycleQueue> _autoMotionLifecycleQueueProvider =
+    Provider<_LifecycleQueue>((Ref ref) => _LifecycleQueue());
+
+/// Serializes asynchronous tracker lifecycle calls.
+///
+/// `start()` and `stop()` both mutate the *single shared* tracker instance, so
+/// they must never overlap: a `stop()` that runs concurrently with the
+/// `start()` that follows it tears the freshly-attached position stream back
+/// down, leaving the stream detached while the tracker still reports `true`.
+/// That is the "stuck at 0.00 km" failure. Chaining every call onto one future
+/// makes the interleave impossible — each action runs strictly after the one
+/// before it has fully settled.
+class _LifecycleQueue {
+  Future<void> _tail = Future<void>.value();
+
+  /// Runs [action] once every previously queued action has settled. The
+  /// returned future completes (or errors) with [action] alone, so callers can
+  /// still await their own result.
+  Future<void> add(Future<void> Function() action) {
+    final Future<void> next = _tail.then((_) => action());
+    // Keep the chain alive when an action throws: a failed start/stop must not
+    // stall every later toggle.
+    _tail = next.catchError((Object _) {});
+    return next;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Notifiers
 // ---------------------------------------------------------------------------
@@ -901,22 +935,15 @@ class GpsTrackingState {
 
 /// Bridges the [GpsTrackerService] stream into a widget-friendly state.
 ///
-/// [build] watches the enabled toggle: flipping it starts or stops the tracker
-/// automatically, and the snapshot refreshes as positions accumulate.
+/// [build] watches the enabled toggle and reconciles the tracker against it
+/// through a single serialized queue, so flipping the toggle can never
+/// interleave a `stop()` with the `start()` that follows it.
 class GpsTrackingController extends Notifier<GpsTrackingState> {
   @override
   GpsTrackingState build() {
     final bool enabled = ref.watch(gpsTrackingEnabledProvider);
     final GpsTrackerService tracker = ref.read(gpsTrackerProvider);
-    // Capture the tracker before disposa: Ref cannot be read inside lifecycle
-    // callbacks. `stop()` persists the day's summary when anything was tracked.
-    ref.onDispose(() {
-      try {
-        unawaited(tracker.stop());
-      } catch (_) {
-        // Best-effort persistence on disposal.
-      }
-    });
+    final _LifecycleQueue queue = ref.read(_gpsLifecycleQueueProvider);
     // Real-time readout: every accepted fix (and the midnight rollover) lands
     // here, so distance / max speed move while tracking instead of only when
     // the toggle is flipped.
@@ -929,17 +956,31 @@ class GpsTrackingController extends Notifier<GpsTrackingState> {
       ).copyWith(unavailable: state.unavailable);
     });
     ref.onDispose(updates.cancel);
-    if (enabled) {
-      scheduleMicrotask(start);
-    } else {
-      scheduleMicrotask(stop);
-    }
+    // Start/stop is driven purely by the enabled flag and every action is
+    // chained onto the shared queue. `build` re-runs on each toggle change, so
+    // an on→off→on flick queues stop-then-start and the stop always finishes
+    // before the start begins.
+    unawaited(queue.add(() => _applyEnabled(tracker, enabled)));
     return _snapshot(tracker, enabled: enabled);
   }
 
   /// Starts the tracker (called when the toggle turns on or the app opens).
-  Future<void> start() async {
-    final GpsTrackerService tracker = ref.read(gpsTrackerProvider);
+  Future<void> start() =>
+      ref.read(_gpsLifecycleQueueProvider).add(
+        () => _startNow(ref.read(gpsTrackerProvider)),
+      );
+
+  /// Stops the tracker and persists today's summary (toggle turned off).
+  Future<void> stop() =>
+      ref.read(_gpsLifecycleQueueProvider).add(
+        () => _stopNow(ref.read(gpsTrackerProvider)),
+      );
+
+  /// Reconciles the live tracker with [enabled]; runs on the serialized queue.
+  Future<void> _applyEnabled(GpsTrackerService tracker, bool enabled) =>
+      enabled ? _startNow(tracker) : _stopNow(tracker);
+
+  Future<void> _startNow(GpsTrackerService tracker) async {
     final bool started = await tracker.start(
       locations: ref.read(locationServiceProvider),
     );
@@ -949,9 +990,7 @@ class GpsTrackingController extends Notifier<GpsTrackingState> {
     await _syncForegroundTracking();
   }
 
-  /// Stops the tracker and persists today's summary (toggle turned off).
-  Future<void> stop() async {
-    final GpsTrackerService tracker = ref.read(gpsTrackerProvider);
+  Future<void> _stopNow(GpsTrackerService tracker) async {
     await tracker.stop();
     if (!ref.mounted) return;
     state = _snapshot(tracker, enabled: false);
@@ -1032,6 +1071,7 @@ class AutoMotionState {
     required this.maxSpeedKmh,
     required this.currentSpeedKmh,
     required this.unavailable,
+    this.failure = AutoMotionStartFailure.none,
   });
 
   /// Whether the AutoMotion toggle is currently on.
@@ -1052,6 +1092,9 @@ class AutoMotionState {
   /// True when tracking could not start (GPS off / permission denied).
   final bool unavailable;
 
+  /// Why the last start attempt failed, or [AutoMotionStartFailure.none].
+  final AutoMotionStartFailure failure;
+
   AutoMotionState copyWith({
     bool? enabled,
     bool? active,
@@ -1059,6 +1102,7 @@ class AutoMotionState {
     double? maxSpeedKmh,
     double? currentSpeedKmh,
     bool? unavailable,
+    AutoMotionStartFailure? failure,
   }) {
     return AutoMotionState(
       enabled: enabled ?? this.enabled,
@@ -1067,28 +1111,22 @@ class AutoMotionState {
       maxSpeedKmh: maxSpeedKmh ?? this.maxSpeedKmh,
       currentSpeedKmh: currentSpeedKmh ?? this.currentSpeedKmh,
       unavailable: unavailable ?? this.unavailable,
+      failure: failure ?? this.failure,
     );
   }
 }
 
 /// Bridges the [AutoMotionService] stream into a widget-friendly state.
 ///
-/// [build] watches the enabled toggle: flipping it starts or stops the tracker
-/// automatically, and the snapshot refreshes as positions accumulate.
+/// [build] watches the enabled toggle and reconciles the tracker against it
+/// through a single serialized queue, so flipping the toggle can never
+/// interleave a `stop()` with the `start()` that follows it.
 class AutoMotionController extends Notifier<AutoMotionState> {
   @override
   AutoMotionState build() {
     final bool enabled = ref.watch(autoMotionEnabledProvider);
     final AutoMotionService tracker = ref.read(autoMotionServiceProvider);
-    // Capture the tracker before dispose: Ref cannot be read inside lifecycle
-    // callbacks. `stop()` persists the day's metrics when anything was tracked.
-    ref.onDispose(() {
-      try {
-        unawaited(tracker.stop());
-      } catch (_) {
-        // Best-effort persistence on disposal.
-      }
-    });
+    final _LifecycleQueue queue = ref.read(_autoMotionLifecycleQueueProvider);
     // Real-time readout: every accepted fix (and the midnight rollover) lands
     // here, so the dashboard / Settings numbers move while tracking.
     final StreamSubscription<void> updates = tracker.changes.listen((_) {
@@ -1097,38 +1135,42 @@ class AutoMotionController extends Notifier<AutoMotionState> {
         tracker,
         enabled: enabled,
         active: tracker.isTracking,
-      ).copyWith(unavailable: state.unavailable);
+      ).copyWith(unavailable: state.unavailable, failure: state.failure);
     });
     ref.onDispose(updates.cancel);
-    if (enabled) {
-      scheduleMicrotask(start);
-    } else {
-      // Toggle off (or disabled from the start): stop any live stream first so
-      // nothing tracked so far is lost, then re-seed today's tallies from
-      // storage so the Home card can keep showing the day's metrics with a
-      // "Paused" badge.
-      scheduleMicrotask(_idle);
-    }
+    // Start/stop is driven purely by the enabled flag and every action is
+    // chained onto the shared queue, so an on→off→on flick can no longer race
+    // a stray stop against the next start on the one shared tracker.
+    unawaited(queue.add(() => _applyEnabled(tracker, enabled)));
     return _snapshot(tracker, enabled: enabled);
   }
 
   /// Starts the tracker (called when the toggle turns on or the app opens).
-  Future<void> start() async {
-    final AutoMotionService tracker = ref.read(autoMotionServiceProvider);
+  Future<void> start() =>
+      ref.read(_autoMotionLifecycleQueueProvider).add(
+        () => _startNow(ref.read(autoMotionServiceProvider)),
+      );
+
+  /// Reconciles the live tracker with [enabled]; runs on the serialized queue.
+  Future<void> _applyEnabled(AutoMotionService tracker, bool enabled) =>
+      enabled ? _startNow(tracker) : _idleNow(tracker);
+
+  Future<void> _startNow(AutoMotionService tracker) async {
     final bool started = await tracker.start(
       locations: ref.read(locationServiceProvider),
     );
     if (!ref.mounted) return;
-    state = _snapshot(tracker, enabled: true, active: started)
-        .copyWith(unavailable: !started);
+    state = _snapshot(tracker, enabled: true, active: started).copyWith(
+      unavailable: !started,
+      failure: tracker.failure,
+    );
     await _syncForegroundTracking();
   }
 
   /// Called while AutoMotion is switched off. Persists anything still in
   /// memory (if the toggle was just turned off mid-session), then loads today's
   /// stored totals so the paused card still reflects the day's motion.
-  Future<void> _idle() async {
-    final AutoMotionService tracker = ref.read(autoMotionServiceProvider);
+  Future<void> _idleNow(AutoMotionService tracker) async {
     await tracker.stop();
     await tracker.resyncFromStore();
     if (!ref.mounted) return;

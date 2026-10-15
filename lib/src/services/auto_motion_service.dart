@@ -9,6 +9,28 @@ import '../data/models/daily_gps_summary.dart';
 import 'location_service.dart';
 import 'motion_signal.dart';
 
+/// Why the last [AutoMotionService.start] call could not begin tracking.
+///
+/// Surfaced to the UI so a refused start is never silent: the AutoMotion card
+/// can tell the user whether GPS is off, permission was denied, permission is
+/// permanently blocked, or the platform channel failed.
+enum AutoMotionStartFailure {
+  /// Tracking is live, or the last start succeeded.
+  none,
+
+  /// The OS location service (GPS) is switched off.
+  locationServiceDisabled,
+
+  /// The runtime location permission was refused this time.
+  permissionDenied,
+
+  /// The runtime location permission is permanently blocked.
+  permissionDeniedForever,
+
+  /// The platform location channel raised (plugin unavailable / not ready).
+  platformError,
+}
+
 /// Phase-1 AutoMotion tracker: while enabled it records today's total
 /// distance (km), the current speed and today's max speed (km/h), and stores
 /// one daily summary (keyed `YYYY-MM-DD`) in the `auto_motion_box` Hive box.
@@ -78,6 +100,13 @@ class AutoMotionService {
   StreamSubscription<Position>? _subscription;
   bool _tracking = false;
 
+  /// Reason the most recent [start] call failed, if it did.
+  AutoMotionStartFailure _failure = AutoMotionStartFailure.none;
+
+  /// Reason the most recent [start] call failed, or
+  /// [AutoMotionStartFailure.none] when tracking is live / succeeded.
+  AutoMotionStartFailure get failure => _failure;
+
   /// Fires after every accepted fix (and at the midnight rollover) so widgets
   /// can repaint today's numbers immediately instead of waiting for a toggle.
   final StreamController<void> _changes = StreamController<void>.broadcast();
@@ -140,24 +169,32 @@ class AutoMotionService {
     final Stream<Position> source;
     if (positions != null) {
       source = positions;
+      _failure = AutoMotionStartFailure.none;
     } else {
       final LocationService loc = locations ?? const LocationService();
       try {
-        if (!await loc.isServiceEnabled()) return false;
-        final LocationPermission permission = await loc.checkPermission();
+        if (!await loc.isServiceEnabled()) {
+          _failure = AutoMotionStartFailure.locationServiceDisabled;
+          return false;
+        }
+        LocationPermission permission = await loc.checkPermission();
         if (permission == LocationPermission.denied) {
-          final LocationPermission next = await loc.requestPermission();
-          if (next == LocationPermission.denied ||
-              next == LocationPermission.deniedForever) {
-            return false;
-          }
-        } else if (permission == LocationPermission.deniedForever) {
+          permission = await loc.requestPermission();
+        }
+        if (permission == LocationPermission.denied) {
+          _failure = AutoMotionStartFailure.permissionDenied;
+          return false;
+        }
+        if (permission == LocationPermission.deniedForever) {
+          _failure = AutoMotionStartFailure.permissionDeniedForever;
           return false;
         }
       } catch (_) {
         // Platform channel unavailable (tests / unsupported platform).
+        _failure = AutoMotionStartFailure.platformError;
         return false;
       }
+      _failure = AutoMotionStartFailure.none;
       // High accuracy, one fix per 10 m of movement; the wrapper re-opens the
       // platform stream if it errors or closes mid-session.
       source = loc.trackingPositionStream(
