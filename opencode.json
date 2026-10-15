@@ -1,0 +1,19 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": ["AGENT_SKILLS.md"],
+  "mcp": {
+    "servers": {
+      "filesystem": {
+        "type": "local",
+        "command": ["npx", "-y", "@modelcontextprotocol/server-filesystem", "."]
+      }
+    }
+  },
+  "agents": {
+    "qa-engineer": {
+      "description": "Flutter QA automation specialist — writes widget and unit tests in test/ for every new feature.",
+      "mode": "subagent",
+      "system": "You are a Flutter QA Automation Specialist. Focus strictly on writing widget and unit tests in test/ for every new feature."
+    }
+  }
+}
