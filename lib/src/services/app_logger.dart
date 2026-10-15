@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -15,6 +17,10 @@ enum LogLevel { info, warning, error }
 /// * Entries are credential-redacted and truncated before being written.
 /// * The file is bounded ([_maxFileBytes]): when exceeded, only the most
 ///   recent tail is kept, so it can never grow without limit.
+/// * Every file operation is serialised, so concurrent writers can never
+///   interleave the append + trim read-modify-write and lose an entry.
+/// * Trimming cuts on whole-line boundaries only, so multi-byte UTF-8 text
+///   (Arabic, emoji) is never split into a broken character.
 /// * All file I/O is best-effort — a failed write never crashes the app.
 ///
 /// Categories are free-form but should follow the supervisor vocabulary:
@@ -37,6 +43,26 @@ class AppLogger {
   static Future<File> _getLogFile() async {
     final Directory directory = await getApplicationDocumentsDirectory();
     return File('${directory.path}/$_logFileName');
+  }
+
+  /// Serialises every file operation through a single chain, so the
+  /// append + trim read-modify-write in [log] can never interleave with a
+  /// concurrent write or read and lose or duplicate an entry.
+  static Future<void> _ioChain = Future<void>.value();
+
+  /// Runs [action] only after every previously queued file operation has
+  /// finished, completing with its result (or error). The chain itself never
+  /// fails, so one bad operation cannot poison the operations queued after it.
+  static Future<T> _serialize<T>(Future<T> Function() action) {
+    final Completer<T> completer = Completer<T>();
+    _ioChain = _ioChain.then((_) async {
+      try {
+        completer.complete(await action());
+      } catch (error, stackTrace) {
+        completer.completeError(error, stackTrace);
+      }
+    });
+    return completer.future;
   }
 
   /// Records a log entry. Never throws: writing is best-effort.
@@ -70,9 +96,11 @@ class AppLogger {
     }
 
     try {
-      final File file = await _getLogFile();
-      await file.writeAsString(entry, mode: FileMode.append, flush: true);
-      await _trimToBudget(file);
+      await _serialize(() async {
+        final File file = await _getLogFile();
+        await file.writeAsString(entry, mode: FileMode.append, flush: true);
+        await _trimToBudget(file);
+      });
     } catch (e) {
       if (kDebugMode) {
         debugPrint('Failed to write log to file: $e');
@@ -81,16 +109,31 @@ class AppLogger {
   }
 
   /// Drops the oldest part of the file once it exceeds [_maxFileBytes],
-  /// always cutting on a line boundary so entries stay parseable.
+  /// keeping only the newest whole lines that still fit the budget.
+  ///
+  /// Working backwards one complete line at a time means the cut can never fall
+  /// inside a UTF-16 surrogate pair or a multi-byte UTF-8 sequence, so Arabic
+  /// text (and emoji) is never split into a corrupted character and every
+  /// retained entry stays intact and parseable.
   static Future<void> _trimToBudget(File file) async {
-    final int length = await file.length();
-    if (length <= maxFileBytesOverride) return;
-    final String content = await file.readAsString();
     final int budget = maxFileBytesOverride;
-    final String tail = content.substring(content.length - budget);
-    // Jump to the next "[timestamp] [LEVEL] [CATEGORY]" line after the cut.
-    final int marker = tail.indexOf('\n[');
-    await file.writeAsString(marker >= 0 ? tail.substring(marker + 1) : tail);
+    if (await file.length() <= budget) return;
+
+    final List<String> lines = (await file.readAsString()).split('\n');
+
+    // Keep the newest suffix whose UTF-8 size fits the budget. The `+1` per
+    // line accounts for its trailing '\n'; it over-counts the final (empty)
+    // segment by one byte, so this trims a hair more — never less.
+    final List<String> kept = <String>[];
+    int bytes = 0;
+    for (int i = lines.length - 1; i >= 0; i--) {
+      final int lineBytes = utf8.encode(lines[i]).length + 1;
+      if (kept.isNotEmpty && bytes + lineBytes > budget) break;
+      kept.add(lines[i]);
+      bytes += lineBytes;
+    }
+
+    await file.writeAsString(kept.reversed.join('\n'));
   }
 
   /// Collapses whitespace/newlines so single entries stay on one field.
@@ -127,23 +170,28 @@ class AppLogger {
   /// Reads the current log content (used by the supervisor agent).
   static Future<String> readLogs() async {
     try {
-      final File file = await _getLogFile();
-      if (await file.exists()) {
-        return await file.readAsString();
-      }
+      return await _serialize(() async {
+        final File file = await _getLogFile();
+        if (await file.exists()) {
+          return await file.readAsString();
+        }
+        return '';
+      });
     } catch (e) {
       debugPrint('Error reading log file: $e');
+      return '';
     }
-    return '';
   }
 
   /// Clears the log file after it has been processed by the supervisor.
   static Future<void> clearLogs() async {
     try {
-      final File file = await _getLogFile();
-      if (await file.exists()) {
-        await file.writeAsString('');
-      }
+      await _serialize(() async {
+        final File file = await _getLogFile();
+        if (await file.exists()) {
+          await file.writeAsString('');
+        }
+      });
     } catch (e) {
       debugPrint('Error clearing log file: $e');
     }

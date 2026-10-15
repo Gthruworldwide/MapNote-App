@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -87,5 +88,46 @@ void main() {
     expect(logs.length, lessThanOrEqualTo(2048));
     expect(logs, startsWith('['), reason: 'trim must cut on a line boundary');
     expect(logs, contains('performance entry number 59'), reason: 'newest entry kept');
+  });
+
+  test('serialises concurrent writes without losing an entry', () async {
+    addTearDown(() => AppLogger.maxFileBytesOverride = 256 * 1024);
+
+    // Fire every write before awaiting any of them: without serialisation the
+    // append + trim read-modify-write of one entry could clobber another.
+    await Future.wait(<Future<void>>[
+      for (int i = 0; i < 40; i++)
+        AppLogger.log(
+          category: 'UI',
+          message: 'concurrent entry $i',
+          level: LogLevel.info,
+        ),
+    ]);
+
+    final String logs = await AppLogger.readLogs();
+    for (int i = 0; i < 40; i++) {
+      expect(logs, contains('concurrent entry $i'));
+    }
+  });
+
+  test('trims whole lines without splitting multi-byte Arabic text', () async {
+    AppLogger.maxFileBytesOverride = 400;
+    addTearDown(() => AppLogger.maxFileBytesOverride = 256 * 1024);
+
+    // Arabic characters are multiple UTF-8 bytes each; a naive cut would slice
+    // one in half and decode it back as the U+FFFD replacement character.
+    for (int i = 0; i < 40; i++) {
+      await AppLogger.log(
+        category: 'UI',
+        message: 'الإحداثيات $i',
+        level: LogLevel.info,
+      );
+    }
+
+    final String logs = await AppLogger.readLogs();
+    expect(utf8.encode(logs).length, lessThanOrEqualTo(400));
+    expect(logs, startsWith('['), reason: 'trim must cut on a line boundary');
+    expect(logs, contains('الإحداثيات 39'), reason: 'newest entry kept');
+    expect(logs.contains('\uFFFD'), isFalse, reason: 'no half-cut character');
   });
 }

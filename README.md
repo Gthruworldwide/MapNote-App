@@ -126,7 +126,8 @@ is the operating system's local storage plus the user's own Google Drive.
 - 🌐 Arabic / English UI (`flutter_localizations` + ARB files).
 - 🌗 Light & dark themes.
 - 🛰️ **Daily GPS tracking** — an optional toggle that records today's distance
-  and max speed while the app is open.
+  and max speed in the foreground *and background* (a location foreground service
+  keeps the stream alive once tracking is switched on).
 - 🚶 **AutoMotion** — an independent daily motion tracker with a custom
   electric-blue/mint status badge; when paused, the Home card stays visible with
   today's recorded totals.
@@ -168,6 +169,7 @@ is the operating system's local storage plus the user's own Google Drive.
 | Background work | `workmanager` 24h periodic task (`ExistingPeriodicWorkPolicy.update`) |
 | Recommendations | Local rule engine (always on) + optional Google Gemini via `http` (`--dart-define=GEMINI_API_KEY`) |
 | Location | `geolocator` |
+| Compass & Qibla | `flutter_compass` (magnetometer heading) + `geomag` (WMM-2020 magnetic declination → true north) |
 | Deep links | `url_launcher` (Google Maps, `geo`, `google.navigation`, Waze, `https`) |
 | Share target | `receive_sharing_intent` (text/links shared into the app) |
 | Localization | `flutter_localizations` + `intl` + ARB (`app_en.arb`, `app_ar.arb`) |
@@ -608,9 +610,12 @@ Already committed — the notes below explain what is in place.
 
 - **Android** (`android/app/src/main/AndroidManifest.xml`):
   `INTERNET`, `ACCESS_COARSE_LOCATION`, `ACCESS_FINE_LOCATION`,
-  `RECEIVE_BOOT_COMPLETED`, a `<queries>` block for the `geo`,
-  `google.navigation`, and `https` intents, and `ACTION_SEND` /
-  `ACTION_SEND_MULTIPLE` share filters for `text/*`.
+  `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_LOCATION`,
+  `ACCESS_BACKGROUND_LOCATION`, `POST_NOTIFICATIONS`, `RECEIVE_BOOT_COMPLETED`,
+  `USE_BIOMETRIC`, the `.LocationTrackingService` foreground service
+  (`foregroundServiceType="location"`) that keeps background tracking alive, a
+  `<queries>` block for the `geo`, `google.navigation`, and `https` intents, and
+  `ACTION_SEND` / `ACTION_SEND_MULTIPLE` share filters for `text/*`.
 - **Firebase Gradle plugins** (`android/settings.gradle.kts`,
   `android/app/build.gradle.kts`): `com.google.gms.google-services` and
   `com.google.firebase.crashlytics` (**3.0.8**) are applied for the
@@ -622,7 +627,9 @@ Already committed — the notes below explain what is in place.
   plugin also needs a Share Extension **target**, which can only be created in
   Xcode — ready-to-use templates and step-by-step instructions live in
   `ios/ShareExtension/README.md`.
-- **iOS** (`ios/Runner/Info.plist`): `NSLocationWhenInUseUsageDescription`,
+- **iOS** (`ios/Runner/Info.plist`): `NSLocationWhenInUseUsageDescription` and
+  `NSLocationAlwaysAndWhenInUseUsageDescription`, plus `UIBackgroundModes`
+  (`location`) so the daily trackers keep receiving fixes in the background,
   `LSApplicationQueriesSchemes` (`comgooglemaps`, `googlemaps`, `waze`), and
   `CFBundleURLTypes` containing the reversed iOS client ID
   (`com.googleusercontent.apps.<ios-client-id>`) so the OAuth flow can return to
@@ -701,7 +708,7 @@ firebase appdistribution:distribute \
   build/app/outputs/flutter-apk/app-release.apk \
   --app 1:679774190551:android:d7bf2f949f60ed62912992 \
   --groups testers \
-  --release-notes "MapNote 1.0.3 (4) — pilot build"
+  --release-notes "MapNote 1.0.4 (5) — pilot build"
 ```
 
 Testers receive an email invite and install through the **App Tester** app.
@@ -709,7 +716,7 @@ Testers receive an email invite and install through the **App Tester** app.
 On Windows the upload step is wrapped in a helper script:
 
 ```powershell
-.\scripts\distribute_app.ps1 -Groups testers -Notes "MapNote 1.0.3 (4) — pilot"
+.\scripts\distribute_app.ps1 -Groups testers -Notes "MapNote 1.0.4 (5) — pilot"
 ```
 
 > **Script blocked by execution policy?** Windows defaults to a `Restricted`

@@ -7,6 +7,7 @@ import 'package:geolocator/geolocator.dart';
 
 import 'package:routenote/l10n/generated/app_localizations.dart';
 import 'package:routenote/src/services/location_service.dart';
+import 'package:routenote/src/utils/magnetic_declination.dart';
 import 'package:routenote/src/utils/qibla_calculator.dart';
 
 /// Live Qibla compass.
@@ -15,6 +16,10 @@ import 'package:routenote/src/utils/qibla_calculator.dart';
 /// - the **magnetometer heading** (`flutter_compass`), which rotates the dial
 ///   with the phone, and
 /// - the **GPS position stream** (`geolocator`), which fixes where Qibla is.
+///
+/// The magnetometer reports a **magnetic** heading while the Qibla bearing is
+/// measured from **true** north, so the two are reconciled with the local
+/// magnetic declination (see [MagneticDeclination]) before the needle is drawn.
 ///
 /// Both sources are optional and every platform call is guarded, so a missing
 /// sensor, a denied permission or a transient stream error can never freeze or
@@ -25,6 +30,7 @@ class QiblaIndicator extends StatefulWidget {
     super.key,
     this.locationService = const LocationService(),
     this.compassEvents,
+    this.declination = MagneticDeclination.degreesAt,
   });
 
   /// Location source. Injectable so tests can drive fixes deterministically
@@ -34,6 +40,12 @@ class QiblaIndicator extends StatefulWidget {
   /// Magnetometer source. Defaults to [FlutterCompass.events]; injectable so
   /// tests can emit headings without the platform event channel.
   final Stream<CompassEvent>? compassEvents;
+
+  /// Resolves the local magnetic declination (east-positive degrees) for a
+  /// latitude/longitude, turning the magnetometer's magnetic heading into a
+  /// true-north heading. Defaults to the offline WMM-2020 model; injectable so
+  /// widget tests never depend on the model's real values.
+  final double? Function(double latitude, double longitude) declination;
 
   @override
   State<QiblaIndicator> createState() => _QiblaIndicatorState();
@@ -55,9 +67,14 @@ class _QiblaIndicatorState extends State<QiblaIndicator> {
   /// started) can neither touch state nor leave a subscription behind.
   int _locationAttempt = 0;
 
-  /// Device magnetic heading in degrees (0 = North), null until the sensor
+  /// Device **magnetic** heading in degrees (0 = North), null until the sensor
   /// delivers its first sample.
   double? _heading;
+
+  /// Local magnetic declination in degrees (east-positive) for the current fix,
+  /// applied to [_heading] to obtain a true-north heading. Stays 0 until the
+  /// first GPS fix, when the compass falls back to the raw magnetic heading.
+  double _declination = 0;
 
   /// Calculated Qibla bearing to Mecca (0°..360°), null until there is a fix.
   double? _qiblaBearing;
@@ -190,6 +207,8 @@ class _QiblaIndicatorState extends State<QiblaIndicator> {
       _qiblaBearing = bearing;
       _latitude = position.latitude;
       _longitude = position.longitude;
+      _declination =
+          widget.declination(position.latitude, position.longitude) ?? 0;
       _fixState = bearing == null ? _FixState.unavailable : _FixState.ready;
     });
   }
@@ -231,11 +250,17 @@ class _QiblaIndicatorState extends State<QiblaIndicator> {
     final double? heading = _heading;
     final bool hasQibla = qibla != null;
 
+    // The magnetometer reports a *magnetic* heading, but the Qibla bearing is
+    // measured from *true* north: add the local declination to reconcile them.
+    final double? trueHeading =
+        heading == null ? null : _normalize(heading + _declination);
+
     // Angle from the top of the phone to Qibla: without a heading the dial is
     // treated as pointing North so the bearing is still meaningful.
-    final double relative = hasQibla ? _normalize(qibla - (heading ?? 0)) : 0;
+    final double relative =
+        hasQibla ? _normalize(qibla - (trueHeading ?? 0)) : 0;
     final bool aligned = hasQibla &&
-        heading != null &&
+        trueHeading != null &&
         (relative <= _alignedTolerance ||
             relative >= 360 - _alignedTolerance);
 
@@ -263,7 +288,7 @@ class _QiblaIndicatorState extends State<QiblaIndicator> {
               ),
               // Rotating compass rose (ticks + cardinal letters).
               Transform.rotate(
-                angle: _radians(-(heading ?? 0)),
+                angle: _radians(-(trueHeading ?? 0)),
                 child: Stack(
                   alignment: Alignment.center,
                   children: <Widget>[

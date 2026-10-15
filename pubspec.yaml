@@ -16,6 +16,8 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
+# Keep in sync with AppConfig.appVersion in
+# lib/src/core/config/app_config.dart.
 version: 1.0.4+5
 
 environment:
@@ -49,7 +51,7 @@ dependencies:
   workmanager: ^0.10.10
   # 1.9.0 requires AGP 9.2+ / Kotlin 2.4 / Gradle 9.4 / compileSdk 37 + breaking
   # iOS changes (SwiftPM + SceneDelegate). This project is pinned to Gradle
-  # 8.14 / AGP 8.11.1 and only SDK 34-36 platforms are installed, so stay on
+  # 9.1.0 / AGP 9.0.1 and only SDK 34-36 platforms are installed, so stay on
   # the last same-Dart-API 1.8.x release.
   receive_sharing_intent: 1.8.1
   local_auth: ^3.0.2
@@ -75,6 +77,11 @@ dependencies:
   open_location_code: ^1.0.1
   geocoding: ^5.0.0
   flutter_compass: ^0.8.1
+  # Pure-Dart World Magnetic Model (WMM-2020). Supplies the local magnetic
+  # declination that turns the magnetometer's magnetic heading into a true-north
+  # heading for the Qibla compass. Fully on-device; no platform channel.
+  # Wrapped by lib/src/utils/magnetic_declination.dart.
+  geomag: ^0.3.0
 
 dev_dependencies:
   flutter_test:

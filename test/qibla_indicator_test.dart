@@ -7,6 +7,7 @@ import 'package:geolocator/geolocator.dart';
 
 import 'package:routenote/l10n/generated/app_localizations.dart';
 import 'package:routenote/src/services/location_service.dart';
+import 'package:routenote/src/utils/magnetic_declination.dart';
 import 'package:routenote/src/utils/qibla_calculator.dart';
 import 'package:routenote/src/widgets/qibla_indicator.dart';
 
@@ -28,6 +29,10 @@ Position _fix(double lat, double lon) => Position(
 /// index 2 is the accuracy, and `-1` maps to "unknown".
 CompassEvent _heading(double degrees) =>
     CompassEvent.fromList(<double>[degrees, 0, -1]);
+
+/// Declination stub injected by the widget tests so the compass never depends
+/// on the real WMM model (whose values would shift the expected alignment).
+double? _zeroDeclination(double latitude, double longitude) => 0;
 
 /// Location source that never touches the geolocator channels. Every
 /// [trackingPositionStream] call returns a fresh, hand-driven controller so a
@@ -137,7 +142,83 @@ void main() {
     });
   });
 
+  group('MagneticDeclination.degreesAt', () {
+    test('reproduces the published NOAA WMM-2020 test values', () {
+      // WMM2020 Report, Table 6 (height 0 km): declination D in degrees, east
+      // positive. The bundled model is WMM-2020, so it is exact at the epoch.
+      expect(
+        MagneticDeclination.degreesAt(80, 0, date: DateTime.utc(2020, 1, 1)),
+        closeTo(-1.28, 0.2),
+      );
+      expect(
+        MagneticDeclination.degreesAt(0, 120, date: DateTime.utc(2020, 1, 1)),
+        closeTo(0.16, 0.2),
+      );
+      // The official table lists this point at longitude 240°E (≡ 120°W).
+      expect(
+        MagneticDeclination.degreesAt(-80, -120, date: DateTime.utc(2020, 1, 1)),
+        closeTo(69.36, 0.2),
+      );
+    });
+
+    test('is westward (negative) in New York and eastward (positive) in Sydney',
+        () {
+      expect(MagneticDeclination.degreesAt(40.71, -74.0), lessThan(-5));
+      expect(MagneticDeclination.degreesAt(-33.87, 151.21), greaterThan(5));
+    });
+
+    test('returns null for out-of-range or non-finite coordinates', () {
+      expect(MagneticDeclination.degreesAt(91, 0), isNull);
+      expect(MagneticDeclination.degreesAt(-91, 0), isNull);
+      expect(MagneticDeclination.degreesAt(0, 181), isNull);
+      expect(MagneticDeclination.degreesAt(double.nan, 0), isNull);
+      expect(MagneticDeclination.degreesAt(0, double.infinity), isNull);
+    });
+  });
+
   group('QiblaIndicator', () {
+    testWidgets('applies the magnetic declination to the true heading',
+        (WidgetTester tester) async {
+      final _FakeLocationService locations = _FakeLocationService();
+      final StreamController<CompassEvent> compass =
+          StreamController<CompassEvent>.broadcast();
+
+      await tester.pumpWidget(
+        _host(
+          QiblaIndicator(
+            locationService: locations,
+            compassEvents: compass.stream,
+            declination: (double latitude, double longitude) => 10,
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      locations.opened.single.add(_fix(30.0444, 31.2357));
+      await tester.pump();
+      await tester.pump();
+
+      final double bearing = QiblaCalculator.bearingFrom(30.0444, 31.2357)!;
+
+      // Declination is +10°, so the magnetometer must read 10° *less* than the
+      // true Qibla bearing for the phone to actually point at Qibla.
+      compass.add(_heading((bearing - 10 + 360) % 360));
+      await tester.pump();
+      await tester.pump();
+      expect(find.text('Aligned with Qibla'), findsOneWidget);
+
+      // Reading the raw, uncorrected bearing is now 10° off — the correction
+      // really is applied, with the right sign.
+      compass.add(_heading(bearing));
+      await tester.pump();
+      await tester.pump();
+      expect(find.text('Aligned with Qibla'), findsNothing);
+
+      await compass.close();
+      await tester.pumpWidget(const SizedBox());
+    });
+
     testWidgets('shows the Qibla bearing once a GPS fix arrives',
         (WidgetTester tester) async {
       final _FakeLocationService locations = _FakeLocationService();
@@ -149,6 +230,7 @@ void main() {
           QiblaIndicator(
             locationService: locations,
             compassEvents: compass.stream,
+            declination: _zeroDeclination,
           ),
         ),
       );
@@ -184,6 +266,7 @@ void main() {
           QiblaIndicator(
             locationService: locations,
             compassEvents: compass.stream,
+            declination: _zeroDeclination,
           ),
         ),
       );
@@ -225,6 +308,7 @@ void main() {
           QiblaIndicator(
             locationService: locations,
             compassEvents: compass.stream,
+            declination: _zeroDeclination,
           ),
         ),
       );
@@ -257,6 +341,7 @@ void main() {
           QiblaIndicator(
             locationService: locations,
             compassEvents: compass.stream,
+            declination: _zeroDeclination,
           ),
         ),
       );
@@ -288,6 +373,7 @@ void main() {
           QiblaIndicator(
             locationService: locations,
             compassEvents: compass.stream,
+            declination: _zeroDeclination,
           ),
         ),
       );
@@ -321,6 +407,7 @@ void main() {
           QiblaIndicator(
             locationService: locations,
             compassEvents: compass.stream,
+            declination: _zeroDeclination,
           ),
         ),
       );
