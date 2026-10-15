@@ -818,6 +818,54 @@ abstract class AppLocalizations {
   /// **'Paused'**
   String get autoMotionPaused;
 
+  /// No description provided for @autoMotionDashboardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'AutoMotion Dashboard'**
+  String get autoMotionDashboardTitle;
+
+  /// No description provided for @autoMotionDriverMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Driver mode'**
+  String get autoMotionDriverMode;
+
+  /// No description provided for @autoMotionCurrentSpeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Current speed'**
+  String get autoMotionCurrentSpeed;
+
+  /// No description provided for @autoMotionToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get autoMotionToday;
+
+  /// No description provided for @autoMotionHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip history'**
+  String get autoMotionHistory;
+
+  /// No description provided for @autoMotionHistoryEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No motion recorded yet'**
+  String get autoMotionHistoryEmpty;
+
+  /// No description provided for @autoMotionHistoryEmptyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Days with recorded motion will appear here.'**
+  String get autoMotionHistoryEmptyHint;
+
+  /// No description provided for @autoMotionViewDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'View details'**
+  String get autoMotionViewDetails;
+
   /// No description provided for @locationChipServiceOff.
   ///
   /// In en, this message translates to:

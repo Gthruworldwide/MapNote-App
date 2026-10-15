@@ -33,3 +33,26 @@
 - **Localization:** `flutter_localizations` & `intl`.
 - **Observability:** Firebase Crashlytics + Analytics (anonymous telemetry only — never user data).
 - **Tester distribution:** Firebase App Distribution (`firebase appdistribution:distribute`).
+
+## 4. AutoMotion & Driver Experience
+
+AutoMotion is a first-party, **offline** daily motion tracker, independent of the
+Daily GPS tracker. It records today's distance and max speed into the dedicated
+`auto_motion_box` Hive box as one `DailyGpsSummary` per `YYYY-MM-DD` key.
+
+- **Phase 1 (shipped):** foreground/background tracking, the Home status card
+  (`auto_motion_card`), and the electric-blue/mint status badge (`auto_motion_badge`).
+- **Phase 2 (this change):** a dedicated **AutoMotion dashboard** screen, opened by
+  tapping the Home card, containing:
+  - a **Driver mode** header — live current speed, active/paused status, and
+    today's distance & max speed, with the shared one-tap location recovery;
+  - a **Trip history** list — every recorded day, newest-first, read from
+    `AutoMotionDataSource.all()`, with an empty state.
+- **Phase 3 (deferred):** per-mode activity breakdown (walk / run / vehicle) and
+  7/30-day aggregates. These require new persisted fields on `DailyGpsSummary`
+  (added with backward-compatible defaults) and are intentionally out of scope
+  for Phase 2.
+
+Rules for this feature: fully offline (no backend), bilingual en/ar through ARB
+keys (no hardcoded strings), no new runtime dependencies, and the two daily
+trackers stay independent (separate boxes and settings switches).

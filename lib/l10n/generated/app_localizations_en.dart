@@ -393,6 +393,31 @@ class AppLocalizationsEn extends AppLocalizations {
   String get autoMotionPaused => 'Paused';
 
   @override
+  String get autoMotionDashboardTitle => 'AutoMotion Dashboard';
+
+  @override
+  String get autoMotionDriverMode => 'Driver mode';
+
+  @override
+  String get autoMotionCurrentSpeed => 'Current speed';
+
+  @override
+  String get autoMotionToday => 'Today';
+
+  @override
+  String get autoMotionHistory => 'Trip history';
+
+  @override
+  String get autoMotionHistoryEmpty => 'No motion recorded yet';
+
+  @override
+  String get autoMotionHistoryEmptyHint =>
+      'Days with recorded motion will appear here.';
+
+  @override
+  String get autoMotionViewDetails => 'View details';
+
+  @override
   String get locationChipServiceOff => 'Location off — tap to enable';
 
   @override

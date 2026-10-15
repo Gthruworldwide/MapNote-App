@@ -392,6 +392,31 @@ class AppLocalizationsAr extends AppLocalizations {
   String get autoMotionPaused => 'متوقف';
 
   @override
+  String get autoMotionDashboardTitle => 'لوحة أوتوموشن';
+
+  @override
+  String get autoMotionDriverMode => 'وضع القيادة';
+
+  @override
+  String get autoMotionCurrentSpeed => 'السرعة الحالية';
+
+  @override
+  String get autoMotionToday => 'اليوم';
+
+  @override
+  String get autoMotionHistory => 'سجل الرحلات';
+
+  @override
+  String get autoMotionHistoryEmpty => 'لم تُسجَّل أي حركة بعد';
+
+  @override
+  String get autoMotionHistoryEmptyHint =>
+      'ستظهر هنا الأيام التي سُجّلت فيها حركة.';
+
+  @override
+  String get autoMotionViewDetails => 'عرض التفاصيل';
+
+  @override
   String get locationChipServiceOff => 'الموقع متوقف — اضغط للتفعيل';
 
   @override

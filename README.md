@@ -130,7 +130,8 @@ is the operating system's local storage plus the user's own Google Drive.
   keeps the stream alive once tracking is switched on).
 - 🚶 **AutoMotion** — an independent daily motion tracker with a custom
   electric-blue/mint status badge; when paused, the Home card stays visible with
-  today's recorded totals.
+  today's recorded totals. Tapping the card opens an **AutoMotion dashboard**
+  with a live driver-mode speed readout and a trip history of recorded days.
 - 🤖 **Smart Insights** — a privacy-first monitoring & recommendation agent that
   watches local app health (lifecycle, sync failures, location-parsing failures,
   UI latency) and the shape of the user's data, then suggests tidy-ups, sync
@@ -359,10 +360,13 @@ lib/
                                    #   app_logger, local_insight_engine,
                                    #   gemini_client, agent_service
     providers/app_providers.dart   # all Riverpod providers & notifiers
+    widgets/                       # shared UI: qibla_indicator, motion_metric,
+                                   #   track_failure_text
     features/
       home/                        # list + search + AppBar actions + Smart Insights
         widgets/                   # place_card, smart_insights_card,
                                    #   auto_motion_card + auto_motion_badge
+      automotion/                  # AutoMotion dashboard: driver mode + trip history
       add_place/                   # GPS or pasted/manual coordinates, name & notes
       place_detail/                # view / navigate / delete
       settings/                    # sign-in, sync, restore, language, theme, agent

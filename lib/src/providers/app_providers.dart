@@ -10,6 +10,7 @@ import '../data/local/gps_daily_data_source.dart';
 import '../data/local/place_local_data_source.dart';
 import '../data/local/settings_repository.dart';
 import '../data/models/agent_insight.dart';
+import '../data/models/daily_gps_summary.dart';
 import '../data/models/place.dart';
 import '../data/remote/auth_service.dart';
 import '../data/remote/drive_service.dart';
@@ -299,6 +300,13 @@ final NotifierProvider<AutoMotionController, AutoMotionState>
 autoMotionControllerProvider =
     NotifierProvider<AutoMotionController, AutoMotionState>(
       AutoMotionController.new,
+    );
+
+/// AutoMotion's recorded days, newest-first, for the dashboard trip history.
+final NotifierProvider<AutoMotionHistoryController, List<DailyGpsSummary>>
+autoMotionHistoryProvider =
+    NotifierProvider<AutoMotionHistoryController, List<DailyGpsSummary>>(
+      AutoMotionHistoryController.new,
     );
 
 /// Serialized lifecycle queue for [GpsTrackingController]. Held in a provider
@@ -1208,5 +1216,28 @@ class AutoMotionController extends Notifier<AutoMotionState> {
       currentSpeedKmh: tracker.currentSpeedKmh,
       unavailable: false,
     );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// AutoMotion history
+// ---------------------------------------------------------------------------
+
+/// AutoMotion's recorded days, newest-first, for the dashboard trip history.
+///
+/// Re-reads the Hive box whenever the tracker reports an accepted fix (and at
+/// the midnight rollover), so today's row tracks the live totals and a new row
+/// appears the moment a day rolls over — without reopening the screen.
+class AutoMotionHistoryController extends Notifier<List<DailyGpsSummary>> {
+  @override
+  List<DailyGpsSummary> build() {
+    final AutoMotionService tracker = ref.watch(autoMotionServiceProvider);
+    final AutoMotionDataSource store = ref.watch(autoMotionDataSourceProvider);
+    final StreamSubscription<void> updates = tracker.changes.listen((_) {
+      if (!ref.mounted) return;
+      state = store.all();
+    });
+    ref.onDispose(updates.cancel);
+    return store.all();
   }
 }
