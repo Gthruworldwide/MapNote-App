@@ -81,20 +81,33 @@ class LocationService {
   /// (the plugin's own default, made explicit here) and `distanceFilter` keeps
   /// the 10 m movement threshold.
   ///
-  /// Everywhere else (iOS CoreLocation fuses internally by default too) the
-  /// plain high-accuracy settings apply.
+  /// On iOS this is [AppleSettings] with background updates allowed, matching
+  /// the `UIBackgroundModes`/`NSLocationAlwaysAndWhenInUseUsageDescription`
+  /// entries in `Info.plist`: `pauseLocationUpdatesAutomatically` is disabled so
+  /// CoreLocation keeps delivering fixes to a backgrounded app, and the activity
+  /// type is `fitness` so the mitigation that would otherwise stop a stationary
+  /// walker from receiving fixes does not kick in. Everywhere else the plain
+  /// high-accuracy settings apply.
   static final LocationSettings trackingLocationSettings =
-      defaultTargetPlatform == TargetPlatform.android
-          ? AndroidSettings(
-              accuracy: LocationAccuracy.high,
-              distanceFilter: trackingDistanceFilterMeters,
-              forceLocationManager: false,
-              intervalDuration: const Duration(seconds: 5),
-            )
-          : const LocationSettings(
-              accuracy: LocationAccuracy.high,
-              distanceFilter: trackingDistanceFilterMeters,
-            );
+      switch (defaultTargetPlatform) {
+        TargetPlatform.android => AndroidSettings(
+            accuracy: LocationAccuracy.high,
+            distanceFilter: trackingDistanceFilterMeters,
+            forceLocationManager: false,
+            intervalDuration: const Duration(seconds: 5),
+          ),
+        TargetPlatform.iOS => AppleSettings(
+            accuracy: LocationAccuracy.high,
+            distanceFilter: trackingDistanceFilterMeters,
+            activityType: ActivityType.fitness,
+            pauseLocationUpdatesAutomatically: false,
+            allowBackgroundLocationUpdates: true,
+          ),
+        _ => const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            distanceFilter: trackingDistanceFilterMeters,
+          ),
+      };
 
   /// Raw position stream (default settings: [trackingLocationSettings]).
   ///

@@ -14,8 +14,10 @@ import '../../data/models/place.dart';
 import '../../data/remote/auth_service.dart';
 import '../../data/repositories/sync_repository.dart';
 import '../../providers/app_providers.dart';
+import '../../services/daily_track_engine.dart';
 import '../../services/location_service.dart';
 import '../../services/lock_gate.dart';
+import '../../widgets/track_failure_text.dart';
 import 'hidden_vault_screen.dart';
 
 /// Settings, consolidated into four Apple-style grouped cards:
@@ -339,12 +341,33 @@ class SettingsScreen extends ConsumerWidget {
               // engine is producing today's numbers.
               unavailable:
                   !anyActive && (tracking.unavailable || motion.unavailable),
+              // Prefer the GPS engine's specific reason, then AutoMotion's.
+              failure: tracking.failure != TrackStartFailure.none
+                  ? tracking.failure
+                  : motion.failure,
+              onManageLocation: () => _manageTrackingLocation(context, ref),
               l10n: l10n,
             ),
           ],
         ],
       ),
     );
+  }
+
+  /// Re-reads location access and restarts whichever engines are switched on,
+  /// mirroring the AutoMotion card's one-tap recovery action.
+  Future<void> _manageTrackingLocation(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    await ref.read(locationStatusProvider.notifier).requestAccessFromUser();
+    if (!context.mounted) return;
+    if (ref.read(gpsTrackingEnabledProvider)) {
+      await ref.read(gpsTrackingControllerProvider.notifier).start();
+    }
+    if (ref.read(autoMotionEnabledProvider)) {
+      await ref.read(autoMotionControllerProvider.notifier).start();
+    }
   }
 
 // --- Sync & backup ---------------------------------------------------------
@@ -842,6 +865,8 @@ class _TrackingSummaryTile extends StatelessWidget {
     required this.maxSpeedKmh,
     required this.active,
     required this.unavailable,
+    required this.failure,
+    required this.onManageLocation,
     required this.l10n,
   });
 
@@ -849,6 +874,8 @@ class _TrackingSummaryTile extends StatelessWidget {
   final double maxSpeedKmh;
   final bool active;
   final bool unavailable;
+  final TrackStartFailure failure;
+  final VoidCallback onManageLocation;
   final AppLocalizations l10n;
 
   @override
@@ -860,20 +887,37 @@ class _TrackingSummaryTile extends StatelessWidget {
         if (unavailable)
           Padding(
             padding: const EdgeInsets.only(bottom: 12),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Icon(
-                  Icons.gps_off,
-                  size: 16,
-                  color: theme.colorScheme.error,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    l10n.dailyGpsUnavailable,
-                    style: theme.textTheme.bodySmall?.copyWith(
+                Row(
+                  children: <Widget>[
+                    Icon(
+                      Icons.gps_off,
+                      size: 16,
                       color: theme.colorScheme.error,
                     ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        trackFailureText(
+                          l10n,
+                          failure,
+                          fallback: l10n.dailyGpsUnavailable,
+                        ),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.error,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: TextButton.icon(
+                    onPressed: onManageLocation,
+                    icon: const Icon(Icons.location_on_outlined, size: 18),
+                    label: Text(l10n.manageLocation),
                   ),
                 ),
               ],

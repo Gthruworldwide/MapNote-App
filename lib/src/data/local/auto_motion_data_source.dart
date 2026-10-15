@@ -1,6 +1,7 @@
 import 'package:hive_ce/hive.dart';
 
 import '../models/daily_gps_summary.dart';
+import 'daily_track_store.dart';
 
 /// Persists AutoMotion's daily metrics.
 ///
@@ -8,12 +9,13 @@ import '../models/daily_gps_summary.dart';
 /// `auto_motion_box` Hive box (see [AppConfig.autoMotionBoxName]), so reading a
 /// specific day is a simple lookup. Writes are flushed so a tracked day is
 /// never lost on a sudden kill.
-class AutoMotionDataSource {
+class AutoMotionDataSource implements DailyTrackStore {
   AutoMotionDataSource(this._box);
 
   final Box<dynamic> _box;
 
   /// The stored metrics for [day], or null when nothing was recorded that day.
+  @override
   DailyGpsSummary? summaryFor(DateTime day) {
     final Object? raw = _box.get(DailyGpsSummary.dayKey(day));
     if (raw is Map) {
@@ -22,6 +24,7 @@ class AutoMotionDataSource {
     return null;
   }
 
+  @override
   Future<void> save(DailyGpsSummary summary) async {
     await _box.put(DailyGpsSummary.dayKey(summary.date), summary.toMap());
     await _box.flush();

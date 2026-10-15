@@ -894,6 +894,7 @@ class GpsTrackingState {
     required this.maxSpeedKmh,
     required this.currentSpeedKmh,
     required this.unavailable,
+    this.failure = TrackStartFailure.none,
   });
 
   /// Whether the daily GPS toggle is currently on.
@@ -914,6 +915,9 @@ class GpsTrackingState {
   /// True when tracking could not start (GPS off / permission denied).
   final bool unavailable;
 
+  /// Why the last start attempt failed, or [TrackStartFailure.none].
+  final TrackStartFailure failure;
+
   GpsTrackingState copyWith({
     bool? enabled,
     bool? active,
@@ -921,6 +925,7 @@ class GpsTrackingState {
     double? maxSpeedKmh,
     double? currentSpeedKmh,
     bool? unavailable,
+    TrackStartFailure? failure,
   }) {
     return GpsTrackingState(
       enabled: enabled ?? this.enabled,
@@ -929,6 +934,7 @@ class GpsTrackingState {
       maxSpeedKmh: maxSpeedKmh ?? this.maxSpeedKmh,
       currentSpeedKmh: currentSpeedKmh ?? this.currentSpeedKmh,
       unavailable: unavailable ?? this.unavailable,
+      failure: failure ?? this.failure,
     );
   }
 }
@@ -953,7 +959,7 @@ class GpsTrackingController extends Notifier<GpsTrackingState> {
         tracker,
         enabled: enabled,
         active: tracker.isTracking,
-      ).copyWith(unavailable: state.unavailable);
+      ).copyWith(unavailable: state.unavailable, failure: state.failure);
     });
     ref.onDispose(updates.cancel);
     // Start/stop is driven purely by the enabled flag and every action is
@@ -986,7 +992,7 @@ class GpsTrackingController extends Notifier<GpsTrackingState> {
     );
     if (!ref.mounted) return;
     state = _snapshot(tracker, enabled: true, active: started)
-        .copyWith(unavailable: !started);
+        .copyWith(unavailable: !started, failure: tracker.failure);
     await _syncForegroundTracking();
   }
 
@@ -1071,7 +1077,7 @@ class AutoMotionState {
     required this.maxSpeedKmh,
     required this.currentSpeedKmh,
     required this.unavailable,
-    this.failure = AutoMotionStartFailure.none,
+    this.failure = TrackStartFailure.none,
   });
 
   /// Whether the AutoMotion toggle is currently on.
@@ -1092,8 +1098,8 @@ class AutoMotionState {
   /// True when tracking could not start (GPS off / permission denied).
   final bool unavailable;
 
-  /// Why the last start attempt failed, or [AutoMotionStartFailure.none].
-  final AutoMotionStartFailure failure;
+  /// Why the last start attempt failed, or [TrackStartFailure.none].
+  final TrackStartFailure failure;
 
   AutoMotionState copyWith({
     bool? enabled,
@@ -1102,7 +1108,7 @@ class AutoMotionState {
     double? maxSpeedKmh,
     double? currentSpeedKmh,
     bool? unavailable,
-    AutoMotionStartFailure? failure,
+    TrackStartFailure? failure,
   }) {
     return AutoMotionState(
       enabled: enabled ?? this.enabled,

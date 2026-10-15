@@ -1,13 +1,14 @@
 import 'package:hive_ce/hive.dart';
 
 import '../models/daily_gps_summary.dart';
+import 'daily_track_store.dart';
 
 /// Persists one [DailyGpsSummary] per calendar day.
 ///
 /// Summaries live in a Hive box under a namespaced key
 /// (`gps_daily.<yyyy-MM-dd>`) so they never collide with settings keys.
 /// Writes are flushed to disk immediately so a tracked day is never lost.
-class GpsDailyDataSource {
+class GpsDailyDataSource implements DailyTrackStore {
   GpsDailyDataSource(this._box);
 
   final Box<dynamic> _box;
@@ -15,6 +16,7 @@ class GpsDailyDataSource {
   static const String _prefix = 'gps_daily.';
 
   /// The stored summary for [day], or null when nothing was tracked that day.
+  @override
   DailyGpsSummary? summaryFor(DateTime day) {
     final Object? raw = _box.get(_prefix + DailyGpsSummary.dayKey(day));
     if (raw is Map) {
@@ -23,6 +25,7 @@ class GpsDailyDataSource {
     return null;
   }
 
+  @override
   Future<void> save(DailyGpsSummary summary) async {
     await _box.put(
       _prefix + DailyGpsSummary.dayKey(summary.date),

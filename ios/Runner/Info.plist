@@ -47,6 +47,8 @@
 	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>MapNote records your daily distance and keeps tracking trips in the background while AutoMotion or daily GPS tracking is on.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>MapNote uses your location to save the coordinates of places you capture.</string>
 	<key>NSFaceIDUsageDescription</key>
@@ -56,6 +58,10 @@
 		<string>comgooglemaps</string>
 		<string>googlemaps</string>
 		<string>waze</string>
+	</array>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
 	</array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>

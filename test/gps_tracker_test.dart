@@ -7,7 +7,9 @@ import 'package:hive_ce/hive.dart';
 
 import 'package:routenote/src/data/local/gps_daily_data_source.dart';
 import 'package:routenote/src/data/models/daily_gps_summary.dart';
+import 'package:routenote/src/services/daily_track_engine.dart';
 import 'package:routenote/src/services/gps_tracker_service.dart';
+import 'package:routenote/src/services/location_service.dart';
 import 'package:routenote/src/services/motion_signal.dart';
 
 /// A [MotionSignal] whose whole state is the timestamp the test hands it: the
@@ -55,6 +57,42 @@ Position _fix(
     hasAccuracy: hasAccuracy,
     hasSpeed: hasSpeed,
   );
+}
+
+/// A location source that returns a scripted verdict without ever touching the
+/// geolocator platform channels, so the tracker's typed start failures can be
+/// exercised deterministically.
+class _ScriptedLocationService extends LocationService {
+  _ScriptedLocationService({
+    this.serviceEnabled = true,
+    this.permission = LocationPermission.whileInUse,
+    this.throwOnCheck = false,
+  });
+
+  final bool serviceEnabled;
+  final LocationPermission permission;
+  final bool throwOnCheck;
+
+  @override
+  Future<bool> isServiceEnabled() async => serviceEnabled;
+
+  @override
+  Future<LocationPermission> checkPermission() async {
+    if (throwOnCheck) {
+      throw Exception('platform location channel unavailable');
+    }
+    return permission;
+  }
+
+  @override
+  Future<LocationPermission> requestPermission() async => permission;
+
+  @override
+  Stream<Position> trackingPositionStream({
+    LocationSettings? settings,
+    void Function(Object error, StackTrace stackTrace)? onError,
+  }) =>
+      const Stream<Position>.empty();
 }
 
 void main() {
@@ -350,6 +388,80 @@ void main() {
       expect(store.summaryFor(today)!.totalKm, closeTo(1.0, 0.05));
       expect(store.summaryFor(tomorrow)!.totalKm, closeTo(1.0, 0.05));
       expect(store.all().length, 2);
+    });
+  });
+
+  group('GpsTrackerService typed start failures', () {
+    test('reports GPS disabled', () async {
+      final GpsTrackerService service =
+          GpsTrackerService(dailyStore: await openStore('fail_off'));
+
+      final bool started = await service.start(
+        locations: _ScriptedLocationService(serviceEnabled: false),
+      );
+
+      expect(started, isFalse);
+      expect(service.failure, TrackStartFailure.locationServiceDisabled);
+      expect(service.isTracking, isFalse);
+    });
+
+    test('reports permission denied', () async {
+      final GpsTrackerService service =
+          GpsTrackerService(dailyStore: await openStore('fail_denied'));
+
+      final bool started = await service.start(
+        locations:
+            _ScriptedLocationService(permission: LocationPermission.denied),
+      );
+
+      expect(started, isFalse);
+      expect(service.failure, TrackStartFailure.permissionDenied);
+    });
+
+    test('reports permission permanently denied', () async {
+      final GpsTrackerService service =
+          GpsTrackerService(dailyStore: await openStore('fail_forever'));
+
+      final bool started = await service.start(
+        locations: _ScriptedLocationService(
+          permission: LocationPermission.deniedForever,
+        ),
+      );
+
+      expect(started, isFalse);
+      expect(service.failure, TrackStartFailure.permissionDeniedForever);
+    });
+
+    test('reports a platform channel error', () async {
+      final GpsTrackerService service =
+          GpsTrackerService(dailyStore: await openStore('fail_platform'));
+
+      final bool started = await service.start(
+        locations: _ScriptedLocationService(throwOnCheck: true),
+      );
+
+      expect(started, isFalse);
+      expect(service.failure, TrackStartFailure.platformError);
+    });
+
+    test('clears the failure once an injected stream starts tracking',
+        () async {
+      final GpsTrackerService service =
+          GpsTrackerService(dailyStore: await openStore('fail_clear'));
+      final StreamController<Position> controller =
+          StreamController<Position>();
+
+      await service.start(
+        locations: _ScriptedLocationService(serviceEnabled: false),
+      );
+      expect(service.failure, TrackStartFailure.locationServiceDisabled);
+
+      final bool started = await service.start(positions: controller.stream);
+      expect(started, isTrue);
+      expect(service.failure, TrackStartFailure.none);
+
+      await service.stop();
+      await controller.close();
     });
   });
 }
