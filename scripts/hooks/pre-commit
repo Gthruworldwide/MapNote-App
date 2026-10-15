@@ -1,0 +1,33 @@
+#!/bin/sh
+# MapNote pre-commit gate.
+#
+# Deterministic and non-mutating: it verifies, and blocks the commit on
+# failure. It never edits files or stages anything — an agent-based
+# auto-fixer would edit the working tree *after* the index was already
+# chosen, so its fixes would never reach the commit.
+#
+# Installed via: git config core.hooksPath scripts/hooks
+
+set -u
+
+if ! command -v flutter >/dev/null 2>&1; then
+  echo "❌ pre-commit: 'flutter' not found on PATH." >&2
+  echo "   Install Flutter, or bypass with: git commit --no-verify" >&2
+  exit 1
+fi
+
+# Only analyze when Dart sources are actually staged.
+if ! git diff --cached --name-only --diff-filter=ACM -- '*.dart' | grep -q .; then
+  exit 0
+fi
+
+echo "🔍 pre-commit: flutter analyze lib test"
+if ! flutter analyze lib test; then
+  echo "" >&2
+  echo "❌ Analyze failed — commit blocked." >&2
+  echo "   Fix the issues above and retry, or bypass with: git commit --no-verify" >&2
+  exit 1
+fi
+
+echo "✅ Analyze clean."
+exit 0

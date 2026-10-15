@@ -1,0 +1,4 @@
+# Shell hooks must keep LF line endings so the `#!/bin/sh` shebang resolves.
+# This machine has core.autocrlf=true, which would otherwise rewrite the hook
+# to CRLF on checkout and make it fail to execute.
+scripts/hooks/* text eol=lf
