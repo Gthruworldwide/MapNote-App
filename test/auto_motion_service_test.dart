@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:hive_ce/hive.dart';
@@ -9,6 +10,7 @@ import 'package:routenote/src/core/config/app_config.dart';
 import 'package:routenote/src/data/local/auto_motion_data_source.dart';
 import 'package:routenote/src/data/models/daily_gps_summary.dart';
 import 'package:routenote/src/services/auto_motion_service.dart';
+import 'package:routenote/src/services/location_service.dart';
 import 'package:routenote/src/services/motion_signal.dart';
 
 /// Builds a [Position] with the required fields for geolocator 14.
@@ -69,6 +71,56 @@ class _RecordingStore extends AutoMotionDataSource {
   Future<void> save(DailyGpsSummary summary) async {
     saved.add(summary);
   }
+}
+
+/// A [LocationService] that answers every check without touching the
+/// geolocator platform channels and records each stream (re-)open together
+/// with the exact [LocationSettings] it was asked for, so power-mode and
+/// adaptive-sampling re-opens can be counted and inspected.
+class _RecordingLocationService extends LocationService {
+  /// How many times the position stream has been (re-)opened.
+  int openCount = 0;
+
+  /// The settings of every open, in order ([openCount] entries).
+  final List<LocationSettings> openedWith = <LocationSettings>[];
+
+  @override
+  Future<bool> isServiceEnabled() async => true;
+
+  @override
+  Future<LocationPermission> checkPermission() async =>
+      LocationPermission.whileInUse;
+
+  @override
+  Future<LocationPermission> requestPermission() async =>
+      LocationPermission.whileInUse;
+
+  @override
+  Stream<ServiceStatus> serviceStatusStream() =>
+      const Stream<ServiceStatus>.empty();
+
+  @override
+  Stream<Position> trackingPositionStream({
+    LocationSettings? settings,
+    void Function(Object error, StackTrace stackTrace)? onError,
+  }) {
+    openCount += 1;
+    // The tracker always opens with an explicit profile (see
+    // `AutoMotionService._streamSettings`), never with a bare null.
+    openedWith.add(settings!);
+    return const Stream<Position>.empty();
+  }
+}
+
+/// Adds [fix] to [controller] and waits until the tracker has recorded it, so
+/// a following synchronous call (e.g. [AutoMotionService.noteOutage]) happens
+/// strictly after the fix landed — mirroring real fix arrival order.
+Future<void> _deliver(
+  StreamController<Position> controller,
+  Position fix,
+) async {
+  controller.add(fix);
+  await Future<void>.delayed(Duration.zero);
 }
 
 void main() {
@@ -384,6 +436,87 @@ void main() {
     });
   });
 
+  group('AutoMotionService explicit outage recovery', () {
+    test('an observed outage recovers the plausible A→B crossing', () async {
+      final AutoMotionService service =
+          AutoMotionService(dailyStore: await openStore('_outage'));
+      final StreamController<Position> controller =
+          StreamController<Position>();
+      expect(await service.start(positions: controller.stream), isTrue);
+
+      final DateTime start = DateTime.now().subtract(const Duration(hours: 1));
+      await _deliver(controller, _fix(0, 0, at: start));
+      expect(service.totalDistanceKm, 0); // first fix seeds only
+
+      // The outage is *observed* (provider switched off / stream failed)…
+      service.noteOutage();
+      // …and GPS comes back 10 minutes later, 20 km away: 120 km/h implied,
+      // plausible travel, so the whole crossing rejoins today's total.
+      await _deliver(
+        controller,
+        _fix(0.18, 0, at: start.add(const Duration(minutes: 10))),
+      );
+
+      // Exactly the Haversine crossing — recovered, but not a metre more.
+      expect(service.totalDistanceKm, closeTo(20.0, 0.05));
+
+      await service.stop();
+      await controller.close();
+    });
+
+    test('an observed outage recovers a span silent-gap rules refuse',
+        () async {
+      final AutoMotionService service =
+          AutoMotionService(dailyStore: await openStore('_outage_span'));
+      final StreamController<Position> controller =
+          StreamController<Position>();
+      expect(await service.start(positions: controller.stream), isTrue);
+
+      final DateTime start = DateTime.now().subtract(const Duration(hours: 1));
+      await _deliver(controller, _fix(0, 0, at: start));
+
+      // The very numbers the silent-gap contract refuses (45 min / 30 km,
+      // no motion evidence ⇒ 0): once the outage was observed, the crossing
+      // is judged by the gap-recovery rule alone — 40 km/h implied — and is
+      // recovered without any motion signal.
+      service.noteOutage();
+      await _deliver(
+        controller,
+        _fix(0.27, 0, at: start.add(const Duration(minutes: 45))),
+      );
+
+      expect(service.totalDistanceKm, closeTo(30.0, 0.1));
+
+      await service.stop();
+      await controller.close();
+    });
+
+    test('an implausible outage crossing recovers nothing', () async {
+      final AutoMotionService service =
+          AutoMotionService(dailyStore: await openStore('_outage_bad'));
+      final StreamController<Position> controller =
+          StreamController<Position>();
+      expect(await service.start(positions: controller.stream), isTrue);
+
+      final DateTime start = DateTime.now().subtract(const Duration(hours: 1));
+      await _deliver(controller, _fix(0, 0, at: start));
+
+      // 10 km in one minute implies 600 km/h: a teleport, never travel. The
+      // outage pass recovers 0, and the inertial fallback (noop by default)
+      // has no estimate to vouch for the window either.
+      service.noteOutage();
+      await _deliver(
+        controller,
+        _fix(0.09, 0, at: start.add(const Duration(minutes: 1))),
+      );
+
+      expect(service.totalDistanceKm, 0);
+
+      await service.stop();
+      await controller.close();
+    });
+  });
+
   group('AutoMotionService crash resilience', () {
     test('flushes today\'s metrics periodically while tracking', () async {
       final _RecordingStore store = _RecordingStore(await openBox('_flush'));
@@ -438,6 +571,144 @@ void main() {
       expect(store.summaryFor(today)!.totalKm, closeTo(1.0, 0.05));
       expect(store.summaryFor(tomorrow)!.totalKm, closeTo(1.0, 0.05));
       expect(store.all().length, 2);
+    });
+  });
+
+  group('AutoMotionService power mode & adaptive sampling', () {
+    // The request interval only exists on the platform-specific settings
+    // (AndroidSettings.intervalDuration), so these tests build the profiles
+    // under an Android platform; the service's own logic is platform-free.
+    void overrideToAndroid() {
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    }
+
+    test('setPowerMode re-opens the live stream only on a mode change',
+        () async {
+      overrideToAndroid();
+      final _RecordingLocationService scripted = _RecordingLocationService();
+      final AutoMotionService service =
+          AutoMotionService(dailyStore: await openStore('_powermode'));
+
+      expect(await service.start(locations: scripted), isTrue);
+      expect(scripted.openCount, 1, reason: 'start() opens the stream once');
+      final AndroidSettings visible =
+          scripted.openedWith.single as AndroidSettings;
+      expect(visible.accuracy, LocationAccuracy.high);
+      expect(visible.intervalDuration, AutoMotionService.defaultInterval);
+
+      await service.setPowerMode(backgrounded: true);
+      expect(scripted.openCount, 2, reason: 'the mode change re-opens once');
+      final AndroidSettings background =
+          scripted.openedWith.last as AndroidSettings;
+      expect(background.accuracy, LocationAccuracy.medium);
+      expect(background.intervalDuration, AutoMotionService.defaultInterval);
+
+      await service.setPowerMode(backgrounded: true);
+      expect(scripted.openCount, 2, reason: 'same mode: idempotent, no re-open');
+
+      await service.setPowerMode(backgrounded: false);
+      expect(scripted.openCount, 3, reason: 'returning to foreground re-opens');
+      expect(scripted.openedWith.last.accuracy, LocationAccuracy.high);
+
+      await service.stop();
+    });
+
+    test('applySampling re-opens only on a profile change and records it',
+        () async {
+      overrideToAndroid();
+      final _RecordingLocationService scripted = _RecordingLocationService();
+      final AutoMotionService service =
+          AutoMotionService(dailyStore: await openStore('_sampling'));
+
+      expect(await service.start(locations: scripted), isTrue);
+      expect(
+        (scripted.openedWith.single as AndroidSettings).intervalDuration,
+        AutoMotionService.defaultInterval,
+        reason: 'no profile yet: the fixed 5 s baseline applies',
+      );
+
+      await service.applySampling(interval: const Duration(seconds: 15));
+      expect(scripted.openCount, 2, reason: 'a new profile re-opens once');
+      AndroidSettings sampled = scripted.openedWith.last as AndroidSettings;
+      expect(sampled.intervalDuration, const Duration(seconds: 15));
+      expect(sampled.accuracy, LocationAccuracy.high); // still foreground
+
+      await service.applySampling(interval: const Duration(seconds: 15));
+      expect(scripted.openCount, 2, reason: 'the same profile is idempotent');
+
+      await service.applySampling(
+        interval: const Duration(seconds: 15),
+        accuracy: LocationAccuracy.lowest,
+      );
+      expect(scripted.openCount, 3, reason: 'a tier change re-opens');
+      sampled = scripted.openedWith.last as AndroidSettings;
+      expect(sampled.intervalDuration, const Duration(seconds: 15));
+      expect(sampled.accuracy, LocationAccuracy.lowest);
+      expect(
+        sampled.distanceFilter,
+        LocationService.trackingDistanceFilterMeters,
+      );
+
+      await service.stop();
+    });
+
+    test('sampling tiers are capped by the background power budget', () async {
+      overrideToAndroid();
+      final _RecordingLocationService scripted = _RecordingLocationService();
+      final AutoMotionService service =
+          AutoMotionService(dailyStore: await openStore('_sampling_bg'));
+
+      expect(await service.start(locations: scripted), isTrue);
+      await service.setPowerMode(backgrounded: true);
+      expect(scripted.openCount, 2);
+      expect(scripted.openedWith.last.accuracy, LocationAccuracy.medium);
+
+      // The stationary tier may go *lower* than the visible baseline even
+      // while backgrounded — a profile may lower accuracy freely.
+      await service.applySampling(
+        interval: const Duration(seconds: 15),
+        accuracy: LocationAccuracy.lowest,
+      );
+      expect(scripted.openCount, 3);
+      expect(scripted.openedWith.last.accuracy, LocationAccuracy.lowest);
+
+      // …but a high-accuracy profile may never outspend the power mode: it
+      // is capped back down to the background budget.
+      await service.applySampling(
+        interval: const Duration(seconds: 15),
+        accuracy: LocationAccuracy.high,
+      );
+      expect(scripted.openCount, 4);
+      expect(scripted.openedWith.last.accuracy, LocationAccuracy.medium);
+
+      await service.stop();
+    });
+
+    test('with an injected stream the power/sampling knobs change nothing',
+        () async {
+      final AutoMotionService service =
+          AutoMotionService(dailyStore: await openStore('_injected_knobs'));
+      final StreamController<Position> controller =
+          StreamController<Position>();
+      expect(await service.start(positions: controller.stream), isTrue);
+
+      // No LocationService backs an injected stream (`_activeLocations` is
+      // null), so both knobs are deliberate no-ops: nothing to re-open,
+      // nothing to reconfigure.
+      await service.setPowerMode(backgrounded: true);
+      await service.applySampling(interval: const Duration(seconds: 15));
+
+      // The original subscription keeps feeding fixes undisturbed.
+      controller.add(_fix(0, 0));
+      controller.add(_fix(0.009, 0, speed: 10));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(service.isTracking, isTrue);
+      expect(service.totalDistanceKm, closeTo(1.0, 0.05));
+
+      await service.stop();
+      await controller.close();
     });
   });
 }

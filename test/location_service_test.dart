@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart';
 
@@ -150,6 +151,75 @@ void main() {
         LocationAccuracy.high,
       );
       expect(LocationService.trackingLocationSettings.distanceFilter, 10);
+    });
+  });
+
+  group('LocationService.trackingSettingsFor', () {
+    // The request interval only exists on the platform-specific settings
+    // (AndroidSettings.intervalDuration); the generic fallback settings of
+    // the test host have no such field, so defaults are asserted on Android.
+    void overrideToAndroid() {
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    }
+
+    test('defaults to high accuracy, a 5 s interval and the 10 m filter', () {
+      overrideToAndroid();
+
+      final LocationSettings settings = LocationService.trackingSettingsFor();
+      expect(settings, isA<AndroidSettings>());
+      final AndroidSettings android = settings as AndroidSettings;
+      expect(android.accuracy, LocationAccuracy.high);
+      expect(android.intervalDuration, const Duration(seconds: 5));
+      expect(
+        android.distanceFilter,
+        LocationService.trackingDistanceFilterMeters,
+      );
+      // A Fused Location Provider request, not the legacy LocationManager.
+      expect(android.forceLocationManager, isFalse);
+    });
+
+    test('honours explicit interval/accuracy overrides for sampling profiles',
+        () {
+      overrideToAndroid();
+
+      final AndroidSettings settings = LocationService.trackingSettingsFor(
+        accuracy: LocationAccuracy.medium,
+        intervalDuration: const Duration(seconds: 15),
+      ) as AndroidSettings;
+      expect(settings.accuracy, LocationAccuracy.medium);
+      expect(settings.intervalDuration, const Duration(seconds: 15));
+      // The movement filter is independent of the request cadence.
+      expect(
+        settings.distanceFilter,
+        LocationService.trackingDistanceFilterMeters,
+      );
+    });
+
+    test('the background cap is medium accuracy at the same 5 s / 10 m '
+        'cadence', () {
+      overrideToAndroid();
+
+      // The background-cap decision: medium is geolocator's name for
+      // Android's balanced-power tier.
+      expect(
+        LocationService.backgroundTrackingLocationSettings.accuracy,
+        LocationAccuracy.medium,
+      );
+      expect(
+        LocationService.backgroundTrackingLocationSettings.distanceFilter,
+        LocationService.trackingDistanceFilterMeters,
+      );
+
+      // The profile that decision is built from keeps the 5 s default —
+      // only the accuracy tier changes between visible and backgrounded.
+      final AndroidSettings backgroundProfile =
+          LocationService.trackingSettingsFor(
+        accuracy: LocationAccuracy.medium,
+      ) as AndroidSettings;
+      expect(backgroundProfile.accuracy, LocationAccuracy.medium);
+      expect(backgroundProfile.intervalDuration, const Duration(seconds: 5));
+      expect(backgroundProfile.forceLocationManager, isFalse);
     });
   });
 }

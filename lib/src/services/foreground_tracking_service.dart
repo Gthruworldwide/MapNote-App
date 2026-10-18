@@ -15,13 +15,23 @@ import 'package:flutter/services.dart';
 ///
 /// Every call is best-effort: on iOS, on the web and in unit/widget tests the
 /// channel has no handler, so the methods resolve as no-ops instead of
-/// throwing.
+/// throwing — and every start/stop is time-bounded (see [invokeTimeout]) so a
+/// dead native side cannot stall the caller's serialized queue.
 class ForegroundTrackingService {
-  ForegroundTrackingService({MethodChannel? channel})
-      : _channel = channel ?? const MethodChannel(channelName);
+  ForegroundTrackingService({
+    MethodChannel? channel,
+    this.invokeTimeout = const Duration(seconds: 20),
+  }) : _channel = channel ?? const MethodChannel(channelName);
 
   /// Must match `TRACKING_CHANNEL` in `MainActivity.kt`.
   static const String channelName = 'com.routenote.routenote/tracking';
+
+  /// Upper bound on any start/stop call. A native side that never replies
+  /// (destroyed activity, dropped message) must not stall the serialized
+  /// tracker lifecycle queue: the call reports failure, `isRunning` stays
+  /// false, and the next sync retries — permission dialogs keep their own,
+  /// longer bound (see [_requestPermission]).
+  final Duration invokeTimeout;
 
   final MethodChannel _channel;
 
@@ -74,12 +84,13 @@ class ForegroundTrackingService {
 
   Future<T?> _invoke<T>(String method) async {
     try {
-      return await _channel.invokeMethod<T>(method);
+      return await _channel.invokeMethod<T>(method).timeout(invokeTimeout);
     } on MissingPluginException {
       // Not Android (or a test): nothing to start or stop.
       return null;
     } catch (_) {
-      // PlatformException (e.g. the OS refused a background service start).
+      // Timeout, or PlatformException (e.g. the OS refused a background
+      // service start): report "not started" and let the next sync retry.
       return null;
     }
   }

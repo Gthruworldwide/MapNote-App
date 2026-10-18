@@ -1,8 +1,10 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+
+import 'motion_sensor_hub.dart';
 
 /// Independent "is the device moving?" evidence, used by the daily trackers to
 /// bridge GPS outages (tunnels, parking garages, urban canyons).
@@ -169,10 +171,16 @@ class MotionClassifier {
 /// (see `MotionSensorChannel.kt`); classification happens here in Dart so the
 /// interesting logic stays unit-testable. Outside Android the bridge is inert
 /// and only the GPS-speed fusion contributes evidence.
+///
+/// When constructed with a [MotionSensorHub] (the production wiring) the
+/// samples are drawn from the hub's shared feed instead of subscribing to the
+/// platform channel directly — the channel accepts a single Dart subscriber,
+/// and the transport classifier and dead reckoning need the same stream.
 class SensorMotionSignal implements MotionSignal {
   SensorMotionSignal({
     EventChannel? channel,
     MotionClassifier? classifier,
+    this._hub,
   })  : _channel = channel ?? const EventChannel(channelName),
         classifier = classifier ?? MotionClassifier();
 
@@ -180,6 +188,9 @@ class SensorMotionSignal implements MotionSignal {
   static const String channelName = 'com.routenote.routenote/motion';
 
   final EventChannel _channel;
+
+  /// Shared sensor fan-out used instead of the raw channel when present.
+  final MotionSensorHub? _hub;
 
   /// The classifier behind this signal, exposed for diagnostics and tests.
   final MotionClassifier classifier;
@@ -201,12 +212,23 @@ class SensorMotionSignal implements MotionSignal {
     // the evidence there is (and the channel has no handler).
     if (defaultTargetPlatform != TargetPlatform.android) return;
     try {
-      _subscription = _channel.receiveBroadcastStream().listen(
-        _onSample,
-        onError: (Object _) {
-          // No accelerometer / sensor error: fall back to speed-only evidence.
-        },
-      );
+      final MotionSensorHub? hub = _hub;
+      if (hub != null) {
+        await hub.start();
+        _subscription = hub.accelerometer.listen(
+          _onHubSample,
+          onError: (Object _) {
+            // Sensor feed silent: fall back to speed-only evidence.
+          },
+        );
+      } else {
+        _subscription = _channel.receiveBroadcastStream().listen(
+          _onSample,
+          onError: (Object _) {
+            // No accelerometer / sensor error: fall back to speed-only evidence.
+          },
+        );
+      }
     } catch (_) {
       // Platform channel unavailable (tests / unsupported platform).
     }
@@ -219,11 +241,24 @@ class SensorMotionSignal implements MotionSignal {
     final StreamSubscription<dynamic>? subscription = _subscription;
     _subscription = null;
     await subscription?.cancel();
+    final MotionSensorHub? hub = _hub;
+    if (hub != null) {
+      try {
+        await hub.stop();
+      } catch (_) {
+        // Hub teardown is best-effort; the tracker is stopping regardless.
+      }
+    }
   }
 
   @override
   void observeSpeed(double metersPerSecond) =>
       classifier.observeSpeed(metersPerSecond);
+
+  /// Consumes one parsed accelerometer sample from the shared hub.
+  void _onHubSample(AccelerometerSample sample) {
+    classifier.feedAcceleration(sample.x, sample.y, sample.z);
+  }
 
   /// Consumes one `[x, y, z]` accelerometer sample from the platform.
   void _onSample(dynamic event) {

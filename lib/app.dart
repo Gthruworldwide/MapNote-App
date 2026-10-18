@@ -80,10 +80,22 @@ class _MapNoteAppState extends ConsumerState<MapNoteApp>
       // visible: Android refuses foreground-service starts from the background,
       // so an earlier attempt may have been dropped.
       resyncTrackingForegroundService(ref);
+      // Visible again: restore best-available accuracy for live tracking.
+      unawaited(applyTrackingPowerMode(ref, backgrounded: false));
       // They may also have copied a Plus Code from Maps or a chat app.
       _checkClipboard();
-    } else if (state == AppLifecycleState.paused) {
-      health.log(HealthEventType.appPause);
+    } else if (state == AppLifecycleState.hidden ||
+        state == AppLifecycleState.paused) {
+      if (state == AppLifecycleState.paused) {
+        health.log(HealthEventType.appPause);
+      }
+      // Not visible any more: drop the trackers to balanced accuracy (battery)
+      // and flush today's distance first, so an aggressive battery-optimisation
+      // kill right after this point cannot drop a background position state.
+      // `setPowerMode` is idempotent, so hidden→paused repeating is free; the
+      // transient `inactive` state (dialog, notification shade) is ignored on
+      // purpose so a pull-down never churns the stream.
+      unawaited(applyTrackingPowerMode(ref, backgrounded: true));
     }
   }
 

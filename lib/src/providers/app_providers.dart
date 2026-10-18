@@ -21,6 +21,7 @@ import '../data/repositories/place_repository.dart';
 import '../data/repositories/sync_repository.dart';
 import '../core/config/app_config.dart';
 import '../core/config/preferred_nav_app.dart';
+import '../services/adaptive_sampling_manager.dart';
 import '../services/agent_service.dart';
 import '../services/analytics_service.dart';
 import '../services/app_health_logger.dart';
@@ -29,18 +30,23 @@ import '../services/app_observer_service.dart';
 import '../services/auto_motion_service.dart';
 import '../services/background_sync_scheduler.dart';
 import '../services/biometric_service.dart';
+import '../services/dead_reckoning_service.dart';
 import '../services/dynamic_icon_service.dart';
 import '../services/foreground_tracking_service.dart';
+import '../services/fused_location_service.dart';
+import '../services/gap_recovery_service.dart';
 import '../services/gemini_client.dart';
 import '../services/geocoding_service.dart';
 import '../services/gps_tracker_service.dart';
 import '../services/home_shortcut_service.dart';
 import '../services/local_insight_engine.dart';
 import '../services/location_service.dart';
+import '../services/motion_sensor_hub.dart';
 import '../services/motion_signal.dart';
 import '../services/navigation_service.dart';
 import '../services/share_intent_service.dart';
 import '../services/smart_clipboard_service.dart';
+import '../services/transport_classifier.dart';
 
 // ---------------------------------------------------------------------------
 // Storage & repositories
@@ -90,11 +96,54 @@ final Provider<AutoMotionDataSource> autoMotionDataSourceProvider =
 final Provider<LocationService> locationServiceProvider =
     Provider<LocationService>((Ref ref) => const LocationService());
 
+/// The single subscriber to the native motion channel: it fans sensor samples
+/// out to the trackers' movement signal, the transport-mode classifier and
+/// the dead-reckoning engine, reference-counting the one platform stream so
+/// the hardware only samples while at least one consumer runs.
+final Provider<MotionSensorHub> motionSensorHubProvider =
+    Provider<MotionSensorHub>((Ref ref) => MotionSensorHub());
+
 /// Movement evidence shared by the two daily trackers: an accelerometer-backed
 /// sensor bridge on Android, inert elsewhere. The trackers refcount it, so the
-/// accelerometer only samples while one of them is actually running.
+/// accelerometer only samples while one of them is actually running. Draws
+/// from [motionSensorHubProvider] so the shared hardware feed is never opened
+/// twice.
 final Provider<MotionSignal> motionSignalProvider =
-    Provider<MotionSignal>((Ref ref) => SensorMotionSignal());
+    Provider<MotionSignal>(
+  (Ref ref) => SensorMotionSignal(hub: ref.watch(motionSensorHubProvider)),
+);
+
+/// The gap-recovery rule (pure arithmetic, no streams): judged separately for
+/// each outage span, so both trackers share one implementation.
+final Provider<GapRecoveryService> gapRecoveryServiceProvider =
+    Provider<GapRecoveryService>((Ref ref) => const GapRecoveryService());
+
+/// Transport-mode classifier over the shared accelerometer feed.
+final Provider<TransportClassifier> transportClassifierProvider =
+    Provider<TransportClassifier>((Ref ref) {
+      return TransportClassifier(
+        accelerometer: ref.watch(motionSensorHubProvider).accelerometer,
+      );
+    });
+
+/// Inertial dead reckoning over the shared accelerometer/gyroscope feeds —
+/// the fallback witness for outage spans the Haversine crossing cannot vouch
+/// for.
+final Provider<DeadReckoningService> deadReckoningServiceProvider =
+    Provider<DeadReckoningService>((Ref ref) {
+      final MotionSensorHub hub = ref.watch(motionSensorHubProvider);
+      return DeadReckoningService(
+        accelerometer: hub.accelerometer,
+        gyroscope: hub.gyroscope,
+      );
+    });
+
+/// Fused high-accuracy ⇄ low-power-network fallback for the trackers' live
+/// platform streams.
+final Provider<FusedLocationService> fusedLocationServiceProvider =
+    Provider<FusedLocationService>((Ref ref) {
+      return FusedLocationService(locationService: ref.watch(locationServiceProvider));
+    });
 
 /// Phase-1 daily GPS tracker (distance + max speed while the app is open).
 final Provider<GpsTrackerService> gpsTrackerProvider =
@@ -102,6 +151,9 @@ final Provider<GpsTrackerService> gpsTrackerProvider =
       return GpsTrackerService(
         dailyStore: ref.watch(gpsDailyDataSourceProvider),
         motion: ref.watch(motionSignalProvider),
+        gapRecovery: ref.watch(gapRecoveryServiceProvider),
+        deadReckoning: ref.watch(deadReckoningServiceProvider),
+        fused: ref.watch(fusedLocationServiceProvider),
       );
     });
 
@@ -111,6 +163,9 @@ final Provider<AutoMotionService> autoMotionServiceProvider =
       return AutoMotionService(
         dailyStore: ref.watch(autoMotionDataSourceProvider),
         motion: ref.watch(motionSignalProvider),
+        gapRecovery: ref.watch(gapRecoveryServiceProvider),
+        deadReckoning: ref.watch(deadReckoningServiceProvider),
+        fused: ref.watch(fusedLocationServiceProvider),
       );
     });
 
@@ -1110,6 +1165,31 @@ Future<void> resyncTrackingForegroundService(WidgetRef ref) {
   );
 }
 
+/// Applies the tracking accuracy mode for MapNote's visibility to both daily
+/// trackers: best available while the app is on screen, `balanced` while it is
+/// backgrounded (see `LocationService.backgroundTrackingLocationSettings`), so
+/// the receiver's duty cycle — and the battery — drops with the screen.
+///
+/// Each tracker flushes today's distance to Hive before re-opening its stream,
+/// so a battery-optimisation kill immediately after backgrounding cannot drop
+/// an already-accepted position. Both calls run on the trackers' own
+/// serialized lifecycle queues, so a power-mode switch can never interleave
+/// with a concurrent `start()`/`stop()`; a tracker that is not running simply
+/// ignores the switch.
+Future<void> applyTrackingPowerMode(
+  WidgetRef ref, {
+  required bool backgrounded,
+}) async {
+  final GpsTrackerService gps = ref.read(gpsTrackerProvider);
+  final AutoMotionService motion = ref.read(autoMotionServiceProvider);
+  await ref
+      .read(_gpsLifecycleQueueProvider)
+      .add(() => gps.setPowerMode(backgrounded: backgrounded));
+  await ref
+      .read(_autoMotionLifecycleQueueProvider)
+      .add(() => motion.setPowerMode(backgrounded: backgrounded));
+}
+
 // ---------------------------------------------------------------------------
 // AutoMotion
 // ---------------------------------------------------------------------------
@@ -1201,6 +1281,36 @@ class AutoMotionController extends Notifier<AutoMotionState> {
       ).copyWith(unavailable: state.unavailable, failure: state.failure);
     });
     ref.onDispose(updates.cancel);
+    // The transport classifier's verdicts drive the adaptive sampling
+    // profile; a disposed controller must stop consuming them.
+    final TransportClassifier classifier =
+        ref.read(transportClassifierProvider);
+    final AdaptiveSamplingNotifier sampling =
+        ref.read(adaptiveSamplingProvider.notifier);
+    final StreamSubscription<TransportMode> modes =
+        classifier.modes.listen((TransportMode mode) {
+      if (!ref.mounted) return;
+      sampling.observeTransport(mode);
+    });
+    ref.onDispose(modes.cancel);
+    // Profile changes (motion or battery) push the new cadence into the live
+    // tracker; while nothing tracks, the next start applies the profile.
+    ref.listen<SamplingProfile>(
+      adaptiveSamplingProvider,
+      (SamplingProfile? previous, SamplingProfile next) {
+        if (!ref.mounted || previous == next) return;
+        final AutoMotionService watched = ref.read(autoMotionServiceProvider);
+        if (!watched.isTracking) return;
+        unawaited(
+          queue.add(
+            () => watched.applySampling(
+              interval: next.interval,
+              accuracy: next.accuracy,
+            ),
+          ),
+        );
+      },
+    );
     // Start/stop is driven purely by the enabled flag and every action is
     // chained onto the shared queue, so an on→off→on flick can no longer race
     // a stray stop against the next start on the one shared tracker.
@@ -1234,12 +1344,54 @@ class AutoMotionController extends Notifier<AutoMotionState> {
             .read(analyticsServiceProvider)
             .logEvent(AnalyticsEvents.autoMotionTripStarted),
       );
+      await _startIntelligentTracking(tracker);
+      if (!ref.mounted) return;
     }
     state = _snapshot(tracker, enabled: true, active: started).copyWith(
       unavailable: !started,
       failure: tracker.failure,
     );
     await _syncForegroundTracking();
+  }
+
+  /// Starts the sensor-driven sampling stack alongside the tracker: the
+  /// transport classifier and dead-reckoning engine consume the shared
+  /// accelerometer/gyroscope feed, and the battery poll drives the adaptive
+  /// profile. The current profile is applied immediately so the stream opens
+  /// at the right cadence from the first fix.
+  Future<void> _startIntelligentTracking(AutoMotionService tracker) async {
+    final MotionSensorHub hub = ref.read(motionSensorHubProvider);
+    final TransportClassifier classifier =
+        ref.read(transportClassifierProvider);
+    final DeadReckoningService deadReckoning =
+        ref.read(deadReckoningServiceProvider);
+    final AdaptiveSamplingNotifier sampling =
+        ref.read(adaptiveSamplingProvider.notifier);
+    await hub.start();
+    await classifier.start();
+    await deadReckoning.start();
+    sampling.startPolling();
+    final SamplingProfile profile = ref.read(adaptiveSamplingProvider);
+    await tracker.applySampling(
+      interval: profile.interval,
+      accuracy: profile.accuracy,
+    );
+  }
+
+  /// Stops the sensor-driven sampling stack when tracking ends: releases the
+  /// shared hardware feed and cancels the battery poll.
+  Future<void> _stopIntelligentTracking() async {
+    final TransportClassifier classifier =
+        ref.read(transportClassifierProvider);
+    final DeadReckoningService deadReckoning =
+        ref.read(deadReckoningServiceProvider);
+    final AdaptiveSamplingNotifier sampling =
+        ref.read(adaptiveSamplingProvider.notifier);
+    final MotionSensorHub hub = ref.read(motionSensorHubProvider);
+    await classifier.stop();
+    await deadReckoning.stop();
+    sampling.stopPolling();
+    await hub.stop();
   }
 
   /// Called while AutoMotion is switched off. Persists anything still in
@@ -1251,6 +1403,7 @@ class AutoMotionController extends Notifier<AutoMotionState> {
     // switched off never emits a spurious `automotion_trip_ended`.
     final bool wasTracking = tracker.isTracking;
     await tracker.stop();
+    await _stopIntelligentTracking();
     await tracker.resyncFromStore();
     if (!ref.mounted) return;
     if (wasTracking) {

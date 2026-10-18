@@ -68,8 +68,8 @@ class LocationService {
   /// therefore the battery) sane while still resolving a street-level path.
   static const int trackingDistanceFilterMeters = 10;
 
-  /// The stream settings every long-running tracker uses: best-available
-  /// accuracy with a 10 m movement filter.
+  /// The stream settings every long-running tracker uses while MapNote is
+  /// **visible**: best-available accuracy with a 10 m movement filter.
   ///
   /// On Android this is [AndroidSettings] with `forceLocationManager: false`,
   /// i.e. the **Fused Location Provider** (`FusedLocationProviderClient`) rather
@@ -88,26 +88,60 @@ class LocationService {
   /// type is `fitness` so the mitigation that would otherwise stop a stationary
   /// walker from receiving fixes does not kick in. Everywhere else the plain
   /// high-accuracy settings apply.
-  static final LocationSettings trackingLocationSettings =
-      switch (defaultTargetPlatform) {
-        TargetPlatform.android => AndroidSettings(
-            accuracy: LocationAccuracy.high,
-            distanceFilter: trackingDistanceFilterMeters,
-            forceLocationManager: false,
-            intervalDuration: const Duration(seconds: 5),
-          ),
-        TargetPlatform.iOS => AppleSettings(
-            accuracy: LocationAccuracy.high,
-            distanceFilter: trackingDistanceFilterMeters,
-            activityType: ActivityType.fitness,
-            pauseLocationUpdatesAutomatically: false,
-            allowBackgroundLocationUpdates: true,
-          ),
-        _ => const LocationSettings(
-            accuracy: LocationAccuracy.high,
-            distanceFilter: trackingDistanceFilterMeters,
-          ),
-      };
+  static final LocationSettings trackingLocationSettings = trackingSettingsFor();
+
+  /// The same profile at reduced precision for a **backgrounded** tracker, so
+  /// the receiver's duty cycle (and therefore the battery) drops when the
+  /// screen is off: [LocationAccuracy.medium] is geolocator's name for
+  /// Android's `PRIORITY_BALANCED_POWER_ACCURACY` — Wi-Fi/cell/sensor-assisted
+  /// fixes instead of demanding a continuous GPS lock (geolocator's enum has
+  /// no literal `balanced` value; `medium` *is* the balanced-power tier) — and
+  /// iOS applies its matching reduced-precision accuracy. The 10 m movement
+  /// filter and the 5 s interval are unchanged, so every measurement rule
+  /// (jitter, min-step, speed caps, gap recovery) behaves identically in both
+  /// modes; only the power cost of obtaining a fix changes.
+  static final LocationSettings backgroundTrackingLocationSettings =
+      trackingSettingsFor(accuracy: LocationAccuracy.medium);
+
+  /// Builds a tracking profile: accuracy (defaults to [LocationAccuracy.high]),
+  /// the fused-provider request interval (defaults to 5 s) and the movement
+  /// filter in metres (defaults to 10 m).
+  ///
+  /// The adaptive sampling manager derives its profiles from this — e.g. a
+  /// one-second interval while in a fast vehicle, a one-minute / passive
+  /// profile while stationary — while [trackingLocationSettings] and
+  /// [backgroundTrackingLocationSettings] stay the two fixed baselines.
+  static LocationSettings trackingSettingsFor({
+    LocationAccuracy? accuracy,
+    Duration? intervalDuration,
+    int? distanceFilter,
+  }) {
+    final LocationAccuracy resolvedAccuracy =
+        accuracy ?? LocationAccuracy.high;
+    final Duration resolvedInterval =
+        intervalDuration ?? const Duration(seconds: 5);
+    final int resolvedDistanceFilter =
+        distanceFilter ?? trackingDistanceFilterMeters;
+    return switch (defaultTargetPlatform) {
+      TargetPlatform.android => AndroidSettings(
+          accuracy: resolvedAccuracy,
+          distanceFilter: resolvedDistanceFilter,
+          forceLocationManager: false,
+          intervalDuration: resolvedInterval,
+        ),
+      TargetPlatform.iOS => AppleSettings(
+          accuracy: resolvedAccuracy,
+          distanceFilter: resolvedDistanceFilter,
+          activityType: ActivityType.fitness,
+          pauseLocationUpdatesAutomatically: false,
+          allowBackgroundLocationUpdates: true,
+        ),
+      _ => LocationSettings(
+          accuracy: resolvedAccuracy,
+          distanceFilter: resolvedDistanceFilter,
+        ),
+    };
+  }
 
   /// Raw position stream (default settings: [trackingLocationSettings]).
   ///
@@ -132,6 +166,17 @@ class LocationService {
         () => positionStream(settings: settings),
         onError: onError,
       );
+
+  /// The OS's own report of the location provider being switched **off** and
+  /// back **on** (`geolocator`'s service-status stream).
+  ///
+  /// This is what lets a tracker tell a real GPS outage — the user toggled
+  /// location, or the OS throttled the provider — apart from a parked phone
+  /// that simply stops producing fixes: the daily engines arm their
+  /// gap-recovery pass on [ServiceStatus.disabled] and judge the skipped span
+  /// against a plausible-speed ceiling when fixes come back.
+  Stream<ServiceStatus> serviceStatusStream() =>
+      Geolocator.getServiceStatusStream();
 
   /// The most recent position the OS has cached for this app, or `null` when
   /// there is none.

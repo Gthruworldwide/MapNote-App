@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -84,5 +86,49 @@ void main() {
 
     await service.requestPermissions();
     expect(service.isRunning, isFalse);
+  });
+
+  test('a native side that never replies times out into a safe no-op',
+      () async {
+    // Permission calls answer immediately; only startForeground hangs on
+    // forever — a destroyed activity that never processes the message.
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (MethodCall call) async {
+      calls.add(call.method);
+      if (call.method == 'startForeground') {
+        return Completer<Object?>().future; // never completes
+      }
+      return true;
+    });
+
+    final ForegroundTrackingService service = ForegroundTrackingService(
+      invokeTimeout: const Duration(milliseconds: 50),
+    );
+
+    final Stopwatch elapsed = Stopwatch()..start();
+    await service.sync(needed: true);
+    elapsed.stop();
+
+    expect(calls, <String>[
+      'requestNotificationPermission',
+      'requestBackgroundLocationPermission',
+      'startForeground',
+    ]);
+    expect(
+      service.isRunning,
+      isFalse,
+      reason: 'the stuck start reports failure instead of wedging on',
+    );
+    expect(
+      elapsed.elapsed,
+      lessThan(const Duration(seconds: 10)),
+      reason: 'invokeTimeout bounds the wait, not the (dead) platform side',
+    );
+
+    // And the service is not wedged: with the native side answering again,
+    // the very next sync starts normally.
+    setMockHandler(answer: true);
+    await service.sync(needed: true);
+    expect(service.isRunning, isTrue);
   });
 }

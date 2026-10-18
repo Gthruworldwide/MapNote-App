@@ -6,6 +6,8 @@ import 'package:geolocator/geolocator.dart';
 import '../core/utils/geo_distance.dart';
 import '../data/local/daily_track_store.dart';
 import '../data/models/daily_gps_summary.dart';
+import 'dead_reckoning_service.dart';
+import 'gap_recovery_service.dart';
 import 'location_service.dart';
 import 'motion_signal.dart';
 
@@ -35,17 +37,21 @@ enum TrackStartFailure {
 /// The measurement core shared by [GpsTrackerService] and [AutoMotionService].
 ///
 /// Owns the Haversine distance accumulation, the accuracy / jitter / speed
-/// noise filters, the motion-signal gap bridge, the local-midnight rollover and
-/// the periodic crash-resilience flush. The two trackers differ only in their
-/// storage box, their settings switch and the way their lifecycle is surfaced,
-/// so each wraps one engine with its own [DailyTrackStore] and keeps a fully
-/// independent lifecycle.
+/// noise filters, the motion-signal gap bridge, the GPS-outage gap-recovery
+/// pass, the local-midnight rollover and the periodic crash-resilience flush.
+/// The two trackers differ only in their storage box, their settings switch
+/// and the way their lifecycle is surfaced, so each wraps one engine with its
+/// own [DailyTrackStore] and keeps a fully independent lifecycle.
 class DailyTrackEngine {
   DailyTrackEngine({
     required this.store,
     MotionSignal? motion,
+    GapRecoveryService? gapRecovery,
+    DistanceEstimator? deadReckoning,
     this.flushEvery = persistInterval,
-  }) : _motion = motion ?? const NoMotionSignal();
+  })  : _motion = motion ?? const NoMotionSignal(),
+        _gapRecovery = gapRecovery ?? const GapRecoveryService(),
+        _deadReckoning = deadReckoning ?? const NoopDistanceEstimator();
 
   /// Where each day's summary is persisted (one Hive box per tracker).
   final DailyTrackStore store;
@@ -53,6 +59,15 @@ class DailyTrackEngine {
   /// Movement evidence for the dead-reckoning gap bridge (see [MotionSignal]);
   /// the no-op default keeps unit tests channel-free.
   final MotionSignal _motion;
+
+  /// The gap-recovery rule: judges whether a skipped A→B crossing is
+  /// plausible travel and may rejoin today's total (see [GapRecoveryService]).
+  final GapRecoveryService _gapRecovery;
+
+  /// Inertial witness for outage windows the Haversine crossing cannot vouch
+  /// for (a refused first-fix-back, or a session that ends mid-outage). The
+  /// no-op default keeps unit tests channel-free.
+  final DistanceEstimator _deadReckoning;
 
   /// How often the periodic flush runs. Defaults to [persistInterval]; tests
   /// pass a short value so the cadence can be observed without waiting 10 s.
@@ -78,6 +93,14 @@ class DailyTrackEngine {
   /// Doppler speed nor a step that implies such a speed may poison the day's
   /// metrics.
   static const double maxPlausibleSpeedKmh = 180;
+
+  /// The stricter ceiling for the **gap-recovery** pass lives in
+  /// [GapRecoveryService.maxPlausibleSpeedKmh]: the straight line between the
+  /// last fix before a GPS outage and the first fix after it is only added
+  /// back to today's distance when dividing it by the elapsed time suggests a
+  /// plausible drive. A bigger implied speed means the jump is a location
+  /// error (or travel that plausibly did *not* happen in the gap), never
+  /// recovered distance.
 
   /// A step is only judged by its implied speed when the fix interval is long
   /// enough for that average to mean anything; below this (sub-second samples)
@@ -105,6 +128,16 @@ class DailyTrackEngine {
 
   StreamSubscription<Position>? _subscription;
   bool _tracking = false;
+
+  /// True while the platform has reported the location pipeline down (the OS
+  /// provider switched off, or the position stream failed). Cleared by the
+  /// first *accepted* fix — the "GPS is back" moment the gap-recovery pass
+  /// judges — and by [detach].
+  bool _outage = false;
+
+  /// The OS provider-status subscription opened by [attach]; cancelled on
+  /// [detach] so a stopped tracker can never arm a recovery window.
+  StreamSubscription<ServiceStatus>? _serviceStatusSubscription;
 
   /// Fires after every accepted fix (and at the midnight rollover) so consumers
   /// repaint today's numbers immediately instead of only on a toggle.
@@ -177,11 +210,29 @@ class DailyTrackEngine {
     }
   }
 
-  /// Attaches [source], joins the motion signal and arms the rollover and
-  /// persistence timers. Callers must resolve location access beforehand.
-  Future<void> attach(Stream<Position> source) async {
+  /// Records that the location pipeline has been observed down — the OS
+  /// provider was switched off (see the service-status listener in [attach])
+  /// or the platform stream failed — so everything skipped in between is
+  /// judged by the gap-recovery pass when fixes come back instead of being
+  /// written off as a dead silence. Idempotent; cleared by the next accepted
+  /// fix and by [detach].
+  void noteOutage() => _outage = true;
+
+  /// Attaches [source], joins the OS provider-status feed (when given), the
+  /// motion signal and arms the rollover and persistence timers. Callers must
+  /// resolve location access beforehand.
+  ///
+  /// [serviceStatus] is the tracker's "GPS switched off/on" feed: a
+  /// [ServiceStatus.disabled] event arms gap recovery (see [noteOutage]) so
+  /// the distance skipped while the provider was off is measured — not
+  /// silently dropped — when fixes resume.
+  Future<void> attach(
+    Stream<Position> source, {
+    Stream<ServiceStatus>? serviceStatus,
+  }) async {
     _subscription = source.listen(recordPosition);
     _tracking = true;
+    _listenForProviderOutages(serviceStatus);
     try {
       await _motion.start();
     } catch (_) {
@@ -189,6 +240,25 @@ class DailyTrackEngine {
     }
     _scheduleMidnightRollover();
     _startPersistTimer();
+  }
+
+  /// Opens the provider-status listener that arms gap recovery. Failures are
+  /// swallowed: without a usable status feed the tracker simply keeps the
+  /// conservative plain-fix rules and the motion-signal bridge, and stream
+  /// failures still arm the same window through the caller's `onError` hook.
+  void _listenForProviderOutages(Stream<ServiceStatus>? serviceStatus) {
+    unawaited(_serviceStatusSubscription?.cancel());
+    _serviceStatusSubscription = null;
+    if (serviceStatus == null) return;
+    _serviceStatusSubscription = serviceStatus.listen(
+      (ServiceStatus status) {
+        if (status == ServiceStatus.disabled) noteOutage();
+      },
+      onError: (Object _, StackTrace _) {
+        // No status feed (tests, or a platform without one): the ordinary
+        // bridging rules above remain in force.
+      },
+    );
   }
 
   /// Detaches the stream, releases the motion signal and persists the day.
@@ -202,10 +272,53 @@ class DailyTrackEngine {
     _cancelTimers();
     await _subscription?.cancel();
     _subscription = null;
+    unawaited(_serviceStatusSubscription?.cancel());
+    _serviceStatusSubscription = null;
+    // A stopped session's outage window never carries over: the next session
+    // may start days later, and its first fix must follow the ordinary rules.
+    // Before closing it, the inertial estimator gets one last chance to vouch
+    // for the span — no fix will ever come to judge this window, and dead
+    // reckoning is the only witness left (a GPS-off drive that never came back
+    // would otherwise be written off entirely).
+    final DateTime? openOutageFrom = _outage ? _lastAt : null;
+    _outage = false;
+    if (openOutageFrom != null) {
+      _applyInertialOutage(openOutageFrom, DateTime.now());
+    }
     await _motion.stop();
     _notify();
     if (!hasAnything) return;
     await _saveDay(_day);
+  }
+
+  /// Re-points the live subscription at [source] without touching anything
+  /// else — used when the power mode changes and the platform stream has to be
+  /// re-opened at a different accuracy (see
+  /// `LocationService.backgroundTrackingLocationSettings`). Today's tallies,
+  /// the last accepted fix, the outage window and the timers all survive, so a
+  /// foreground ↔ background switch mid-trip loses no state.
+  Future<void> reopen(Stream<Position> source) async {
+    final StreamSubscription<Position>? previous = _subscription;
+    _subscription = null;
+    if (previous != null) {
+      try {
+        await previous.cancel();
+      } catch (_) {
+        // A failing teardown must not block the replacement stream.
+      }
+    }
+    // Detached while the old stream was being cancelled: stay detached rather
+    // than resurrecting a subscription nobody will ever stop again.
+    if (!_tracking) return;
+    _subscription = source.listen(recordPosition);
+  }
+
+  /// Writes today's metrics to disk right now — no-op when nothing was
+  /// recorded since the last write — so a battery-optimisation kill immediately
+  /// after the app is backgrounded cannot drop an accepted position.
+  Future<void> flush() async {
+    if (!_dirty) return;
+    await _persistSafely();
   }
 
   /// Consumes one fix: filters noise, rolls over at midnight, and accumulates
@@ -251,6 +364,13 @@ class DailyTrackEngine {
     _lastLon = position.longitude;
     _dirty = true;
 
+    // An accepted fix is the end of the outage, so judge the skipped span
+    // while the window is still known. A fix that the accuracy gate already
+    // rejected never gets here — a poor-quality "first fix back" keeps the
+    // window open for the next, usable one.
+    final bool afterOutage = _outage;
+    _outage = false;
+
     if (lastAt != null) {
       final Duration gap = position.timestamp.difference(lastAt).abs();
       final double stepKm = haversineKm(
@@ -259,9 +379,19 @@ class DailyTrackEngine {
         position.latitude,
         position.longitude,
       );
-      if (stepKm * 1000 >= minStepMeters &&
-          _countsAsTravel(stepKm, gap, lastAt)) {
-        _dayKm += stepKm;
+      // Across an outage the gap *is* the measurement: the Haversine span
+      // between the last known position and the new one is recovered only
+      // when it implies a plausible drive (see [GapRecoveryService]), and the
+      // inertial estimate may vouch for the window when the crossing itself
+      // is refused. Every other step follows the ordinary fix-to-fix rules.
+      final double countedKm = afterOutage
+          ? _outageRecoveryKm(stepKm, gap, lastAt, position.timestamp)
+          : (stepKm * 1000 >= minStepMeters &&
+                  _countsAsTravel(stepKm, gap, lastAt))
+              ? stepKm
+              : 0.0;
+      if (countedKm > 0) {
+        _dayKm += countedKm;
       }
     }
 
@@ -274,6 +404,9 @@ class DailyTrackEngine {
 
   /// Whether the geometric step between the last accepted fix and this one is
   /// travel that belongs in today's total.
+  ///
+  /// Steps that span a *known* outage never reach this — they are judged only
+  /// by [_recoversGap]. For everything else:
   ///
   /// * A physically impossible step (one implying a speed above
   ///   [maxPlausibleSpeedKmh]) is a GPS jump, never travel.
@@ -293,6 +426,44 @@ class DailyTrackEngine {
     if (gap > maxBridgedGap) return false;
     final DateTime? motionAt = _motion.lastMotionAt;
     return motionAt != null && motionAt.isAfter(since);
+  }
+
+  /// How much distance an **outage** span ([noteOutage]) adds back to the
+  /// day's total. The geometric crossing is judged by [GapRecoveryService]
+  /// (implied average speed ≤ its ceiling); when that refuses — a bad first
+  /// fix back, or an out-and-back through a tunnel whose endpoints nearly
+  /// coincide — the inertial estimate for the same window is judged by the
+  /// same rule and, if plausible, is what gets appended. Both witnesses must
+  /// clear the speed gate; neither clearing it means the span is written off.
+  double _outageRecoveryKm(
+    double stepKm,
+    Duration gap,
+    DateTime from,
+    DateTime to,
+  ) {
+    final GapVerdict crossing = _gapRecovery.judge(gap: gap, crossingKm: stepKm);
+    if (crossing.recovered && stepKm * 1000 >= minStepMeters) {
+      return crossing.recoveredKm;
+    }
+    final GapVerdict inertial = _gapRecovery.judge(
+      gap: gap,
+      crossingKm: _deadReckoning.displacementKmBetween(from, to),
+    );
+    return inertial.recoveredKm;
+  }
+
+  /// Appends the inertial estimate of an outage window that will never see a
+  /// resuming fix (the session ended while the outage was still open). Judged
+  /// by the same plausible-speed rule as every other recovery, and marked
+  /// dirty so the final persist picks it up.
+  void _applyInertialOutage(DateTime from, DateTime to) {
+    final GapVerdict verdict = _gapRecovery.judge(
+      gap: to.difference(from),
+      crossingKm: _deadReckoning.displacementKmBetween(from, to),
+    );
+    if (verdict.recoveredKm <= 0) return;
+    _dayKm += verdict.recoveredKm;
+    _dirty = true;
   }
 
   /// Re-seeds the last accepted fix from [stored] so a restarted service can

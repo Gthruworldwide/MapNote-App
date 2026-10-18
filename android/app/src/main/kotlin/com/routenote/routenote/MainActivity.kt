@@ -2,11 +2,13 @@ package com.routenote.routenote
 
 import android.Manifest
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.content.pm.ShortcutInfo
 import android.content.pm.ShortcutManager
 import android.graphics.drawable.Icon
+import android.os.BatteryManager
 import android.os.Build
 import android.os.Bundle
 import android.view.ViewGroup
@@ -136,6 +138,7 @@ class MainActivity : FlutterFragmentActivity() {
                     requestNotificationPermission(result)
                 "requestBackgroundLocationPermission" ->
                     requestBackgroundLocationPermission(result)
+                "getBatteryLevel" -> result.success(readBatteryLevel())
                 else -> result.notImplemented()
             }
         }
@@ -174,6 +177,27 @@ class MainActivity : FlutterFragmentActivity() {
             true
         } catch (error: Exception) {
             false
+        }
+    }
+
+    /**
+     * Reads the current battery charge (0…1) from the OS's sticky
+     * `ACTION_BATTERY_CHANGED` broadcast — no permission, no plugin.
+     *
+     * Used by the adaptive sampling manager to stretch the request interval
+     * when the battery is low. Returns `-1.0` when the platform refuses to
+     * answer, which the Dart side treats as "unknown" (assume healthy) rather
+     * than throttling tracking on a guess.
+     */
+    private fun readBatteryLevel(): Double {
+        return try {
+            val status = registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+            val level = status?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: -1
+            val scale = status?.getIntExtra(BatteryManager.EXTRA_SCALE, -1) ?: -1
+            if (level < 0 || scale <= 0 || scale <= level) -1.0
+            else level.toDouble() / scale
+        } catch (error: Exception) {
+            -1.0
         }
     }
 

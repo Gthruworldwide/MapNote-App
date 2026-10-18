@@ -19,6 +19,7 @@ import 'package:routenote/src/services/app_health_logger.dart';
 import 'package:routenote/src/services/auto_motion_service.dart';
 import 'package:routenote/src/services/foreground_tracking_service.dart';
 import 'package:routenote/src/services/location_service.dart';
+import 'package:routenote/src/services/motion_sensor_hub.dart';
 import 'package:routenote/src/services/share_intent_service.dart';
 import 'package:routenote/src/widgets/qibla_indicator.dart';
 
@@ -125,6 +126,16 @@ const MethodChannel _trackingChannel = MethodChannel(
   ForegroundTrackingService.channelName,
 );
 
+/// Native sensor channel, mocked for the duration of each test.
+///
+/// `AutoMotionController` now starts the shared `MotionSensorHub` alongside
+/// the tracker; without a handler, the EventChannel's underlying
+/// `listen`/`cancel` calls report `MissingPluginException` through
+/// `FlutterError`, which the widget-test binding treats as a failure.
+const MethodChannel _motionChannel = MethodChannel(
+  MotionSensorHub.channelName,
+);
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -146,9 +157,16 @@ void main() {
       _trackingChannel,
       (MethodCall call) async => true,
     );
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+      _motionChannel,
+      (MethodCall call) async => null,
+    );
   });
 
   tearDown(() async {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(_motionChannel, null);
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(_trackingChannel, null);
     await placesBox.close();

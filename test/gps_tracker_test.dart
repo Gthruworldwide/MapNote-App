@@ -362,6 +362,40 @@ void main() {
     });
   });
 
+  group('GpsTrackerService outage recovery', () {
+    test('noteOutage() recovers a plausible A→B crossing', () async {
+      final GpsTrackerService service =
+          GpsTrackerService(dailyStore: await openStore('outage'));
+      final DateTime start = DateTime.now().subtract(const Duration(hours: 1));
+
+      service.recordPosition(_fix(0, 0, at: start));
+      service.noteOutage();
+      // Ten minutes later the phone is 20 km away: 120 km/h implied —
+      // plausible travel, so the crossing rejoins the day's total.
+      service.recordPosition(
+        _fix(0.18, 0, at: start.add(const Duration(minutes: 10))),
+      );
+
+      expect(service.totalDistanceKm, closeTo(20.0, 0.05));
+    });
+
+    test('noteOutage() refuses a crossing implying an implausible speed',
+        () async {
+      final GpsTrackerService service =
+          GpsTrackerService(dailyStore: await openStore('outage_refused'));
+      final DateTime start = DateTime.now().subtract(const Duration(hours: 1));
+
+      service.recordPosition(_fix(0, 0, at: start));
+      service.noteOutage();
+      // 10 km in one minute implies 600 km/h: a teleport, never travel.
+      service.recordPosition(
+        _fix(0.09, 0, at: start.add(const Duration(minutes: 1))),
+      );
+
+      expect(service.totalDistanceKm, 0);
+    });
+  });
+
   group('GpsTrackerService midnight roll-over', () {
     test('saves the finished day and starts the next one', () async {
       final GpsDailyDataSource store = await openStore('rollover');
