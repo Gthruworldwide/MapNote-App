@@ -177,6 +177,19 @@
   "autoMotionHistoryEmpty": "No motion recorded yet",
   "autoMotionHistoryEmptyHint": "Days with recorded motion will appear here.",
   "autoMotionViewDetails": "View details",
+  "autoMotionRoute": "Today's route",
+  "autoMotionRouteEmpty": "No route recorded yet — turn on tracking and drive or walk to see it drawn here.",
+  "autoMotionEvents": "Driving events",
+  "autoMotionEventsEmpty": "No harsh maneuvers detected on this trip.",
+  "autoMotionEventsMore": "{count} more",
+  "@autoMotionEventsMore": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "harshAcceleration": "Harsh acceleration",
+  "harshBraking": "Hard braking",
+  "mps2Unit": "m/s²",
   "locationChipServiceOff": "Location off — tap to enable",
   "locationChipPermissionDenied": "Location permission needed — tap to allow",
   "locationChipDeniedForever": "Location blocked — tap to open settings",

@@ -417,6 +417,33 @@ class AppLocalizationsAr extends AppLocalizations {
   String get autoMotionViewDetails => 'عرض التفاصيل';
 
   @override
+  String get autoMotionRoute => 'مسار اليوم';
+
+  @override
+  String get autoMotionRouteEmpty =>
+      'لم يُسجَّل أي مسار بعد — فعّل التتبع ثم قُد أو امشِ ليظهر هنا.';
+
+  @override
+  String get autoMotionEvents => 'أحداث القيادة';
+
+  @override
+  String get autoMotionEventsEmpty => 'لم تُرصد مناورات قاسية في هذه الرحلة.';
+
+  @override
+  String autoMotionEventsMore(int count) {
+    return '$count أخرى';
+  }
+
+  @override
+  String get harshAcceleration => 'تسارع حاد';
+
+  @override
+  String get harshBraking => 'كبح حاد';
+
+  @override
+  String get mps2Unit => 'm/s²';
+
+  @override
   String get locationChipServiceOff => 'الموقع متوقف — اضغط للتفعيل';
 
   @override

@@ -29,6 +29,11 @@ enum HealthEventType {
   /// A coarse, sanitized "something went wrong" report recorded through
   /// [AppObserverService]. The category lives in `data['category']`.
   serviceIssue,
+
+  /// A harsh driving maneuver (hard braking / harsh acceleration) detected by
+  /// the motion behavior analyzer. Carries only the maneuver kind, the peak
+  /// acceleration magnitude and a duration in `data` — never a location.
+  drivingManeuver,
 }
 
 /// A single timestamped health/lifecycle event.
@@ -295,6 +300,7 @@ class AppHealthLogger {
         case HealthEventType.agentSkipped:
         case HealthEventType.agentFailure:
         case HealthEventType.serviceIssue:
+        case HealthEventType.drivingManeuver:
           break;
       }
     }

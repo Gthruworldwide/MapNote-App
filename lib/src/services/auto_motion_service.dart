@@ -8,13 +8,16 @@ import 'dead_reckoning_service.dart';
 import 'fused_location_service.dart';
 import 'gap_recovery_service.dart';
 import 'location_service.dart';
+import 'motion_profiler.dart';
 import 'motion_signal.dart';
+import 'polyline_smoother.dart';
 
 export 'daily_track_engine.dart' show TrackStartFailure;
 
 /// Phase-1 AutoMotion tracker: while enabled it records today's total
-/// distance (km), the current speed and today's max speed (km/h), and stores
-/// one daily summary (keyed `YYYY-MM-DD`) in the `auto_motion_box` Hive box.
+/// distance (km), the current speed, today's max speed (km/h) and the day's
+/// recorded route, and stores one daily summary (keyed `YYYY-MM-DD`) in the
+/// `auto_motion_box` Hive box.
 ///
 /// All measurement logic is shared with the GPS tracker through
 /// [DailyTrackEngine]; this façade keeps AutoMotion's own storage box and
@@ -25,6 +28,8 @@ class AutoMotionService {
     MotionSignal? motion,
     GapRecoveryService? gapRecovery,
     DistanceEstimator? deadReckoning,
+    PolylineSmoother? smoother,
+    MotionBehaviorAnalyzer? behavior,
     this._fused,
     Duration flushEvery = persistInterval,
   }) : _engine = DailyTrackEngine(
@@ -32,6 +37,8 @@ class AutoMotionService {
           motion: motion,
           gapRecovery: gapRecovery,
           deadReckoning: deadReckoning,
+          smoother: smoother,
+          behavior: behavior,
           flushEvery: flushEvery,
         );
 
@@ -86,6 +93,13 @@ class AutoMotionService {
 
   /// Speed of the most recent accepted fix, in km/h.
   double get currentSpeedKmh => _engine.currentSpeedKmh;
+
+  /// Raw accepted fixes recorded for the current day (unmodifiable snapshot).
+  List<RoutePoint> get dayPath => _engine.dayPath;
+
+  /// Today's route with GPS jitter smoothed away — what the dashboard draws
+  /// and what [resyncFromStore]/the periodic flush persist to trip history.
+  List<RoutePoint> get smoothedPath => _engine.smoothedPath;
 
   /// Emits after every accepted fix, and after the midnight rollover, so
   /// Settings / Home readouts repaint immediately instead of only when the

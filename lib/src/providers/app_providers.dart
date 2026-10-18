@@ -41,6 +41,7 @@ import '../services/gps_tracker_service.dart';
 import '../services/home_shortcut_service.dart';
 import '../services/local_insight_engine.dart';
 import '../services/location_service.dart';
+import '../services/motion_profiler.dart';
 import '../services/motion_sensor_hub.dart';
 import '../services/motion_signal.dart';
 import '../services/navigation_service.dart';
@@ -126,6 +127,24 @@ final Provider<TransportClassifier> transportClassifierProvider =
       );
     });
 
+/// Driving-behavior profiler (harsh acceleration / hard braking) over the
+/// same shared accelerometer feed, mirroring the classifier's construction.
+///
+/// GPS speed reaches the analyzer through the AutoMotion tracker's engine
+/// (the engine fuses each fix's speed next to the motion signal), and the
+/// vehicle gate through the classifier verdicts `AutoMotionController`
+/// already distributes. Lifecycle ([MotionBehaviorAnalyzer.start]/[stop]) is
+/// owned by that controller alongside the classifier's; [reset] happens when
+/// a new trip starts, via [drivingEventsProvider].
+final Provider<MotionBehaviorAnalyzer> motionBehaviorAnalyzerProvider =
+    Provider<MotionBehaviorAnalyzer>((Ref ref) {
+      final MotionBehaviorAnalyzer analyzer = MotionBehaviorAnalyzer(
+        accelerometer: ref.watch(motionSensorHubProvider).accelerometer,
+      );
+      ref.onDispose(analyzer.stop);
+      return analyzer;
+    });
+
 /// Inertial dead reckoning over the shared accelerometer/gyroscope feeds —
 /// the fallback witness for outage spans the Haversine crossing cannot vouch
 /// for.
@@ -165,6 +184,7 @@ final Provider<AutoMotionService> autoMotionServiceProvider =
         motion: ref.watch(motionSignalProvider),
         gapRecovery: ref.watch(gapRecoveryServiceProvider),
         deadReckoning: ref.watch(deadReckoningServiceProvider),
+        behavior: ref.watch(motionBehaviorAnalyzerProvider),
         fused: ref.watch(fusedLocationServiceProvider),
       );
     });
@@ -1282,15 +1302,19 @@ class AutoMotionController extends Notifier<AutoMotionState> {
     });
     ref.onDispose(updates.cancel);
     // The transport classifier's verdicts drive the adaptive sampling
-    // profile; a disposed controller must stop consuming them.
+    // profile and gate the driving-behavior analyzer to vehicle trips; a
+    // disposed controller must stop consuming them.
     final TransportClassifier classifier =
         ref.read(transportClassifierProvider);
     final AdaptiveSamplingNotifier sampling =
         ref.read(adaptiveSamplingProvider.notifier);
+    final MotionBehaviorAnalyzer analyzer =
+        ref.read(motionBehaviorAnalyzerProvider);
     final StreamSubscription<TransportMode> modes =
         classifier.modes.listen((TransportMode mode) {
       if (!ref.mounted) return;
       sampling.observeTransport(mode);
+      analyzer.observeTransport(mode);
     });
     ref.onDispose(modes.cancel);
     // Profile changes (motion or battery) push the new cadence into the live
@@ -1339,6 +1363,9 @@ class AutoMotionController extends Notifier<AutoMotionState> {
     );
     if (!ref.mounted) return;
     if (started && !wasTracking) {
+      // A new trip starts with a clean driving-event slate; the previous
+      // trip's maneuvers already live in the local health log.
+      ref.read(drivingEventsProvider.notifier).clear();
       unawaited(
         ref
             .read(analyticsServiceProvider)
@@ -1356,7 +1383,8 @@ class AutoMotionController extends Notifier<AutoMotionState> {
 
   /// Starts the sensor-driven sampling stack alongside the tracker: the
   /// transport classifier and dead-reckoning engine consume the shared
-  /// accelerometer/gyroscope feed, and the battery poll drives the adaptive
+  /// accelerometer/gyroscope feed, the driving-behavior analyzer watches the
+  /// same feed for harsh maneuvers, and the battery poll drives the adaptive
   /// profile. The current profile is applied immediately so the stream opens
   /// at the right cadence from the first fix.
   Future<void> _startIntelligentTracking(AutoMotionService tracker) async {
@@ -1365,11 +1393,17 @@ class AutoMotionController extends Notifier<AutoMotionState> {
         ref.read(transportClassifierProvider);
     final DeadReckoningService deadReckoning =
         ref.read(deadReckoningServiceProvider);
+    final MotionBehaviorAnalyzer analyzer =
+        ref.read(motionBehaviorAnalyzerProvider);
     final AdaptiveSamplingNotifier sampling =
         ref.read(adaptiveSamplingProvider.notifier);
+    // Instantiate the events notifier before the first fix can arrive, so
+    // maneuvers are captured even while the dashboard is closed.
+    ref.read(drivingEventsProvider.notifier);
     await hub.start();
     await classifier.start();
     await deadReckoning.start();
+    await analyzer.start();
     sampling.startPolling();
     final SamplingProfile profile = ref.read(adaptiveSamplingProvider);
     await tracker.applySampling(
@@ -1379,17 +1413,21 @@ class AutoMotionController extends Notifier<AutoMotionState> {
   }
 
   /// Stops the sensor-driven sampling stack when tracking ends: releases the
-  /// shared hardware feed and cancels the battery poll.
+  /// shared hardware feed and cancels the battery poll. The detected events
+  /// themselves stay on show until the next trip resets them.
   Future<void> _stopIntelligentTracking() async {
     final TransportClassifier classifier =
         ref.read(transportClassifierProvider);
     final DeadReckoningService deadReckoning =
         ref.read(deadReckoningServiceProvider);
+    final MotionBehaviorAnalyzer analyzer =
+        ref.read(motionBehaviorAnalyzerProvider);
     final AdaptiveSamplingNotifier sampling =
         ref.read(adaptiveSamplingProvider.notifier);
     final MotionSensorHub hub = ref.read(motionSensorHubProvider);
     await classifier.stop();
     await deadReckoning.stop();
+    await analyzer.stop();
     sampling.stopPolling();
     await hub.stop();
   }
@@ -1441,6 +1479,73 @@ class AutoMotionController extends Notifier<AutoMotionState> {
       currentSpeedKmh: tracker.currentSpeedKmh,
       unavailable: false,
     );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Driving events & route path
+// ---------------------------------------------------------------------------
+
+/// Fires after every accepted AutoMotion fix (and the midnight rollover).
+///
+/// The dashboard's trip-route card watches this purely as a repaint trigger:
+/// the path itself is read from `autoMotionServiceProvider.smoothedPath`.
+/// Each notification carries an incrementing tick because Riverpod's
+/// `AsyncData<void>` states all compare equal — a bare `StreamProvider<void>`
+/// would notify dependents only once (the very first event, from the
+/// controller's idle reconcile) and the card would then never repaint, no
+/// matter how many fixes arrived.
+final StreamProvider<int> autoMotionFixesProvider = StreamProvider<int>((
+  Ref ref,
+) {
+  int tick = 0;
+  return ref.watch(autoMotionServiceProvider).changes.map((_) => tick++);
+});
+
+/// Harsh maneuvers (hard braking / harsh acceleration) detected so far in the
+/// current trip, oldest-first — a mirror of the analyzer's own history.
+final NotifierProvider<DrivingEventsNotifier, List<DrivingEvent>>
+    drivingEventsProvider =
+        NotifierProvider<DrivingEventsNotifier, List<DrivingEvent>>(
+  DrivingEventsNotifier.new,
+);
+
+/// Bridges [MotionBehaviorAnalyzer.onEvent] into widget-friendly state.
+///
+/// The subscription lives here (not in the UI) so maneuvers are captured even
+/// while the dashboard is closed; every event is also mirrored into the
+/// privacy-safe local health log (kind + magnitude + duration only — never a
+/// location). [clear] starts a new trip's slate and is driven by
+/// `AutoMotionController` the moment a trip begins.
+class DrivingEventsNotifier extends Notifier<List<DrivingEvent>> {
+  @override
+  List<DrivingEvent> build() {
+    final MotionBehaviorAnalyzer analyzer =
+        ref.read(motionBehaviorAnalyzerProvider);
+    final StreamSubscription<DrivingEvent> detected =
+        analyzer.onEvent.listen((DrivingEvent event) {
+      if (!ref.mounted) return;
+      // The analyzer adds the event to its own list before emitting, so this
+      // keeps one source of truth instead of appending twice.
+      ref.read(appHealthLoggerProvider).log(
+        HealthEventType.drivingManeuver,
+        data: <String, Object?>{
+          'maneuver': event.type.name,
+          'peak_mps2': event.peakMps2,
+          'duration_ms': event.duration.inMilliseconds,
+        },
+      );
+      state = List<DrivingEvent>.unmodifiable(analyzer.events);
+    });
+    ref.onDispose(detected.cancel);
+    return List<DrivingEvent>.unmodifiable(analyzer.events);
+  }
+
+  /// Resets the trip's slate: the analyzer discards its events, armed
+  /// windows and sensor windows, and the exposed list empties with it.
+  void clear() {
+    ref.read(motionBehaviorAnalyzerProvider).reset();
+    state = const <DrivingEvent>[];
   }
 }
 

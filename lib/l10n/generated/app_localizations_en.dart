@@ -418,6 +418,34 @@ class AppLocalizationsEn extends AppLocalizations {
   String get autoMotionViewDetails => 'View details';
 
   @override
+  String get autoMotionRoute => 'Today\'s route';
+
+  @override
+  String get autoMotionRouteEmpty =>
+      'No route recorded yet — turn on tracking and drive or walk to see it drawn here.';
+
+  @override
+  String get autoMotionEvents => 'Driving events';
+
+  @override
+  String get autoMotionEventsEmpty =>
+      'No harsh maneuvers detected on this trip.';
+
+  @override
+  String autoMotionEventsMore(int count) {
+    return '$count more';
+  }
+
+  @override
+  String get harshAcceleration => 'Harsh acceleration';
+
+  @override
+  String get harshBraking => 'Hard braking';
+
+  @override
+  String get mps2Unit => 'm/s²';
+
+  @override
   String get locationChipServiceOff => 'Location off — tap to enable';
 
   @override

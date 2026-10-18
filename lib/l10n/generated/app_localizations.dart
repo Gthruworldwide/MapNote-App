@@ -866,6 +866,54 @@ abstract class AppLocalizations {
   /// **'View details'**
   String get autoMotionViewDetails;
 
+  /// No description provided for @autoMotionRoute.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s route'**
+  String get autoMotionRoute;
+
+  /// No description provided for @autoMotionRouteEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No route recorded yet — turn on tracking and drive or walk to see it drawn here.'**
+  String get autoMotionRouteEmpty;
+
+  /// No description provided for @autoMotionEvents.
+  ///
+  /// In en, this message translates to:
+  /// **'Driving events'**
+  String get autoMotionEvents;
+
+  /// No description provided for @autoMotionEventsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No harsh maneuvers detected on this trip.'**
+  String get autoMotionEventsEmpty;
+
+  /// No description provided for @autoMotionEventsMore.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} more'**
+  String autoMotionEventsMore(int count);
+
+  /// No description provided for @harshAcceleration.
+  ///
+  /// In en, this message translates to:
+  /// **'Harsh acceleration'**
+  String get harshAcceleration;
+
+  /// No description provided for @harshBraking.
+  ///
+  /// In en, this message translates to:
+  /// **'Hard braking'**
+  String get harshBraking;
+
+  /// No description provided for @mps2Unit.
+  ///
+  /// In en, this message translates to:
+  /// **'m/s²'**
+  String get mps2Unit;
+
   /// No description provided for @locationChipServiceOff.
   ///
   /// In en, this message translates to:

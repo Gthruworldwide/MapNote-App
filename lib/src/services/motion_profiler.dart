@@ -86,7 +86,10 @@ class DrivingEvent {
 /// user is walking, on a train or still.
 ///
 /// Pure Dart, deterministic under injected timestamps, and fully offline —
-/// nothing here persists or transmits anything.
+/// nothing here persists or transmits anything. Production wiring (see
+/// `motionBehaviorAnalyzerProvider`) hands the shared [MotionSensorHub]
+/// accelerometer feed to [start]; unit tests may drive [feed]/[feedSample]
+/// directly with no stream at all.
 class MotionBehaviorAnalyzer {
   MotionBehaviorAnalyzer({
     this.harshAccelerationThresholdMps2 = 3.5,
@@ -99,6 +102,7 @@ class MotionBehaviorAnalyzer {
     this.movingVarianceRms = 0.28,
     this.gateOnVehicle = true,
     this.varianceWindowSamples = 32,
+    this.accelerometer,
     DateTime Function()? clock,
   }) : _clock = clock ?? DateTime.now;
 
@@ -146,7 +150,16 @@ class MotionBehaviorAnalyzer {
   /// How many accelerometer samples the variance window keeps.
   final int varianceWindowSamples;
 
+  /// The accelerometer feed [start] listens to — normally the shared
+  /// [MotionSensorHub] broadcast stream, whose hardware reference counting is
+  /// owned by the trackers' lifecycle. `null` in unit tests, which drive
+  /// [feed]/[feedSample] directly.
+  final Stream<AccelerometerSample>? accelerometer;
+
   final DateTime Function() _clock;
+
+  /// The variance-window subscription opened by [start].
+  StreamSubscription<AccelerometerSample>? _subscription;
 
   /// Detected maneuvers, in detection order.
   List<DrivingEvent> get events => List<DrivingEvent>.unmodifiable(_events);
@@ -195,6 +208,26 @@ class MotionBehaviorAnalyzer {
   /// variance window. Equivalent to [feed].
   void feedSample(AccelerometerSample sample) =>
       feed(sample.x, sample.y, sample.z, at: sample.at);
+
+  /// Whether [start] has opened the accelerometer feed.
+  bool get isRunning => _subscription != null;
+
+  /// Opens the accelerometer feed (when one was provided), so the variance
+  /// window fills from live hardware. Idempotent; the caller owns the
+  /// hub's reference counting (start the [MotionSensorHub] first).
+  Future<void> start() async {
+    final Stream<AccelerometerSample>? stream = accelerometer;
+    if (stream == null || _subscription != null) return;
+    _subscription = stream.listen(feedSample);
+  }
+
+  /// Cancels the accelerometer feed. Idempotent and safe to call when no
+  /// stream was ever provided.
+  Future<void> stop() async {
+    final StreamSubscription<AccelerometerSample>? subscription = _subscription;
+    _subscription = null;
+    await subscription?.cancel();
+  }
 
   /// Feeds one raw accelerometer sample. Gravity is removed with the same
   /// seeded EMA the transport classifier uses, so both components interpret

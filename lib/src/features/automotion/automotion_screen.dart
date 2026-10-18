@@ -8,14 +8,17 @@ import '../../providers/app_providers.dart';
 import '../../widgets/motion_metric.dart';
 import '../../widgets/track_failure_text.dart';
 import '../home/widgets/auto_motion_badge.dart';
+import 'widgets/driving_events_card.dart';
+import 'widgets/trip_route_card.dart';
 
 /// The full AutoMotion dashboard, opened by tapping the Home status card.
 ///
 /// Shows a live **driver mode** header (current speed, active/paused status and
-/// today's distance & max speed) followed by the **trip history** of every
-/// recorded day, newest-first. Everything is read from the same offline Hive
-/// data the Home card uses — no network calls, and the two daily trackers stay
-/// independent.
+/// today's distance & max speed), today's **recorded route** as an offline
+/// mini-map, the trip's **driving events** (hard braking / harsh acceleration)
+/// and the **trip history** of every recorded day, newest-first. Everything is
+/// read from the same offline Hive data the Home card uses — no network calls,
+/// and the two daily trackers stay independent.
 class AutoMotionScreen extends ConsumerWidget {
   const AutoMotionScreen({super.key});
 
@@ -31,6 +34,10 @@ class AutoMotionScreen extends ConsumerWidget {
         padding: const EdgeInsets.all(16),
         children: <Widget>[
           _DriverModeCard(state: state),
+          const SizedBox(height: 16),
+          const TripRouteCard(),
+          const SizedBox(height: 16),
+          const DrivingEventsCard(),
           const SizedBox(height: 16),
           _HistoryCard(history: history),
         ],

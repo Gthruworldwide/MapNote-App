@@ -142,6 +142,19 @@
   "autoMotionHistoryEmpty": "لم تُسجَّل أي حركة بعد",
   "autoMotionHistoryEmptyHint": "ستظهر هنا الأيام التي سُجّلت فيها حركة.",
   "autoMotionViewDetails": "عرض التفاصيل",
+  "autoMotionRoute": "مسار اليوم",
+  "autoMotionRouteEmpty": "لم يُسجَّل أي مسار بعد — فعّل التتبع ثم قُد أو امشِ ليظهر هنا.",
+  "autoMotionEvents": "أحداث القيادة",
+  "autoMotionEventsEmpty": "لم تُرصد مناورات قاسية في هذه الرحلة.",
+  "autoMotionEventsMore": "{count} أخرى",
+  "@autoMotionEventsMore": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "harshAcceleration": "تسارع حاد",
+  "harshBraking": "كبح حاد",
+  "mps2Unit": "m/s²",
   "locationChipServiceOff": "الموقع متوقف — اضغط للتفعيل",
   "locationChipPermissionDenied": "إذن الموقع مطلوب — اضغط للسماح",
   "locationChipDeniedForever": "الموقع محظور — اضغط لفتح الإعدادات",

@@ -9,7 +9,9 @@ import '../data/models/daily_gps_summary.dart';
 import 'dead_reckoning_service.dart';
 import 'gap_recovery_service.dart';
 import 'location_service.dart';
+import 'motion_profiler.dart';
 import 'motion_signal.dart';
+import 'polyline_smoother.dart';
 
 /// Why the most recent `start()` on a daily tracker could not begin tracking.
 ///
@@ -39,6 +41,12 @@ enum TrackStartFailure {
 /// Owns the Haversine distance accumulation, the accuracy / jitter / speed
 /// noise filters, the motion-signal gap bridge, the GPS-outage gap-recovery
 /// pass, the local-midnight rollover and the periodic crash-resilience flush.
+/// It also records the day's **route** — every accepted fix is appended to an
+/// in-memory path (see [dayPath]) that is run through [PolylineSmoother] on
+/// the way to trip history and exposed smoothed ([smoothedPath]) for the
+/// dashboard's offline mini-map, so raw GPS jitter is never rendered or
+/// stored. Optionally it fuses GPS speed into a [MotionBehaviorAnalyzer]
+/// ([behavior]) that turns harsh maneuvers into [DrivingEvent]s.
 /// The two trackers differ only in their storage box, their settings switch
 /// and the way their lifecycle is surfaced, so each wraps one engine with its
 /// own [DailyTrackStore] and keeps a fully independent lifecycle.
@@ -48,10 +56,13 @@ class DailyTrackEngine {
     MotionSignal? motion,
     GapRecoveryService? gapRecovery,
     DistanceEstimator? deadReckoning,
+    PolylineSmoother? smoother,
+    this._behavior,
     this.flushEvery = persistInterval,
   })  : _motion = motion ?? const NoMotionSignal(),
         _gapRecovery = gapRecovery ?? const GapRecoveryService(),
-        _deadReckoning = deadReckoning ?? const NoopDistanceEstimator();
+        _deadReckoning = deadReckoning ?? const NoopDistanceEstimator(),
+        _smoother = smoother ?? const PolylineSmoother();
 
   /// Where each day's summary is persisted (one Hive box per tracker).
   final DailyTrackStore store;
@@ -68,6 +79,14 @@ class DailyTrackEngine {
   /// for (a refused first-fix-back, or a session that ends mid-outage). The
   /// no-op default keeps unit tests channel-free.
   final DistanceEstimator _deadReckoning;
+
+  /// The polyline smoother every recorded vertex passes through before it is
+  /// rendered or persisted (see [smoothedPath]).
+  final PolylineSmoother _smoother;
+
+  /// Driving-behavior profiler fed with each fix's GPS speed; `null` when the
+  /// caller wired no analyzer (unit tests, the phase-1 GPS tracker).
+  final MotionBehaviorAnalyzer? _behavior;
 
   /// How often the periodic flush runs. Defaults to [persistInterval]; tests
   /// pass a short value so the cadence can be observed without waiting 10 s.
@@ -111,6 +130,14 @@ class DailyTrackEngine {
   /// when no fix arrives, so a crash or a battery pull loses seconds at most.
   static const Duration persistInterval = Duration(seconds: 10);
 
+  /// The day's recorded path is halved (every other vertex kept) whenever it
+  /// reaches this many points, so a long high-cadence day stays bounded in
+  /// memory and on disk. At the strictest 1 s vehicle sampling that is a bit
+  /// over an hour of fixes before the first decimation — and each halving
+  /// doubles the effective sampling interval, so the drawn shape is kept
+  /// while the count is capped.
+  static const int maxPathPoints = 4096;
+
   double _dayKm = 0;
   double _dayMaxKmh = 0;
   double _currentKmh = 0;
@@ -121,6 +148,10 @@ class DailyTrackEngine {
   double _lastLat = 0;
   double _lastLon = 0;
   DateTime? _lastAt;
+
+  /// Every accepted fix of the current day, in order — the raw recorded track
+  /// that [smoothedPath] filters and [_saveDay] persists.
+  List<RoutePoint> _dayPath = <RoutePoint>[];
 
   /// True once this run accepted at least one fix (i.e. there is something
   /// worth writing back).
@@ -161,6 +192,16 @@ class DailyTrackEngine {
   /// Speed of the most recent accepted fix, in km/h.
   double get currentSpeedKmh => _currentKmh;
 
+  /// Raw accepted fixes recorded for the current day (unmodifiable snapshot;
+  /// `[]` until the first fix of the day, or after a rollover).
+  List<RoutePoint> get dayPath => List<RoutePoint>.unmodifiable(_dayPath);
+
+  /// Today's recorded route with GPS jitter removed — the exact vertices the
+  /// dashboard draws and [_saveDay] stores. Recomputed per read; the Kalman
+  /// pass is a few microseconds per vertex, so repaint-frequency calls stay
+  /// cheap even at [maxPathPoints].
+  List<RoutePoint> get smoothedPath => _smoother.smooth(_dayPath);
+
   /// Emits after every accepted fix, and after the midnight rollover, so
   /// readouts repaint immediately instead of only when the toggle is flipped.
   Stream<void> get changes => _changes.stream;
@@ -181,6 +222,9 @@ class DailyTrackEngine {
     _dayKm = stored?.totalKm ?? 0;
     _dayMaxKmh = stored?.maxSpeedKmh ?? 0;
     _restoreLastPoint(stored);
+    // A live in-memory path wins; otherwise the day's stored route resumes so
+    // the dashboard never loses the morning's path across a restart.
+    if (_dayPath.isEmpty) _dayPath = _pathOf(stored);
   }
 
   /// Resolves the runtime location permission for [locations].
@@ -335,12 +379,16 @@ class DailyTrackEngine {
     // Roll into a new calendar day when the tracking ran past midnight.
     final DateTime positionDay = DailyGpsSummary.dayOf(position.timestamp);
     if (positionDay != _day) {
-      unawaited(_persistSafely()); // Persist yesterday before switching.
+      unawaited(_persistSafely()); // Persist yesterday (path included) before switching.
       _day = positionDay;
       final DailyGpsSummary? stored = store.summaryFor(_day);
       _dayKm = stored?.totalKm ?? 0;
       _dayMaxKmh = stored?.maxSpeedKmh ?? 0;
       _restoreLastPoint(stored);
+      // Yesterday's path was captured by the synchronous part of the persist
+      // above; today's route starts fresh, resuming any earlier session's
+      // stored path for this same day.
+      _dayPath = _pathOf(stored);
     }
 
     // Doppler speed, with impossible spikes (a GPS glitch reports hundreds of
@@ -351,9 +399,13 @@ class DailyTrackEngine {
     if (speedPlausible) {
       _currentKmh = reportedKmh;
     }
-    // Every fix also fuses its speed as movement evidence for the bridge.
+    // Every fix also fuses its speed as movement evidence for the bridge and
+    // as the signed-acceleration timeline of the driving-behavior analyzer —
+    // timestamped by the fix itself, not the wall clock, so replays and
+    // buffered streams stay consistent.
     if (position.hasSpeed) {
       _motion.observeSpeed(position.speed);
+      _behavior?.observeSpeed(position.speed, at: position.timestamp);
     }
 
     final DateTime? lastAt = _lastAt;
@@ -363,6 +415,13 @@ class DailyTrackEngine {
     _lastLat = position.latitude;
     _lastLon = position.longitude;
     _dirty = true;
+    _appendPathPoint(
+      RoutePoint(
+        latitude: position.latitude,
+        longitude: position.longitude,
+        at: position.timestamp,
+      ),
+    );
 
     // An accepted fix is the end of the outage, so judge the skipped span
     // while the window is still known. A fix that the accuracy gate already
@@ -553,11 +612,21 @@ class DailyTrackEngine {
     _dayKm = stored?.totalKm ?? 0;
     _dayMaxKmh = stored?.maxSpeedKmh ?? 0;
     _restoreLastPoint(stored);
+    // The finished day's path went to disk in the persist above (its summary
+    // is built synchronously); the new day's route starts fresh.
+    _dayPath = _pathOf(stored);
     _currentKmh = 0;
   }
 
   Future<void> _saveDay(DateTime day) {
     final DateTime? lastAt = _lastAt;
+    // Smoothing happens here — on the way to disk — so trip history never
+    // stores raw jitter. The summary is built synchronously before the
+    // (async) write, so an unawaited persist (rollover, flush) always
+    // captures the path as it was at call time.
+    final List<RoutePoint>? path = _dayPath.isEmpty
+        ? null
+        : _smoother.smooth(_dayPath);
     return store.save(
       DailyGpsSummary(
         date: day,
@@ -566,8 +635,26 @@ class DailyTrackEngine {
         lastLatitude: lastAt == null ? null : _lastLat,
         lastLongitude: lastAt == null ? null : _lastLon,
         lastFixAt: lastAt,
+        path: path,
       ),
     );
+  }
+
+  /// Copies [stored]'s route (a day restored from disk) or starts empty.
+  static List<RoutePoint> _pathOf(DailyGpsSummary? stored) =>
+      List<RoutePoint>.of(stored?.path ?? const <RoutePoint>[]);
+
+  /// Appends one accepted fix to today's recorded path, halving the list
+  /// (every other vertex) whenever it reaches [maxPathPoints] so a long
+  /// high-cadence day stays bounded. The per-vertex timestamps survive
+  /// decimation, so the smoother's per-step dt still reflects real spacing.
+  void _appendPathPoint(RoutePoint point) {
+    if (_dayPath.length >= maxPathPoints) {
+      _dayPath = <RoutePoint>[
+        for (int i = 0; i < _dayPath.length; i += 2) _dayPath[i],
+      ];
+    }
+    _dayPath.add(point);
   }
 
   /// Great-circle distance between two coordinates, in kilometres (Haversine).
