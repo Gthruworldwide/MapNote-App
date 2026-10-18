@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +10,7 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../core/theme/app_motion.dart';
 import '../../core/utils/haptics.dart';
 import '../../providers/app_providers.dart';
+import '../../services/analytics_service.dart';
 import '../../services/app_logger.dart';
 import '../../services/location_parser.dart';
 import '../../services/lock_gate.dart';
@@ -296,9 +299,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           // Dynamic Island slot above the search bar.
           GestureDetector(
             onLongPress: () {
+              // Only the expand counts as "opening" the compass, so collapsing
+              // the island never logs an event.
+              final bool opening = !_isCompassExpanded;
               setState(() {
-                _isCompassExpanded = !_isCompassExpanded;
+                _isCompassExpanded = opening;
               });
+              if (opening) _trackCompassOpened();
             },
             // The tooltip uses a manual trigger so it never competes for the
             // long press (a default long-press tooltip would swallow it and the
@@ -475,10 +482,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Future<void> _refresh() =>
       ref.read(syncControllerProvider.notifier).syncNow();
 
+  /// Records that the Qibla compass became visible to the user. Fired by both
+  /// entry points (the Dynamic Island expansion and the full sheet).
+  void _trackCompassOpened() {
+    unawaited(
+      ref
+          .read(analyticsServiceProvider)
+          .logEvent(AnalyticsEvents.qiblaCompassOpened),
+    );
+  }
+
   /// Opens the offline compass: a full sheet with the live Qibla indicator,
   /// which fuses the magnetometer heading with the GPS position.
   Future<void> _openOfflineCompass() async {
     Haptics.light();
+    _trackCompassOpened();
     // The Dynamic Island slot above the search bar renders its own
     // QiblaIndicator. Mounting this sheet on top would leave both alive at once
     // — two magnetometer streams and two GPS subscriptions — so collapse the

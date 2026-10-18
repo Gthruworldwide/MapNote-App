@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
@@ -20,6 +22,7 @@ import '../data/repositories/sync_repository.dart';
 import '../core/config/app_config.dart';
 import '../core/config/preferred_nav_app.dart';
 import '../services/agent_service.dart';
+import '../services/analytics_service.dart';
 import '../services/app_health_logger.dart';
 import '../services/app_logger.dart';
 import '../services/app_observer_service.dart';
@@ -199,6 +202,45 @@ final Provider<AppObserverService> appObserverServiceProvider =
       return AppObserverService(ref.watch(appHealthLoggerProvider));
     });
 
+// ---------------------------------------------------------------------------
+// Analytics
+// ---------------------------------------------------------------------------
+
+/// Firebase Analytics facade.
+///
+/// Null-backed when Firebase never initialised (offline-first: a missing
+/// `google-services.json` must not break launch), in which case every event
+/// degrades to a silent no-op. Resolved once, right after `main()`'s
+/// best-effort `Firebase.initializeApp()`.
+final Provider<AnalyticsService> analyticsServiceProvider =
+    Provider<AnalyticsService>((Ref ref) {
+      FirebaseAnalytics? analytics;
+      try {
+        if (Firebase.apps.isNotEmpty) {
+          analytics = FirebaseAnalytics.instance;
+        }
+      } catch (_) {
+        // Firebase is unavailable: fall back to the no-op service.
+        analytics = null;
+      }
+      return AnalyticsService(analytics: analytics);
+    });
+
+/// [FirebaseAnalyticsObserver] wired into [MaterialApp.navigatorObservers] for
+/// automatic `screen_view` events.
+///
+/// Empty when Firebase is unavailable, so navigation never depends on it.
+final Provider<List<NavigatorObserver>> analyticsNavigatorObserversProvider =
+    Provider<List<NavigatorObserver>>((Ref ref) {
+      final FirebaseAnalytics? analytics = ref
+          .watch(analyticsServiceProvider)
+          .analytics;
+      if (analytics == null) return const <NavigatorObserver>[];
+      return <NavigatorObserver>[
+        FirebaseAnalyticsObserver(analytics: analytics),
+      ];
+    });
+
 /// Pure, offline rule engine.
 final Provider<LocalInsightEngine> localInsightEngineProvider =
     Provider<LocalInsightEngine>((Ref ref) => const LocalInsightEngine());
@@ -354,6 +396,13 @@ class PlacesNotifier extends AsyncNotifier<List<Place>> {
   Future<void> save(Place place) async {
     await ref.read(placeRepositoryProvider).save(place);
     ref.read(appHealthLoggerProvider).log(HealthEventType.placeSaved);
+    // Single funnel for every add/edit save path: no names, notes or
+    // coordinates are sent (see AnalyticsService's privacy note).
+    unawaited(
+      ref
+          .read(analyticsServiceProvider)
+          .logEvent(AnalyticsEvents.placeSaved),
+    );
     await _refresh();
   }
 
@@ -1170,10 +1219,22 @@ class AutoMotionController extends Notifier<AutoMotionState> {
       enabled ? _startNow(tracker) : _idleNow(tracker);
 
   Future<void> _startNow(AutoMotionService tracker) async {
+    // `_applyEnabled` re-runs on every rebuild and `tracker.start()`
+    // short-circuits when it is already live, so the off→on transition is what
+    // defines a trip: without this check `automotion_trip_started` would fire
+    // on every rebuild while AutoMotion is enabled.
+    final bool wasTracking = tracker.isTracking;
     final bool started = await tracker.start(
       locations: ref.read(locationServiceProvider),
     );
     if (!ref.mounted) return;
+    if (started && !wasTracking) {
+      unawaited(
+        ref
+            .read(analyticsServiceProvider)
+            .logEvent(AnalyticsEvents.autoMotionTripStarted),
+      );
+    }
     state = _snapshot(tracker, enabled: true, active: started).copyWith(
       unavailable: !started,
       failure: tracker.failure,
@@ -1185,9 +1246,20 @@ class AutoMotionController extends Notifier<AutoMotionState> {
   /// memory (if the toggle was just turned off mid-session), then loads today's
   /// stored totals so the paused card still reflects the day's motion.
   Future<void> _idleNow(AutoMotionService tracker) async {
+    // Mirror of the start guard: only a live→off transition is a trip end, so
+    // the idle reconciliation that runs on every rebuild while AutoMotion is
+    // switched off never emits a spurious `automotion_trip_ended`.
+    final bool wasTracking = tracker.isTracking;
     await tracker.stop();
     await tracker.resyncFromStore();
     if (!ref.mounted) return;
+    if (wasTracking) {
+      unawaited(
+        ref
+            .read(analyticsServiceProvider)
+            .logEvent(AnalyticsEvents.autoMotionTripEnded),
+      );
+    }
     state = _snapshot(tracker, enabled: false);
     await _syncForegroundTracking();
   }

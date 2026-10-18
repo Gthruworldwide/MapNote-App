@@ -360,6 +360,9 @@ class _MapNoteAppState extends ConsumerState<MapNoteApp>
       locale: locale,
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
+      // Automatic `screen_view` events; empty (not absent) when Firebase is
+      // unavailable, so navigation still works offline-first.
+      navigatorObservers: ref.watch(analyticsNavigatorObserversProvider),
       // Branded cold-start splash: an overlay above the navigator, so the home
       // route (and early share-intent / shortcut navigation) is live underneath.
       builder: (BuildContext context, Widget? child) =>
