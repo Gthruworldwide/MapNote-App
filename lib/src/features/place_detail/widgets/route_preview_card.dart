@@ -1,8 +1,7 @@
-import 'dart:math' as math;
-import 'dart:ui' as ui;
-
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:latlong2/latlong.dart';
 
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../core/theme/app_motion.dart';
@@ -12,15 +11,23 @@ import '../../../core/utils/haptics.dart';
 import '../../../data/models/place.dart';
 import '../../../providers/app_providers.dart';
 import '../../../services/location_service.dart';
+import '../../../widgets/map_attribution_chip.dart';
 
-/// A compact, fully offline "route preview" for a saved place.
+/// A compact route preview for a saved place, drawn over real OpenStreetMap
+/// tiles — the same `flutter_map` stack the AutoMotion dashboard uses.
 ///
-/// The map is painted with [CustomPaint] — there is no map SDK and no network
-/// call — so the preview also works in airplane mode and in tests. The saved
-/// place is always drawn; when the device can be located the current position,
-/// a dashed great-circle route and an estimated distance are added on top.
+/// The saved place is always marked (red pin); when the device can be located
+/// the current position (blue dot), the straight connection between the two
+/// and an estimated distance are added on top. The camera auto-fits both
+/// markers, so the pair is framed without any user interaction.
 ///
-/// Tapping the card opens a taller preview in a bottom sheet. Everything that
+/// Tiles need a network, but the frame does not: the tinted grid the preview
+/// has always painted stays underneath as the offline backdrop, so with no
+/// connectivity (or before the first tile lands) both markers and the path
+/// still render. The tile source is injected through
+/// [routeTileProviderProvider], so tests never reach the network.
+///
+/// Tapping the card opens a taller copy in a bottom sheet. Everything that
 /// touches or moves the card fires the shared [Haptics] tap, and the entrance
 /// animation is skipped when the platform asks for reduced motion.
 class RoutePreviewCard extends ConsumerStatefulWidget {
@@ -163,16 +170,28 @@ class _RoutePreviewCardState extends ConsumerState<RoutePreviewCard>
       label: l10n.mapPreview,
       child: AnimatedBuilder(
         animation: _entrance,
-        builder: (BuildContext context, Widget? child) => CustomPaint(
-          painter: _RouteMapPainter(
-            targetLat: widget.place.latitude,
-            targetLon: widget.place.longitude,
-            currentLat: _current?.latitude,
-            currentLon: _current?.longitude,
-            scheme: scheme,
-            progress: _entrance.value,
-            isDark: theme.brightness == Brightness.dark,
-          ),
+        // The map subtree is passed as `child`, so the entrance fade repaints
+        // the layer without rebuilding the tiles or the markers.
+        builder: (BuildContext context, Widget? child) =>
+            Opacity(opacity: _entrance.value.clamp(0.0, 1.0), child: child),
+        child: Stack(
+          fit: StackFit.expand,
+          children: <Widget>[
+            // Offline backdrop (the preview's original grid): it shows through
+            // wherever no tile has loaded, so the markers and path — pure
+            // widget layers that need no network — never sit on a blank box.
+            CustomPaint(
+              painter: _PreviewGridPainter(
+                scheme: scheme,
+                isDark: theme.brightness == Brightness.dark,
+              ),
+            ),
+            _RoutePreviewMap(
+              place: widget.place,
+              currentLat: _current?.latitude,
+              currentLon: _current?.longitude,
+            ),
+          ],
         ),
       ),
     );
@@ -338,98 +357,28 @@ class _LegendItem extends StatelessWidget {
   }
 }
 
-/// Paints the offline preview: a paper-like grid, the dashed route, the device
-/// dot and the saved-place pin.
-class _RouteMapPainter extends CustomPainter {
-  _RouteMapPainter({
-    required this.targetLat,
-    required this.targetLon,
-    required this.currentLat,
-    required this.currentLon,
-    required this.scheme,
-    required this.progress,
-    required this.isDark,
-  });
+/// The offline backdrop: the paper-like grid the preview has always painted,
+/// now layered *under* the real tiles. It shows through wherever no tile has
+/// loaded (airplane mode, first paint, an OSM outage) instead of leaving a
+/// blank box.
+class _PreviewGridPainter extends CustomPainter {
+  _PreviewGridPainter({required this.scheme, required this.isDark});
 
-  final double targetLat;
-  final double targetLon;
-  final double? currentLat;
-  final double? currentLon;
   final ColorScheme scheme;
-  final double progress;
   final bool isDark;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final Rect rect = Offset.zero & size;
-    final RRect rounded = RRect.fromRectAndRadius(
-      rect,
-      const Radius.circular(AppRadii.input),
-    );
-    canvas.drawRRect(
-      rounded,
+    // The card's ClipRRect already rounds the corners, so the backdrop fills
+    // the whole box; the real tiles cover it the moment they arrive.
+    canvas.drawRect(
+      Offset.zero & size,
       Paint()
         ..color = isDark
             ? scheme.surfaceContainerHighest
             : scheme.primary.withValues(alpha: 0.04),
     );
-
-    canvas.save();
-    canvas.clipRRect(rounded);
     _paintGrid(canvas, size);
-
-    // Equirectangular projection, longitude scaled by the mean latitude so
-    // northern/southern places are not stretched.
-    final double? cLat = currentLat;
-    final double? cLon = currentLon;
-    final double meanLat = cLat == null ? targetLat : (cLat + targetLat) / 2;
-    final double lonScale = math
-        .cos(meanLat * math.pi / 180)
-        .abs()
-        .clamp(0.05, 1.0);
-
-    final double tx = targetLon * lonScale;
-    final double ty = -targetLat;
-    final double? cx = cLon == null ? null : cLon * lonScale;
-    final double? cy = cLat == null ? null : -cLat;
-
-    double minX = tx;
-    double maxX = tx;
-    double minY = ty;
-    double maxY = ty;
-    if (cx != null && cy != null) {
-      minX = math.min(minX, cx);
-      maxX = math.max(maxX, cx);
-      minY = math.min(minY, cy);
-      maxY = math.max(maxY, cy);
-    }
-    // Keep a sensible zoom when the two points coincide (or when only the
-    // saved place is known).
-    final double spanX = math.max(maxX - minX, 0.0009);
-    final double spanY = math.max(maxY - minY, 0.0009);
-    const double pad = 46;
-    final double availW = math.max(size.width - pad * 2, 1);
-    final double availH = math.max(size.height - pad * 2, 1);
-    final double scale = math.min(availW / spanX, availH / spanY);
-    final double centerX = (minX + maxX) / 2;
-    final double centerY = (minY + maxY) / 2;
-
-    Offset project(double wx, double wy) => Offset(
-      size.width / 2 + (wx - centerX) * scale,
-      size.height / 2 + (wy - centerY) * scale,
-    );
-
-    final Offset targetPoint = project(tx, ty);
-    final Offset? currentPoint = (cx == null || cy == null)
-        ? null
-        : project(cx, cy);
-
-    if (currentPoint != null) {
-      _paintRoute(canvas, currentPoint, targetPoint);
-      _paintDeviceDot(canvas, currentPoint);
-    }
-    _paintPin(canvas, targetPoint);
-    canvas.restore();
   }
 
   void _paintGrid(Canvas canvas, Size size) {
@@ -445,90 +394,219 @@ class _RouteMapPainter extends CustomPainter {
     }
   }
 
-  void _paintRoute(Canvas canvas, Offset from, Offset to) {
-    final Offset delta = to - from;
-    final double length = delta.distance;
-    final Offset mid = Offset.lerp(from, to, 0.5)!;
-    final Offset normal = length == 0
-        ? Offset.zero
-        : Offset(-delta.dy / length, delta.dx / length);
-    final Offset control = mid + normal * (length * 0.18);
-    final Path path = Path()
-      ..moveTo(from.dx, from.dy)
-      ..quadraticBezierTo(control.dx, control.dy, to.dx, to.dy);
+  @override
+  bool shouldRepaint(covariant _PreviewGridPainter old) =>
+      old.isDark != isDark || old.scheme != scheme;
+}
 
-    canvas.drawPath(
-      path,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 7
-        ..strokeCap = StrokeCap.round
-        ..color = scheme.primary.withValues(alpha: 0.16),
-    );
-    _drawDashed(
-      canvas,
-      path,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.4
-        ..strokeCap = StrokeCap.round
-        ..color = scheme.primary.withValues(alpha: 0.90),
-    );
-  }
+/// The real-tile preview: OpenStreetMap raster tiles under a straight
+/// connection line, a blue "you are here" dot and a red pin on the saved
+/// place.
+///
+/// Mirrors `RouteMapView`'s language — a transparent background over the
+/// offline grid, an injectable [TileProvider] (tests must never reach the
+/// network) and the OSM attribution chip the tile usage policy requires. The
+/// camera frames every known point on first paint and again whenever the
+/// asynchronous device fix, or the place itself, changes.
+class _RoutePreviewMap extends ConsumerStatefulWidget {
+  const _RoutePreviewMap({
+    required this.place,
+    this.currentLat,
+    this.currentLon,
+  });
 
-  /// Draws [path] as dashes, trimmed to the current [progress] so the route
-  /// appears to draw itself in.
-  void _drawDashed(Canvas canvas, Path path, Paint paint) {
-    const double dash = 9;
-    const double gap = 7;
-    for (final ui.PathMetric metric in path.computeMetrics()) {
-      final double limit = metric.length * progress.clamp(0.0, 1.0);
-      double distance = 0;
-      while (distance < limit) {
-        final double next = math.min(distance + dash, limit);
-        canvas.drawPath(metric.extractPath(distance, next), paint);
-        distance = next + gap;
-      }
-    }
-  }
+  final Place place;
+  final double? currentLat;
+  final double? currentLon;
 
-  /// The blue "you are here" dot, with a soft halo.
-  void _paintDeviceDot(Canvas canvas, Offset center) {
-    canvas.drawCircle(
-      center,
-      13,
-      Paint()..color = scheme.primary.withValues(alpha: 0.16 * progress),
-    );
-    canvas.drawCircle(center, 6.5, Paint()..color = scheme.primary);
-    canvas.drawCircle(center, 2.6, Paint()..color = Colors.white);
-  }
+  @override
+  ConsumerState<_RoutePreviewMap> createState() => _RoutePreviewMapState();
+}
 
-  /// The saved-place pin, anchored so its tip sits exactly on the place.
-  void _paintPin(Canvas canvas, Offset anchor) {
-    final double s = 0.82 + 0.18 * progress.clamp(0.0, 1.0);
-    final Offset head = Offset(anchor.dx, anchor.dy - 11 * s);
-    canvas.drawCircle(
-      head,
-      15 * s,
-      Paint()..color = scheme.error.withValues(alpha: 0.16 * progress),
-    );
-    final Path tail = Path()
-      ..moveTo(anchor.dx - 5.6 * s, head.dy + 4.5 * s)
-      ..lineTo(anchor.dx + 5.6 * s, head.dy + 4.5 * s)
-      ..lineTo(anchor.dx, anchor.dy + 1.5 * s)
-      ..close();
-    canvas.drawPath(tail, Paint()..color = scheme.error);
-    canvas.drawCircle(head, 7.6 * s, Paint()..color = scheme.error);
-    canvas.drawCircle(head, 3 * s, Paint()..color = Colors.white);
+class _RoutePreviewMapState extends ConsumerState<_RoutePreviewMap> {
+  /// The zoom used while only the saved place is known — and the anchor for
+  /// the very first frame, before the fit runs.
+  static const double _singlePointZoom = 15;
+
+  /// Padding around the fitted bounds: roomy enough that neither marker, nor
+  /// the attribution chip, can be clipped by the card's rounded edge.
+  static const EdgeInsets _fitPadding = EdgeInsets.fromLTRB(36, 44, 36, 52);
+
+  /// Owned by this widget rather than the app-wide AutoMotion controller: the
+  /// preview can be on screen while the dashboard's map is alive, and two live
+  /// maps must never share a camera.
+  final MapController _controller = MapController();
+
+  /// Whether [FlutterMap.onMapReady] has fired — camera maths is only valid
+  /// from then on.
+  bool _ready = false;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   @override
-  bool shouldRepaint(covariant _RouteMapPainter old) =>
-      old.targetLat != targetLat ||
-      old.targetLon != targetLon ||
-      old.currentLat != currentLat ||
-      old.currentLon != currentLon ||
-      old.progress != progress ||
-      old.isDark != isDark ||
-      old.scheme != scheme;
+  void didUpdateWidget(covariant _RoutePreviewMap oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // The device fix arrives asynchronously (and the place can be edited), so
+    // re-frame whenever either marker moves.
+    final bool moved =
+        oldWidget.place.latitude != widget.place.latitude ||
+        oldWidget.place.longitude != widget.place.longitude ||
+        oldWidget.currentLat != widget.currentLat ||
+        oldWidget.currentLon != widget.currentLon;
+    if (moved) _scheduleFit();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context);
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+
+    return FlutterMap(
+      mapController: _controller,
+      options: MapOptions(
+        initialCenter: _target(),
+        initialZoom: _singlePointZoom,
+        // Transparent so the offline grid painted underneath stays visible
+        // wherever no tile has loaded — this is the offline fallback.
+        backgroundColor: Colors.transparent,
+        // Drag stays off: the card lives in the detail screen's ListView and
+        // inside a bottom sheet, where a vertical drag belongs to the scroll
+        // view. Pinch and double-tap zoom still work, and the camera
+        // auto-fits both markers anyway.
+        interactionOptions: const InteractionOptions(
+          flags: InteractiveFlag.pinchZoom | InteractiveFlag.doubleTapZoom,
+        ),
+        onMapReady: () {
+          _ready = true;
+          _scheduleFit();
+        },
+      ),
+      children: <Widget>[
+        TileLayer(
+          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+          userAgentPackageName: 'com.routenote.routenote',
+          tileProvider: ref.watch(routeTileProviderProvider),
+        ),
+        PolylineLayer(polylines: _polylines(scheme)),
+        MarkerLayer(markers: _markers(scheme)),
+        Align(
+          alignment: AlignmentDirectional.bottomEnd,
+          child: Padding(
+            padding: const EdgeInsetsDirectional.only(end: 6, bottom: 6),
+            child: MapAttributionChip(label: l10n.routeMapAttribution),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// The saved place — always known, so the map always has an anchor.
+  LatLng _target() => LatLng(widget.place.latitude, widget.place.longitude);
+
+  /// Every point the camera should frame: the place, plus the device whenever
+  /// a fix is known.
+  List<LatLng> _framePoints() {
+    final List<LatLng> points = <LatLng>[_target()];
+    final double? lat = widget.currentLat;
+    final double? lon = widget.currentLon;
+    if (lat != null && lon != null) points.add(LatLng(lat, lon));
+    return points;
+  }
+
+  /// Reframes once this frame has laid the map out — never during build.
+  void _scheduleFit() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _fit();
+    });
+  }
+
+  /// "Fit bounds": frames every known point inside [_fitPadding], capped at a
+  /// street-level zoom so a degenerate frame — only the place, or a fix
+  /// sitting on top of it — cannot ask for an infinite zoom.
+  void _fit() {
+    if (!_ready) return;
+    _controller.fitCamera(
+      CameraFit.bounds(
+        bounds: LatLngBounds.fromPoints(_framePoints()),
+        padding: _fitPadding,
+        maxZoom: 16,
+      ),
+    );
+  }
+
+  /// The straight connection between the device and the saved place, in the
+  /// route map's two-stroke language (a soft halo under a crisp primary line).
+  /// Empty until the device can be located.
+  List<Polyline> _polylines(ColorScheme scheme) {
+    final double? lat = widget.currentLat;
+    final double? lon = widget.currentLon;
+    if (lat == null || lon == null) return const <Polyline>[];
+    final List<LatLng> leg = <LatLng>[LatLng(lat, lon), _target()];
+    return <Polyline>[
+      Polyline(
+        points: leg,
+        strokeWidth: 6,
+        color: scheme.primary.withValues(alpha: 0.16),
+      ),
+      Polyline(
+        points: leg,
+        strokeWidth: 2.6,
+        color: scheme.primary.withValues(alpha: 0.90),
+      ),
+    ];
+  }
+
+  /// The red saved-place pin, plus — once the device is located — the blue
+  /// "you are here" dot. Both sit on the legend printed under the card, which
+  /// uses [ColorScheme.primary] and [ColorScheme.error] the same way.
+  List<Marker> _markers(ColorScheme scheme) {
+    final List<Marker> markers = <Marker>[
+      _pin(
+        _target(),
+        Icon(
+          Icons.place,
+          size: 32,
+          color: scheme.error,
+          // A surface-coloured halo keeps the pin legible over dark imagery.
+          shadows: <Shadow>[Shadow(color: scheme.surface, blurRadius: 6)],
+        ),
+      ),
+    ];
+    final double? lat = widget.currentLat;
+    final double? lon = widget.currentLon;
+    if (lat != null && lon != null) {
+      markers.add(
+        _pin(LatLng(lat, lon), _youAreHereDot(scheme.primary, scheme.surface)),
+      );
+    }
+    return markers;
+  }
+
+  Marker _pin(LatLng point, Widget child) => Marker(
+    point: point,
+    width: 32,
+    height: 32,
+    alignment: Alignment.center,
+    child: Center(child: child),
+  );
+
+  /// The blue dot ringed by the map surface — the same marker language the
+  /// route map uses for its anchors.
+  Widget _youAreHereDot(Color color, Color ring) => Container(
+    width: 16,
+    height: 16,
+    decoration: BoxDecoration(
+      shape: BoxShape.circle,
+      color: color,
+      border: Border.all(color: ring, width: 3),
+      boxShadow: <BoxShadow>[
+        BoxShadow(color: color.withValues(alpha: 0.35), blurRadius: 6),
+      ],
+    ),
+  );
 }

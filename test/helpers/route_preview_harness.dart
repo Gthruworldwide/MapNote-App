@@ -1,7 +1,8 @@
-// Shared fakes for the AutoMotion route-preview widget tests (tile map,
-// offline fallback, milestone timeline). Nothing here touches the network or
-// platform channels — widget tests must be deterministic and offline, exactly
-// like the app's own fallback path.
+// Shared fakes for the map-preview widget tests — the AutoMotion route card
+// and the saved-place route preview (tile map, offline fallback, milestone
+// timeline). Nothing here touches the network or platform channels — widget
+// tests must be deterministic and offline, exactly like the app's own
+// fallback path.
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';

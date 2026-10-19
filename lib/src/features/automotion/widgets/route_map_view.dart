@@ -4,10 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../../l10n/generated/app_localizations.dart';
-import '../../../core/theme/app_theme.dart';
 import '../../../providers/app_providers.dart';
 import '../../../services/polyline_smoother.dart';
 import '../../../services/route_milestones.dart';
+import '../../../widgets/map_attribution_chip.dart';
 
 /// The day's route drawn over real OpenStreetMap raster tiles.
 ///
@@ -97,7 +97,7 @@ class _RouteMapViewState extends ConsumerState<RouteMapView> {
           alignment: AlignmentDirectional.bottomEnd,
           child: Padding(
             padding: const EdgeInsetsDirectional.only(end: 6, bottom: 6),
-            child: _AttributionChip(label: l10n.routeMapAttribution),
+            child: MapAttributionChip(label: l10n.routeMapAttribution),
           ),
         ),
       ],
@@ -214,33 +214,6 @@ class _RouteMapViewState extends ConsumerState<RouteMapView> {
         shape: BoxShape.circle,
         color: filled ? color : scheme.surface,
         border: Border.all(color: filled ? scheme.surface : color, width: 3),
-      ),
-    );
-  }
-}
-
-/// Small "© OpenStreetMap contributors" chip pinned over the map — required
-/// by the OSM tile usage policy, themed from the app so it reads correctly in
-/// both brightnesses.
-class _AttributionChip extends StatelessWidget {
-  const _AttributionChip({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    return Material(
-      color: theme.colorScheme.surface.withValues(alpha: 0.85),
-      borderRadius: BorderRadius.circular(AppRadii.pill),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-        child: Text(
-          label,
-          style: theme.textTheme.labelSmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-        ),
       ),
     );
   }

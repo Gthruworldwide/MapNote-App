@@ -18,7 +18,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # of the product and file versions while build-number is used as the build suffix.
 # Keep in sync with AppConfig.appVersion in
 # lib/src/core/config/app_config.dart.
-version: 1.0.5+11
+version: 1.0.5+12
 
 environment:
   sdk: ^3.12.2
