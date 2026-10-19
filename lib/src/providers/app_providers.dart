@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 
@@ -41,10 +42,12 @@ import '../services/gps_tracker_service.dart';
 import '../services/home_shortcut_service.dart';
 import '../services/local_insight_engine.dart';
 import '../services/location_service.dart';
+import '../services/milestone_name_resolver.dart';
 import '../services/motion_profiler.dart';
 import '../services/motion_sensor_hub.dart';
 import '../services/motion_signal.dart';
 import '../services/navigation_service.dart';
+import '../services/route_milestones.dart';
 import '../services/share_intent_service.dart';
 import '../services/smart_clipboard_service.dart';
 import '../services/transport_classifier.dart';
@@ -1624,6 +1627,91 @@ final StreamProvider<int> autoMotionFixesProvider = StreamProvider<int>((
   int tick = 0;
   return ref.watch(autoMotionServiceProvider).changes.map((_) => tick++);
 });
+
+// ---------------------------------------------------------------------------
+// Route map & milestones (AutoMotion dashboard)
+// ---------------------------------------------------------------------------
+
+/// The day's route distilled into timeline milestones (start, sustained
+/// stops, end), recomputed whenever a fix lands.
+///
+/// Derived, not stored: the source of truth stays `AutoMotionService`'s
+/// smoothed path, so this provider adds no Hive schema. Watching
+/// [autoMotionFixesProvider] is what re-runs the detection on every accepted
+/// fix and on the midnight rollover.
+final Provider<List<RouteMilestone>> routeMilestonesProvider =
+    Provider<List<RouteMilestone>>((Ref ref) {
+      ref.watch(autoMotionFixesProvider);
+      return detectMilestones(
+        ref.read(autoMotionServiceProvider).smoothedPath,
+      );
+    });
+
+/// Session-scoped reverse-geocode cache backing [routeMilestoneNamesProvider].
+final Provider<MilestoneNameResolver> milestoneNameResolverProvider =
+    Provider<MilestoneNameResolver>(
+      (Ref ref) =>
+          MilestoneNameResolver(geocoding: ref.watch(geocodingServiceProvider)),
+    );
+
+/// Resolved place names for the current route's milestones, keyed by
+/// [RouteMilestone.coordinateKey].
+///
+/// Absent keys mean "not resolved yet (or ever — offline)" and the timeline
+/// renders the milestone's kind label instead; names upgrade in place as the
+/// geocoder answers. Resolution is kicked off by this notifier itself, so the
+/// widget layer stays declarative and a cache hit rebuilds synchronously with
+/// no loading flicker.
+final NotifierProvider<RouteMilestoneNames, Map<String, String?>>
+routeMilestoneNamesProvider =
+    NotifierProvider<RouteMilestoneNames, Map<String, String?>>(
+      RouteMilestoneNames.new,
+    );
+
+/// Watches the milestones and fills the name map from the resolver cache,
+/// requesting whatever is still missing (deduplicated, serialised, and
+/// negative-cached by the resolver itself).
+class RouteMilestoneNames extends Notifier<Map<String, String?>> {
+  @override
+  Map<String, String?> build() {
+    final List<RouteMilestone> milestones = ref.watch(routeMilestonesProvider);
+    final MilestoneNameResolver resolver = ref.read(
+      milestoneNameResolverProvider,
+    );
+    final Map<String, String?> known = resolver.cached(milestones);
+    final List<RouteMilestone> missing = <RouteMilestone>[
+      for (final RouteMilestone milestone in milestones)
+        if (!known.containsKey(milestone.coordinateKey)) milestone,
+    ];
+    if (missing.isNotEmpty) {
+      unawaited(
+        resolver.resolve(missing).then((_) {
+          if (!ref.mounted) return;
+          // Re-read the *current* milestones: more fixes may have arrived
+          // while the geocoder was answering.
+          state = resolver.cached(ref.read(routeMilestonesProvider));
+        }),
+      );
+    }
+    return known;
+  }
+}
+
+/// One [MapController] shared by the route map and its tests — fitting the
+/// camera is imperative, so the widget and the assertions must agree on the
+/// instance.
+final Provider<MapController> routeMapControllerProvider =
+    Provider<MapController>((Ref ref) {
+      final MapController controller = MapController();
+      ref.onDispose(controller.dispose);
+      return controller;
+    });
+
+/// The route map's tile source. The default fetches OpenStreetMap raster
+/// tiles; tests override it so no test ever reaches the network (the offline
+/// fallback path is asserted through the same override).
+final Provider<TileProvider> routeTileProviderProvider =
+    Provider<TileProvider>((Ref ref) => NetworkTileProvider());
 
 /// Harsh maneuvers (hard braking / harsh acceleration) detected so far in the
 /// current trip, oldest-first — a mirror of the analyzer's own history.

@@ -18,7 +18,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # of the product and file versions while build-number is used as the build suffix.
 # Keep in sync with AppConfig.appVersion in
 # lib/src/core/config/app_config.dart.
-version: 1.0.4+9
+version: 1.0.4+10
 
 environment:
   sdk: ^3.12.2
@@ -86,6 +86,8 @@ dependencies:
   # heading for the Qibla compass. Fully on-device; no platform channel.
   # Wrapped by lib/src/utils/magnetic_declination.dart.
   geomag: ^0.3.0
+  flutter_map: ^8.3.2
+  latlong2: ^0.9.1
 
 dev_dependencies:
   flutter_test:

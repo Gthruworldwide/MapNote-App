@@ -20,6 +20,8 @@ import 'package:routenote/src/services/auto_motion_service.dart';
 import 'package:routenote/src/services/location_service.dart';
 import 'package:routenote/src/services/motion_profiler.dart';
 
+import 'helpers/route_preview_harness.dart' show NoImageryTiles, QuietNames;
+
 /// Builds a [Position] with the required fields for geolocator 14.
 Position _fix(double lat, double lon, {double speed = 0}) {
   return Position(
@@ -127,6 +129,10 @@ void main() {
           hiveDatabaseProvider.overrideWithValue(database),
           appHealthLoggerProvider.overrideWithValue(AppHealthLogger(null)),
           autoMotionServiceProvider.overrideWithValue(motion),
+          // The route card now mounts a tile map + milestone names: keep both
+          // away from the network / platform geocoder in widget tests.
+          routeTileProviderProvider.overrideWithValue(NoImageryTiles()),
+          routeMilestoneNamesProvider.overrideWith(() => QuietNames()),
           ...extraOverrides,
         ],
         child: MaterialApp(

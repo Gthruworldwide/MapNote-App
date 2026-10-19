@@ -425,6 +425,25 @@ class AppLocalizationsEn extends AppLocalizations {
       'No route recorded yet — turn on tracking and drive or walk to see it drawn here.';
 
   @override
+  String get routeMapAttribution => '© OpenStreetMap contributors';
+
+  @override
+  String get routeMilestonesTitle => 'Route milestones';
+
+  @override
+  String get routeMilestonesEmpty =>
+      'No timed milestones on this route yet — timed stops appear here as the trip is recorded.';
+
+  @override
+  String get milestoneTripStart => 'Trip start';
+
+  @override
+  String get milestoneStop => 'Stop';
+
+  @override
+  String get milestoneTripEnd => 'Trip end';
+
+  @override
   String get autoMotionEvents => 'Driving events';
 
   @override

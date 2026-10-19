@@ -424,6 +424,25 @@ class AppLocalizationsAr extends AppLocalizations {
       'لم يُسجَّل أي مسار بعد — فعّل التتبع ثم قُد أو امشِ ليظهر هنا.';
 
   @override
+  String get routeMapAttribution => '© المساهمون في OpenStreetMap';
+
+  @override
+  String get routeMilestonesTitle => 'محطات المسار';
+
+  @override
+  String get routeMilestonesEmpty =>
+      'لا توجد محطات موقوتة على هذا المسار بعد — تظهر محطات التوقف الموقوتة هنا أثناء تسجيل الرحلة.';
+
+  @override
+  String get milestoneTripStart => 'بداية الرحلة';
+
+  @override
+  String get milestoneStop => 'توقف';
+
+  @override
+  String get milestoneTripEnd => 'نهاية الرحلة';
+
+  @override
   String get autoMotionEvents => 'أحداث القيادة';
 
   @override

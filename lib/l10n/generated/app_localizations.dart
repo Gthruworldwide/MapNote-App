@@ -878,6 +878,42 @@ abstract class AppLocalizations {
   /// **'No route recorded yet — turn on tracking and drive or walk to see it drawn here.'**
   String get autoMotionRouteEmpty;
 
+  /// No description provided for @routeMapAttribution.
+  ///
+  /// In en, this message translates to:
+  /// **'© OpenStreetMap contributors'**
+  String get routeMapAttribution;
+
+  /// No description provided for @routeMilestonesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Route milestones'**
+  String get routeMilestonesTitle;
+
+  /// No description provided for @routeMilestonesEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No timed milestones on this route yet — timed stops appear here as the trip is recorded.'**
+  String get routeMilestonesEmpty;
+
+  /// No description provided for @milestoneTripStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip start'**
+  String get milestoneTripStart;
+
+  /// No description provided for @milestoneStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get milestoneStop;
+
+  /// No description provided for @milestoneTripEnd.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip end'**
+  String get milestoneTripEnd;
+
   /// No description provided for @autoMotionEvents.
   ///
   /// In en, this message translates to:

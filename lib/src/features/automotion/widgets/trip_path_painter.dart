@@ -19,6 +19,7 @@ class TripPathPainter extends CustomPainter {
     required this.points,
     required this.scheme,
     required this.isDark,
+    this.routeVisible = true,
   });
 
   /// The smoothed route vertices, in drive order.
@@ -28,6 +29,15 @@ class TripPathPainter extends CustomPainter {
 
   /// Whether the surrounding theme is dark (selects the background tint).
   final bool isDark;
+
+  /// Whether to draw the route itself (line, start dot, end pin).
+  ///
+  /// `false` turns the painter into the pure tinted-grid backdrop the tile
+  /// map sits on: the real map draws its own polyline and markers, and only
+  /// the grid needs to survive underneath for the offline fallback. With
+  /// [routeVisible] `true` (the default) the painter renders the complete
+  /// offline mini-map, exactly as it always has.
+  final bool routeVisible;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -47,6 +57,11 @@ class TripPathPainter extends CustomPainter {
     canvas.save();
     canvas.clipRRect(rounded);
     _paintGrid(canvas, size);
+
+    if (!routeVisible || points.isEmpty) {
+      canvas.restore();
+      return;
+    }
 
     // Equirectangular projection with the longitude scaled by the mean
     // latitude (same projection as the route preview), fitted to the whole
@@ -169,5 +184,6 @@ class TripPathPainter extends CustomPainter {
   bool shouldRepaint(covariant TripPathPainter old) =>
       old.isDark != isDark ||
       old.scheme != scheme ||
+      old.routeVisible != routeVisible ||
       !listEquals(old.points, points);
 }
