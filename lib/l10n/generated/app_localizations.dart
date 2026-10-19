@@ -944,6 +944,24 @@ abstract class AppLocalizations {
   /// **'Hard braking'**
   String get harshBraking;
 
+  /// No description provided for @sharpTurn.
+  ///
+  /// In en, this message translates to:
+  /// **'Sharp turn'**
+  String get sharpTurn;
+
+  /// No description provided for @speedBump.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed bump'**
+  String get speedBump;
+
+  /// No description provided for @pothole.
+  ///
+  /// In en, this message translates to:
+  /// **'Pothole'**
+  String get pothole;
+
   /// No description provided for @mps2Unit.
   ///
   /// In en, this message translates to:

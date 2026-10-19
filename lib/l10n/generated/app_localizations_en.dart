@@ -462,6 +462,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get harshBraking => 'Hard braking';
 
   @override
+  String get sharpTurn => 'Sharp turn';
+
+  @override
+  String get speedBump => 'Speed bump';
+
+  @override
+  String get pothole => 'Pothole';
+
+  @override
   String get mps2Unit => 'm/s²';
 
   @override

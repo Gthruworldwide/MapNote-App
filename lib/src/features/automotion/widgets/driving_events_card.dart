@@ -5,9 +5,9 @@ import '../../../../l10n/generated/app_localizations.dart';
 import '../../../providers/app_providers.dart';
 import '../../../services/motion_profiler.dart';
 
-/// The current trip's harsh maneuvers — hard braking and harsh acceleration
-/// — as detected by the motion behavior analyzer (GPS speed timeline
-/// confirmed by accelerometer vibration, gated to vehicle trips).
+/// The current trip's maneuvers — hard braking and harsh acceleration from the
+/// speed timeline, plus the sharp turns, speed bumps and potholes the calibrated
+/// on-device classifier sees — as detected by the motion behavior analyzer.
 ///
 /// Events are captured by [drivingEventsProvider] even while this card is
 /// off-screen, and a new trip starts with a clean slate. Nothing here leaves
@@ -87,25 +87,43 @@ class _DrivingEventTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppLocalizations l10n = AppLocalizations.of(context);
     final ThemeData theme = Theme.of(context);
-    final bool braking = event.type == DrivingEventType.harshBraking;
+    final ColorScheme scheme = theme.colorScheme;
+    // Warning-toned maneuvers (the ones that mean something went wrong) take the
+    // error colour; turns are a fact of driving, so they stay in the accent
+    // colour alongside harsh acceleration.
+    final bool warning = switch (event.type) {
+      DrivingEventType.harshBraking || DrivingEventType.pothole => true,
+      DrivingEventType.harshAcceleration ||
+      DrivingEventType.sharpTurn ||
+      DrivingEventType.speedBump => false,
+    };
+    final IconData icon = switch (event.type) {
+      DrivingEventType.harshAcceleration => Icons.trending_up,
+      DrivingEventType.harshBraking => Icons.trending_down,
+      DrivingEventType.sharpTurn => Icons.u_turn_right,
+      DrivingEventType.speedBump => Icons.speed,
+      DrivingEventType.pothole => Icons.arrow_downward,
+    };
+    final String label = switch (event.type) {
+      DrivingEventType.harshAcceleration => l10n.harshAcceleration,
+      DrivingEventType.harshBraking => l10n.harshBraking,
+      DrivingEventType.sharpTurn => l10n.sharpTurn,
+      DrivingEventType.speedBump => l10n.speedBump,
+      DrivingEventType.pothole => l10n.pothole,
+    };
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: <Widget>[
           Icon(
-            braking ? Icons.trending_down : Icons.trending_up,
+            icon,
             size: 20,
-            color: braking
-                ? theme.colorScheme.error
-                : theme.colorScheme.primary,
+            color: warning ? scheme.error : scheme.primary,
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              braking ? l10n.harshBraking : l10n.harshAcceleration,
-              style: theme.textTheme.bodyLarge,
-            ),
+            child: Text(label, style: theme.textTheme.bodyLarge),
           ),
           Text(
             '${event.peakMps2.abs().toStringAsFixed(1)} ${l10n.mps2Unit}',
@@ -119,7 +137,7 @@ class _DrivingEventTile extends StatelessWidget {
               context,
             ).formatTimeOfDay(TimeOfDay.fromDateTime(event.startedAt)),
             style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+              color: scheme.onSurfaceVariant,
             ),
           ),
         ],

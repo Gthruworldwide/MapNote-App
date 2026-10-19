@@ -20,6 +20,9 @@ import '../data/remote/drive_service.dart';
 import '../data/remote/google_auth_service.dart';
 import '../data/repositories/place_repository.dart';
 import '../data/repositories/sync_repository.dart';
+import '../features/motion_analytics/data/ml_classifier_isolate.dart';
+import '../features/motion_analytics/data/motion_event_mapper.dart';
+import '../features/motion_analytics/domain/entities/motion_event.dart';
 import '../core/config/app_config.dart';
 import '../core/config/preferred_nav_app.dart';
 import '../services/adaptive_sampling_manager.dart';
@@ -131,6 +134,29 @@ final Provider<TransportClassifier> transportClassifierProvider =
       );
     });
 
+/// On-device motion analytics: the vehicle-frame classifier that turns the
+/// accelerometer into hard brakes, harsh launches, sharp turns, speed bumps and
+/// potholes.
+///
+/// Inference runs on a **dedicated background isolate**
+/// (`IsolateMotionInferenceRunner`), rebuilt from `buildHeuristicMotionModel` —
+/// the deterministic feature model that ships today. Point this provider at a
+/// builder that loads a trained `.tflite` asset and the whole pipeline follows,
+/// with no other change (see `MotionModel` for the tensor contract).
+///
+/// Its lifecycle mirrors [motionBehaviorAnalyzerProvider]: started and stopped
+/// with AutoMotion tracking. Its stream is bridged into the analyzer (see
+/// [motionBehaviorAnalyzerProvider]), so classified maneuvers reach the same
+/// driving-event log as the speed-timeline ones.
+final Provider<MLClassifierIsolate> mlClassifierIsolateProvider =
+    Provider<MLClassifierIsolate>((Ref ref) {
+      final MLClassifierIsolate classifier = MLClassifierIsolate.standard(
+        accelerometer: ref.watch(motionSensorHubProvider).accelerometer,
+      );
+      ref.onDispose(classifier.dispose);
+      return classifier;
+    });
+
 /// Driving-behavior profiler (harsh acceleration / hard braking) over the
 /// same shared accelerometer feed, mirroring the classifier's construction.
 ///
@@ -140,11 +166,28 @@ final Provider<TransportClassifier> transportClassifierProvider =
 /// already distributes. Lifecycle ([MotionBehaviorAnalyzer.start]/[stop]) is
 /// owned by that controller alongside the classifier's; [reset] happens when
 /// a new trip starts, via [drivingEventsProvider].
+///
+/// The calibrated-frame classifier is fused in here: every maneuver
+/// [mlClassifierIsolateProvider] classifies joins the analyzer's log through
+/// [MotionBehaviorAnalyzer.observeDrivingEvent], which is what puts lateral and
+/// vertical dynamics (turns, bumps, potholes) on the same list as the
+/// longitudinal ones the speed timeline signs.
 final Provider<MotionBehaviorAnalyzer> motionBehaviorAnalyzerProvider =
     Provider<MotionBehaviorAnalyzer>((Ref ref) {
       final MotionBehaviorAnalyzer analyzer = MotionBehaviorAnalyzer(
         accelerometer: ref.watch(motionSensorHubProvider).accelerometer,
       );
+      final StreamSubscription<MotionEvent> classified = ref
+          .watch(mlClassifierIsolateProvider)
+          .onEvent
+          .listen((MotionEvent event) {
+            if (!ref.mounted) return;
+            final DrivingEvent? driving = toDrivingEvent(event);
+            // Smooth driving is a state, not a maneuver: it has no place in a
+            // log of things that happened.
+            if (driving != null) analyzer.observeDrivingEvent(driving);
+          });
+      ref.onDispose(classified.cancel);
       ref.onDispose(analyzer.stop);
       return analyzer;
     });
@@ -1505,6 +1548,10 @@ class AutoMotionController extends Notifier<AutoMotionState> {
       // A new trip starts with a clean driving-event slate; the previous
       // trip's maneuvers already live in the local health log.
       ref.read(drivingEventsProvider.notifier).clear();
+      // The classifier's window belongs to the trip too: carrying it over
+      // would classify the parking-lot exit together with the last 2.56 s of
+      // the previous trip.
+      ref.read(mlClassifierIsolateProvider).clear();
       unawaited(
         ref
             .read(analyticsServiceProvider)
@@ -1522,10 +1569,12 @@ class AutoMotionController extends Notifier<AutoMotionState> {
 
   /// Starts the AutoMotion-owned pieces of the sensor stack alongside the
   /// tracker — the driving-behavior analyzer watches the shared
-  /// accelerometer feed for harsh maneuvers — then reconciles the shared
-  /// sampling stack (transport classifier, dead reckoning, battery poll; see
-  /// [AdaptiveTrackingStack]) and applies the current profile so the stream
-  /// opens at the right cadence from the first fix.
+  /// accelerometer feed for harsh maneuvers, and the on-device classifier
+  /// buffers that same feed through its vehicle-frame alignment — then
+  /// reconciles the shared sampling stack (transport classifier, dead
+  /// reckoning, battery poll; see [AdaptiveTrackingStack]) and applies the
+  /// current profile so the stream opens at the right cadence from the first
+  /// fix.
   Future<void> _startIntelligentTracking(AutoMotionService tracker) async {
     final MotionBehaviorAnalyzer analyzer =
         ref.read(motionBehaviorAnalyzerProvider);
@@ -1533,6 +1582,7 @@ class AutoMotionController extends Notifier<AutoMotionState> {
     // maneuvers are captured even while the dashboard is closed.
     ref.read(drivingEventsProvider.notifier);
     await analyzer.start();
+    await ref.read(mlClassifierIsolateProvider).start();
     await _syncAdaptiveStack();
     if (!ref.mounted) return;
     final SamplingProfile profile = ref.read(adaptiveSamplingProvider);
@@ -1552,6 +1602,7 @@ class AutoMotionController extends Notifier<AutoMotionState> {
     final MotionBehaviorAnalyzer analyzer =
         ref.read(motionBehaviorAnalyzerProvider);
     await analyzer.stop();
+    await ref.read(mlClassifierIsolateProvider).stop();
     await _syncAdaptiveStack();
   }
 
@@ -1724,7 +1775,8 @@ final Provider<MapController> routeMapControllerProvider =
 final Provider<TileProvider> routeTileProviderProvider =
     Provider<TileProvider>((Ref ref) => NetworkTileProvider());
 
-/// Harsh maneuvers (hard braking / harsh acceleration) detected so far in the
+/// Detected maneuvers (hard braking / harsh acceleration from the speed
+/// timeline, plus classified turns and road-surface events) so far in the
 /// current trip, oldest-first — a mirror of the analyzer's own history.
 final NotifierProvider<DrivingEventsNotifier, List<DrivingEvent>>
     drivingEventsProvider =

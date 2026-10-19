@@ -460,6 +460,15 @@ class AppLocalizationsAr extends AppLocalizations {
   String get harshBraking => 'كبح حاد';
 
   @override
+  String get sharpTurn => 'انعطاف حاد';
+
+  @override
+  String get speedBump => 'مطب صناعي';
+
+  @override
+  String get pothole => 'حفرة';
+
+  @override
   String get mps2Unit => 'm/s²';
 
   @override

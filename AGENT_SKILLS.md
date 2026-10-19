@@ -298,6 +298,48 @@ widgets must be direction-agnostic.
 
 ---
 
+## 5. On-device motion analytics (offload & privacy)
+
+**Constraint.** `lib/src/core/sensors/gravity_alignment_calculator.dart` plus
+`lib/src/features/motion_analytics/{domain,data}` classify driving maneuvers
+(hard brake, hard accel, sharp turn, speed bump, pothole, smooth drive) from the
+shared accelerometer feed. Inference is offloaded off the platform thread, and
+nothing about it leaves the device.
+
+**Eval.**
+
+- **Inference never runs on the platform thread.** The shipped path is
+  `IsolateMotionInferenceRunner` (a persistent worker isolate); the isolate entry
+  point is a top-level function marked `@pragma('vm:entry-point')` so release
+  AOT does not tree-shake it. `InlineMotionInferenceRunner` is test-only.
+- **A TFLite model can be dropped in without touching downstream code.** The
+  classifier depends on the `MotionModel` interface (input `[1,128,3]`
+  gravity-free `float32` in `[lateral, vertical, longitudinal]` order; shared
+  `decodeMotionScores` for output), not on a concrete model. No fabricated
+  weights ship: today's model is `HeuristicMotionModel`, a deterministic
+  threshold classifier with documented physical thresholds.
+- **Alignment is honest.** `GravityAlignmentCalculator` publishes no frame until
+  its health gates pass (sample count, physical gravity band, observable
+  heading); a phone pointed along gravity reports "not aligned" rather than
+  inventing a heading, and callers must fall back. Gravity is learned only while
+  the device is stationary, so a maneuver can never re-train the frame.
+- **Sign conventions are consistent and tested.** Right-handed vehicle frame;
+  `Z_car` accel `>0` / brake `<0`, `X_car` left `>0` / right `<0`, `Y_car` bump
+  `>0` / pothole `<0`.
+- **Fusion keeps the existing taxonomy stable.** New `DrivingEventType` values
+  are **appended** (indices of `harshAcceleration`/`harshBraking` unchanged);
+  every new kind has a localized label (`app_en.arb` + `app_ar.arb`) and a
+  distinct icon in `driving_events_card.dart` — no kind may fall through to
+  another kind's label.
+- **Privacy.** Events carry kind + magnitude + timestamp only; no place names,
+  notes or coordinates reach logs, analytics or the classifier.
+- **Isolate plumbing is failure-tolerant.** Spawn failure, worker death, error or
+  timeout degrades to "no events" and respawns on the next window; window
+  buffering, hop cadence, per-kind cooldown and start/stop/dispose are covered by
+  `test/ml_classifier_isolate_test.dart`, including a real-isolate path.
+
+---
+
 ## Reporting
 
 When an agent completes a change, report:
@@ -308,6 +350,7 @@ Verification gate: analyze [pass/fail], tests [pass/fail]
 2 Data security & auth ............. pass/fail
 3 Location parsing accuracy ........ pass/fail
 4 UI/UX (dark mode, RTL) ........... pass/fail
+5 On-device motion analytics ....... pass/fail
 ```
 
 Each failure must cite the file/line and the standard violated, and be fixed

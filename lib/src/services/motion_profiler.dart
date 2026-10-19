@@ -5,16 +5,30 @@ import 'motion_sensor_hub.dart';
 import 'transport_classifier.dart';
 
 /// What a detected driving maneuver was.
+///
+/// The first two kinds are the speed-timeline events this profiler derives on
+/// its own; the rest can only come from the calibrated vehicle frame
+/// (`MLClassifierIsolate`, fused through `observeDrivingEvent`). New kinds are
+/// appended, never inserted, so any value already recorded keeps its meaning.
 enum DrivingEventType {
   /// Sustained forward acceleration beyond the harsh threshold (m/s²).
   harshAcceleration,
 
   /// Sustained deceleration beyond the hard-braking threshold (m/s²).
   harshBraking,
+
+  /// Sustained lateral force — cornering (m/s² on the vehicle's lateral axis).
+  sharpTurn,
+
+  /// A brief upward vertical impulse — a speed bump (m/s²).
+  speedBump,
+
+  /// A brief downward vertical impulse — a pothole (m/s²).
+  pothole,
 }
 
-/// One detected harsh maneuver: its kind, the peak signed acceleration it
-/// reached, when the threshold was first crossed, and how long it lasted.
+/// One detected maneuver: its kind, the peak signed acceleration it reached,
+/// when it started, and — for the speed-timeline kinds — how long it lasted.
 ///
 /// Carries no location, identity or user content — just magnitudes and
 /// timestamps — so it can never leak where or who drove.
@@ -294,6 +308,31 @@ class MotionBehaviorAnalyzer {
   /// Feeds a transport verdict; with [gateOnVehicle] on, events are only
   /// recorded while the verdict is [TransportMode.vehicle].
   void observeTransport(TransportMode mode) => _mode = mode;
+
+  /// Fuses one maneuver that was classified on-device from the calibrated
+  /// vehicle frame (see `MLClassifierIsolate`).
+  ///
+  /// The two evidence paths are complementary rather than competing. The speed
+  /// timeline is the only thing that can *sign* a longitudinal acceleration —
+  /// a raw accelerometer reads accelerating and braking alike — while the
+  /// calibrated frame is the only thing that can see lateral and vertical
+  /// dynamics at all: cornering, speed bumps, potholes. So a classified
+  /// maneuver joins the same event log under the same vehicle-context gate,
+  /// but skips the vibration/variance gauntlet that guards the noisier speed
+  /// estimate, and the shared [eventCooldown], which would otherwise let a
+  /// speed-derived brake suppress a bump classified 0.5 s later. The
+  /// classifier has already thresholded and de-duplicated it.
+  ///
+  /// `smoothDrive` is a driving *state*, not a maneuver, and never reaches
+  /// this log.
+  ///
+  /// Returns whether the event was recorded.
+  bool observeDrivingEvent(DrivingEvent event) {
+    if (!isVehicleContext) return false;
+    _events.add(event);
+    if (!_onEvent.isClosed) _onEvent.add(event);
+    return true;
+  }
 
   /// Ends the current trip's profiling state: armed windows are discarded
   /// and the detected-event history cleared. The accelerometer window and
