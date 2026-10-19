@@ -186,14 +186,29 @@ void main() {
       final AndroidSettings settings = LocationService.trackingSettingsFor(
         accuracy: LocationAccuracy.medium,
         intervalDuration: const Duration(seconds: 15),
+        distanceFilter: 25,
       ) as AndroidSettings;
       expect(settings.accuracy, LocationAccuracy.medium);
       expect(settings.intervalDuration, const Duration(seconds: 15));
-      // The movement filter is independent of the request cadence.
-      expect(
-        settings.distanceFilter,
-        LocationService.trackingDistanceFilterMeters,
-      );
+      // The movement filter is independent of the request cadence and is
+      // overridable per profile (the stationary tier runs 50 m).
+      expect(settings.distanceFilter, 25);
+    });
+
+    test('never enables the plugin-owned foreground notification', () {
+      // MapNote runs its own typed foreground service (LocationTrackingService,
+      // type=location, promoted from Dart by ForegroundTrackingService) for
+      // exactly as long as a tracker records. Enabling geolocator's
+      // foregroundNotificationConfig as well would make the plugin start a
+      // *second* foreground service with a second ongoing notification for
+      // the same session — and its Wi-Fi/wake lock flags are exactly the
+      // keep-the-radio-awake battery drain this stack exists to avoid.
+      overrideToAndroid();
+
+      final AndroidSettings settings = LocationService.trackingSettingsFor(
+        accuracy: LocationAccuracy.medium,
+      ) as AndroidSettings;
+      expect(settings.foregroundNotificationConfig, isNull);
     });
 
     test('the background cap is medium accuracy at the same 5 s / 10 m '

@@ -685,6 +685,94 @@ void main() {
       await service.stop();
     });
 
+    test('transport speeds keep GPS-grade accuracy while backgrounded',
+        () async {
+      overrideToAndroid();
+      final _RecordingLocationService scripted = _RecordingLocationService();
+      final AutoMotionService service =
+          AutoMotionService(dailyStore: await openStore('_sampling_vroom'));
+
+      expect(await service.start(locations: scripted), isTrue);
+      await service.setPowerMode(backgrounded: true);
+      expect(scripted.openedWith.last.accuracy, LocationAccuracy.medium);
+
+      // The walking tier (medium) is already within the background budget.
+      await service.applySampling(
+        interval: const Duration(seconds: 15),
+        accuracy: LocationAccuracy.medium,
+        distanceFilter: 10,
+      );
+      expect(scripted.openedWith.last.accuracy, LocationAccuracy.medium);
+
+      // The vehicle tier is the *only* profile allowed to outspend the
+      // background budget: at 30 m/s a balanced-power fix would bend the
+      // recorded path into chords.
+      await service.applySampling(
+        interval: const Duration(seconds: 1),
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 10,
+        transportSpeed: true,
+      );
+      expect(scripted.openCount, 4);
+      expect(scripted.openedWith.last.accuracy, LocationAccuracy.high);
+
+      // Dropping the transport flag at the same tier caps it again.
+      await service.applySampling(
+        interval: const Duration(seconds: 1),
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 10,
+      );
+      expect(scripted.openedWith.last.accuracy, LocationAccuracy.medium);
+
+      await service.stop();
+    });
+
+    test('the sampling profile drives the movement filter and is idempotent '
+        'on all four knobs', () async {
+      overrideToAndroid();
+      final _RecordingLocationService scripted = _RecordingLocationService();
+      final AutoMotionService service =
+          AutoMotionService(dailyStore: await openStore('_sampling_filter'));
+
+      expect(await service.start(locations: scripted), isTrue);
+      expect(
+        (scripted.openedWith.single as AndroidSettings).distanceFilter,
+        LocationService.trackingDistanceFilterMeters,
+        reason: 'no profile yet: the fixed 10 m baseline applies',
+      );
+
+      // The stationary tier's 50 m filter reaches the platform request…
+      await service.applySampling(
+        interval: const Duration(seconds: 60),
+        accuracy: LocationAccuracy.lowest,
+        distanceFilter: 50,
+      );
+      AndroidSettings sampled = scripted.openedWith.last as AndroidSettings;
+      expect(sampled.distanceFilter, 50);
+      expect(scripted.openCount, 2);
+
+      // …and the same four-tuple is idempotent: no churn, no re-open.
+      await service.applySampling(
+        interval: const Duration(seconds: 60),
+        accuracy: LocationAccuracy.lowest,
+        distanceFilter: 50,
+      );
+      expect(scripted.openCount, 2);
+
+      // A filter-only change re-opens, proving the filter is part of the
+      // identity that gates the re-open.
+      await service.applySampling(
+        interval: const Duration(seconds: 60),
+        accuracy: LocationAccuracy.lowest,
+        distanceFilter: 10,
+      );
+      expect(scripted.openCount, 3);
+      sampled = scripted.openedWith.last as AndroidSettings;
+      expect(sampled.distanceFilter, 10);
+
+      await service.stop();
+    });
+
     test('with an injected stream the power/sampling knobs change nothing',
         () async {
       final AutoMotionService service =

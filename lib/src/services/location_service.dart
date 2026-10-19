@@ -88,6 +88,20 @@ class LocationService {
   /// type is `fitness` so the mitigation that would otherwise stop a stationary
   /// walker from receiving fixes does not kick in. Everywhere else the plain
   /// high-accuracy settings apply.
+  ///
+  /// **Foreground service (deliberate design).** These settings do *not* set
+  /// geolocator's `foregroundNotificationConfig`. That option makes the plugin
+  /// start its own foreground service (`GeolocatorLocationService`, type
+  /// `location`) with a second, generic notification for as long as a stream
+  /// is open — while MapNote already runs its own typed foreground service
+  /// (`LocationTrackingService`, declared with
+  /// `android:foregroundServiceType="location"` and promoted with
+  /// `ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION`), started and stopped
+  /// from Dart by `ForegroundTrackingService` for exactly as long as one of
+  /// the trackers records. Enabling both would post two ongoing
+  /// notifications for one session. The plugin's `enableWifiLock` /
+  /// `enableWakeLock` flags stay off for the same reason this task exists: a
+  /// held Wi-Fi lock *is* "keep the Wi-Fi radio awake" battery drain.
   static final LocationSettings trackingLocationSettings = trackingSettingsFor();
 
   /// The same profile at reduced precision for a **backgrounded** tracker, so

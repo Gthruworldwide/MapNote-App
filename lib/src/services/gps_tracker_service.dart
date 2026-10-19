@@ -56,9 +56,20 @@ class GpsTrackerService {
   /// during this session (starts false — tracking begins with the app visible).
   bool _backgrounded = false;
 
+  /// Adaptive-sampling overrides for the live stream (see [applySampling]):
+  /// `null` means "use the fixed 5 s / 10 m baseline", and `false` means
+  /// "no transport-speed exception to the background accuracy cap".
+  Duration? _sampleInterval;
+  LocationAccuracy? _sampleAccuracy;
+  int? _sampleDistanceFilter;
+  bool _transportSpeed = false;
+
   /// While tracking, the day's metrics are flushed on this cadence
   /// (see [DailyTrackEngine.persistInterval]).
   static const Duration persistInterval = DailyTrackEngine.persistInterval;
+
+  /// The fixed baseline request interval when no adaptive profile is active.
+  static const Duration defaultInterval = Duration(seconds: 5);
 
   TrackStartFailure _failure = TrackStartFailure.none;
 
@@ -167,6 +178,43 @@ class GpsTrackerService {
     await _engine.reopen(_openFixes(locations));
   }
 
+  /// Applies an adaptive-sampling profile (see `AdaptiveSamplingNotifier`):
+  /// the minimum request interval, the accuracy tier and the movement filter
+  /// for how the device is moving and how much battery is left. Without a
+  /// profile the fixed 5 s / 10 m baselines apply.
+  ///
+  /// A [LocationAccuracy.lowest] profile is the *stationary* tier — effectively
+  /// paused sampling that the accelerometer classifier can wake again — and
+  /// always wins, because a profile may lower accuracy but never raise it
+  /// above what the power mode allows (see [_effectiveAccuracy]). The one
+  /// exception is [transportSpeed]: a vehicle-speed profile keeps GPS-grade
+  /// accuracy even while backgrounded, because at 30 m/s a balanced-power
+  /// fix would bend the recorded path into chords. Idempotent: an unchanged
+  /// profile never re-opens the stream.
+  Future<void> applySampling({
+    Duration? interval,
+    LocationAccuracy? accuracy,
+    int? distanceFilter,
+    bool transportSpeed = false,
+  }) async {
+    if (interval == _sampleInterval &&
+        accuracy == _sampleAccuracy &&
+        distanceFilter == _sampleDistanceFilter &&
+        transportSpeed == _transportSpeed) {
+      return;
+    }
+    _sampleInterval = interval;
+    _sampleAccuracy = accuracy;
+    _sampleDistanceFilter = distanceFilter;
+    _transportSpeed = transportSpeed;
+    final LocationService? locations = _activeLocations;
+    if (!_engine.isTracking || locations == null) return;
+    // Same durability rule as [setPowerMode]: measured distance reaches disk
+    // before the request cadence changes under the OS.
+    await _engine.flush();
+    await _engine.reopen(_openFixes(locations));
+  }
+
   /// Opens the platform position stream for the current power mode. When a
   /// [FusedLocationService] is wired in (the production wiring), the session
   /// also falls back to the low-power network tier whenever the high-accuracy
@@ -184,18 +232,52 @@ class GpsTrackerService {
     return fused.track(
       highSettings: _streamSettings,
       networkSettings: LocationService.trackingSettingsFor(
-        accuracy:
-            _backgrounded ? LocationAccuracy.low : LocationAccuracy.medium,
+        accuracy: _fallbackAccuracy,
+        intervalDuration: _sampleInterval ?? defaultInterval,
+        distanceFilter: _effectiveDistanceFilter,
       ),
       onError: onError,
       serviceStatus: _activeStatus,
     );
   }
 
-  /// Stream settings for the current power mode (see [setPowerMode]).
-  LocationSettings get _streamSettings => _backgrounded
-      ? LocationService.backgroundTrackingLocationSettings
-      : LocationService.trackingLocationSettings;
+  /// Stream settings for the current power mode (see [setPowerMode]) and
+  /// adaptive sampling profile (see [applySampling]). Without a profile this
+  /// is exactly the two fixed baselines: 5 s / 10 m at best accuracy while
+  /// visible, at the balanced-power tier while backgrounded.
+  LocationSettings get _streamSettings => LocationService.trackingSettingsFor(
+        accuracy: _effectiveAccuracy,
+        intervalDuration: _sampleInterval ?? defaultInterval,
+        distanceFilter: _effectiveDistanceFilter,
+      );
+
+  /// The movement filter the live stream runs with: the sampling profile's
+  /// tier (the stationary tier's 50 m swallows jitter outright), or the
+  /// fixed 10 m baseline while no profile is active.
+  int get _effectiveDistanceFilter =>
+      _sampleDistanceFilter ?? LocationService.trackingDistanceFilterMeters;
+
+  /// The accuracy the live stream asks for: the sampling profile's tier,
+  /// capped at [LocationAccuracy.medium] — geolocator's name for Android's
+  /// `PRIORITY_BALANCED_POWER_ACCURACY`, the balanced-power tier — while
+  /// backgrounded, so the receiver's duty cycle (and the battery) drops with
+  /// the screen. The one exception is [transportSpeed]: a vehicle-speed
+  /// profile keeps GPS-grade accuracy even in the background, where a coarse
+  /// fix would bend the recorded path into chords.
+  LocationAccuracy get _effectiveAccuracy {
+    final LocationAccuracy sampled = _sampleAccuracy ?? LocationAccuracy.high;
+    if (!_backgrounded) return sampled;
+    // The enum is ordered by precision, so a tier at or below `medium` is
+    // already within the background budget.
+    if (sampled.index <= LocationAccuracy.medium.index) return sampled;
+    return _transportSpeed ? LocationAccuracy.high : LocationAccuracy.medium;
+  }
+
+  /// The fallback tier is one notch below the visible tier: Wi-Fi/cell fixes
+  /// while on screen, coarse-only once backgrounded (both cost a fraction of
+  /// a GPS lock).
+  LocationAccuracy get _fallbackAccuracy =>
+      _backgrounded ? LocationAccuracy.low : LocationAccuracy.medium;
 
   /// Consumes one fix (see [DailyTrackEngine.recordPosition]).
   void recordPosition(Position position) => _engine.recordPosition(position);

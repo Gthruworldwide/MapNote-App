@@ -62,6 +62,8 @@ void main() {
       expect(vehicle.interval, SamplingProfile.vehicleInterval);
       expect(vehicle.interval, const Duration(seconds: 1));
       expect(vehicle.accuracy, LocationAccuracy.high);
+      expect(vehicle.distanceFilter, SamplingProfile.vehicleDistanceFilterMeters);
+      expect(vehicle.transportSpeeds, isTrue);
 
       final SamplingProfile train = computeProfile(
         mode: TransportMode.train,
@@ -70,15 +72,24 @@ void main() {
       expect(train.interval, SamplingProfile.trainInterval);
       expect(train.interval, const Duration(seconds: 1));
       expect(train.accuracy, LocationAccuracy.high);
+      expect(train.distanceFilter, SamplingProfile.trainDistanceFilterMeters);
+      expect(train.transportSpeeds, isTrue);
 
+      // Walking is a balanced-power tier: `medium` is geolocator's name for
+      // Android's PRIORITY_BALANCED_POWER_ACCURACY. `high` accuracy is
+      // reserved for transport speeds.
       final SamplingProfile walking = computeProfile(
         mode: TransportMode.walking,
         battery: healthy,
       );
       expect(walking.interval, SamplingProfile.walkingInterval);
       expect(walking.interval, const Duration(seconds: 15));
-      expect(walking.accuracy, LocationAccuracy.high);
+      expect(walking.accuracy, LocationAccuracy.medium);
+      expect(walking.distanceFilter, SamplingProfile.walkingDistanceFilterMeters);
+      expect(walking.transportSpeeds, isFalse);
 
+      // The stationary tier hides behind a 50 m movement filter so GPS
+      // jitter never wakes the fix callback at all.
       final SamplingProfile stationary = computeProfile(
         mode: TransportMode.stationary,
         battery: healthy,
@@ -86,6 +97,12 @@ void main() {
       expect(stationary.interval, SamplingProfile.stationaryInterval);
       expect(stationary.interval, const Duration(seconds: 60));
       expect(stationary.accuracy, LocationAccuracy.lowest);
+      expect(
+        stationary.distanceFilter,
+        SamplingProfile.stationaryDistanceFilterMeters,
+      );
+      expect(stationary.distanceFilter, 50);
+      expect(stationary.transportSpeeds, isFalse);
     });
 
     test('doubles the interval and drops accuracy one notch on a low battery',
@@ -99,12 +116,13 @@ void main() {
       expect(vehicle.interval, const Duration(seconds: 2));
       expect(vehicle.accuracy, LocationAccuracy.medium);
 
+      // One notch below the walking tier's medium is low.
       final SamplingProfile walking = computeProfile(
         mode: TransportMode.walking,
         battery: low,
       );
       expect(walking.interval, const Duration(seconds: 30));
-      expect(walking.accuracy, LocationAccuracy.medium);
+      expect(walking.accuracy, LocationAccuracy.low);
 
       // The stationary tier is already the lowest accuracy — there is no
       // lower notch to fall to, only the interval doubles.
@@ -114,6 +132,15 @@ void main() {
       );
       expect(stationary.interval, const Duration(seconds: 120));
       expect(stationary.accuracy, LocationAccuracy.lowest);
+
+      // The movement filter is a property of how far the device moves in one
+      // interval, not of how much battery is left — it never stretches.
+      expect(vehicle.distanceFilter, SamplingProfile.vehicleDistanceFilterMeters);
+      expect(walking.distanceFilter, SamplingProfile.walkingDistanceFilterMeters);
+      expect(
+        stationary.distanceFilter,
+        SamplingProfile.stationaryDistanceFilterMeters,
+      );
     });
 
     test('halves the interval while charging with a one-second floor', () {
@@ -124,7 +151,7 @@ void main() {
         battery: charging,
       );
       expect(walking.interval, const Duration(seconds: 7, milliseconds: 500));
-      expect(walking.accuracy, LocationAccuracy.high);
+      expect(walking.accuracy, LocationAccuracy.medium);
 
       // 1 s / 2 would be 500 ms, but the floor keeps the fastest tier at 1 s.
       final SamplingProfile vehicle = computeProfile(
@@ -163,12 +190,21 @@ void main() {
         );
         expect(withUnknown.interval, withHealthy.interval, reason: '$mode');
         expect(withUnknown.accuracy, withHealthy.accuracy, reason: '$mode');
+        expect(
+          withUnknown.distanceFilter,
+          withHealthy.distanceFilter,
+          reason: '$mode',
+        );
         expect(withUnknown.battery, BatteryStatus.unknown);
       }
       // …and the conservative default profile is the stationary one.
       expect(SamplingProfile.defaults.mode, TransportMode.stationary);
       expect(SamplingProfile.defaults.interval, const Duration(seconds: 60));
       expect(SamplingProfile.defaults.accuracy, LocationAccuracy.lowest);
+      expect(
+        SamplingProfile.defaults.distanceFilter,
+        SamplingProfile.stationaryDistanceFilterMeters,
+      );
       expect(SamplingProfile.defaults.battery, BatteryStatus.unknown);
     });
   });
@@ -344,7 +380,13 @@ void main() {
       expect(notifier.battery.isLow, isTrue);
       expect(updated.mode, TransportMode.walking);
       expect(updated.interval, const Duration(seconds: 30));
-      expect(updated.accuracy, LocationAccuracy.medium);
+      // One notch below the walking tier's balanced `medium` is `low`.
+      expect(updated.accuracy, LocationAccuracy.low);
+      // The movement filter is battery-independent.
+      expect(
+        updated.distanceFilter,
+        SamplingProfile.walkingDistanceFilterMeters,
+      );
       expect(updated.battery.isLow, isTrue);
     });
 

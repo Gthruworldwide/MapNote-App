@@ -65,9 +65,12 @@ class AutoMotionService {
   bool _backgrounded = false;
 
   /// Adaptive-sampling overrides for the live stream (see [applySampling]):
-  /// `null` means "use the fixed 5 s / high-accuracy baseline".
+  /// `null` means "use the fixed 5 s / 10 m baseline", and `false` means
+  /// "no transport-speed exception to the background accuracy cap".
   Duration? _sampleInterval;
   LocationAccuracy? _sampleAccuracy;
+  int? _sampleDistanceFilter;
+  bool _transportSpeed = false;
 
   /// While tracking, the day's metrics are flushed on this cadence
   /// (see [DailyTrackEngine.persistInterval]).
@@ -190,21 +193,33 @@ class AutoMotionService {
   }
 
   /// Applies an adaptive-sampling profile (see `AdaptiveSamplingNotifier`):
-  /// the minimum request interval and accuracy tier for how the device is
-  /// moving and how much battery is left.
+  /// the minimum request interval, the accuracy tier and the movement filter
+  /// for how the device is moving and how much battery is left.
   ///
   /// A [LocationAccuracy.lowest] profile is the *stationary* tier — effectively
   /// paused sampling that the accelerometer classifier can wake again — and
   /// always wins, because a profile may lower accuracy but never raise it
-  /// above what the power mode allows (see [_effectiveAccuracy]). Idempotent:
-  /// an unchanged profile never re-opens the stream.
+  /// above what the power mode allows (see [_effectiveAccuracy]). The one
+  /// exception is [transportSpeed]: a vehicle-speed profile keeps GPS-grade
+  /// accuracy even while backgrounded, because at 30 m/s a balanced-power
+  /// fix would bend the recorded path into chords. Idempotent: an unchanged
+  /// profile never re-opens the stream.
   Future<void> applySampling({
     Duration? interval,
     LocationAccuracy? accuracy,
+    int? distanceFilter,
+    bool transportSpeed = false,
   }) async {
-    if (interval == _sampleInterval && accuracy == _sampleAccuracy) return;
+    if (interval == _sampleInterval &&
+        accuracy == _sampleAccuracy &&
+        distanceFilter == _sampleDistanceFilter &&
+        transportSpeed == _transportSpeed) {
+      return;
+    }
     _sampleInterval = interval;
     _sampleAccuracy = accuracy;
+    _sampleDistanceFilter = distanceFilter;
+    _transportSpeed = transportSpeed;
     final LocationService? locations = _activeLocations;
     if (!_engine.isTracking || locations == null) return;
     // Same durability rule as [setPowerMode]: measured distance reaches disk
@@ -232,6 +247,7 @@ class AutoMotionService {
       networkSettings: LocationService.trackingSettingsFor(
         accuracy: _fallbackAccuracy,
         intervalDuration: _sampleInterval ?? defaultInterval,
+        distanceFilter: _effectiveDistanceFilter,
       ),
       onError: onError,
       serviceStatus: _activeStatus,
@@ -243,20 +259,29 @@ class AutoMotionService {
   LocationSettings get _streamSettings => LocationService.trackingSettingsFor(
         accuracy: _effectiveAccuracy,
         intervalDuration: _sampleInterval ?? defaultInterval,
+        distanceFilter: _effectiveDistanceFilter,
       );
 
+  /// The movement filter the live stream runs with: the sampling profile's
+  /// tier (the stationary tier's 50 m swallows jitter outright), or the
+  /// fixed 10 m baseline while no profile is active.
+  int get _effectiveDistanceFilter =>
+      _sampleDistanceFilter ?? LocationService.trackingDistanceFilterMeters;
+
   /// The accuracy the live stream asks for: the sampling profile's tier,
-  /// capped at [LocationAccuracy.medium] while backgrounded. A profile may
-  /// therefore lower accuracy (stationary → [LocationAccuracy.lowest]) but
-  /// never spend more power than the visibility allows.
+  /// capped at [LocationAccuracy.medium] — geolocator's name for Android's
+  /// `PRIORITY_BALANCED_POWER_ACCURACY`, the balanced-power tier — while
+  /// backgrounded. A profile may therefore lower accuracy (stationary →
+  /// [LocationAccuracy.lowest]) but never spend more power than the
+  /// visibility allows — except at transport speeds, where a coarse fix
+  /// would bend the recorded path into chords ([transportSpeed]).
   LocationAccuracy get _effectiveAccuracy {
     final LocationAccuracy sampled = _sampleAccuracy ?? LocationAccuracy.high;
     if (!_backgrounded) return sampled;
     // The enum is ordered by precision, so a tier at or below `medium` is
     // already within the background budget.
-    return sampled.index <= LocationAccuracy.medium.index
-        ? sampled
-        : LocationAccuracy.medium;
+    if (sampled.index <= LocationAccuracy.medium.index) return sampled;
+    return _transportSpeed ? LocationAccuracy.high : LocationAccuracy.medium;
   }
 
   /// The fallback tier is one notch below the visible tier: Wi-Fi/cell fixes

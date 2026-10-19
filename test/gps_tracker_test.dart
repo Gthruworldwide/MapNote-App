@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:hive_ce/hive.dart';
@@ -93,6 +94,34 @@ class _ScriptedLocationService extends LocationService {
     void Function(Object error, StackTrace stackTrace)? onError,
   }) =>
       const Stream<Position>.empty();
+}
+
+/// A [LocationService] that answers every check without touching the
+/// geolocator platform channels and records each stream (re-)open together
+/// with the exact [LocationSettings] it was asked for, so power-mode and
+/// adaptive-sampling re-opens can be counted and inspected.
+class _RecordingLocationService extends _ScriptedLocationService {
+  /// How many times the position stream has been (re-)opened.
+  int openCount = 0;
+
+  /// The settings of every open, in order ([openCount] entries).
+  final List<LocationSettings> openedWith = <LocationSettings>[];
+
+  @override
+  Stream<ServiceStatus> serviceStatusStream() =>
+      const Stream<ServiceStatus>.empty();
+
+  @override
+  Stream<Position> trackingPositionStream({
+    LocationSettings? settings,
+    void Function(Object error, StackTrace stackTrace)? onError,
+  }) {
+    openCount += 1;
+    // The tracker always opens with an explicit profile (see
+    // `GpsTrackerService._streamSettings`), never with a bare null.
+    openedWith.add(settings!);
+    return const Stream<Position>.empty();
+  }
 }
 
 void main() {
@@ -493,6 +522,160 @@ void main() {
       final bool started = await service.start(positions: controller.stream);
       expect(started, isTrue);
       expect(service.failure, TrackStartFailure.none);
+
+      await service.stop();
+      await controller.close();
+    });
+  });
+
+  group('GpsTrackerService power mode & adaptive sampling', () {
+    // The request interval only exists on the platform-specific settings
+    // (AndroidSettings.intervalDuration), so these tests build the profiles
+    // under an Android platform; the service's own logic is platform-free.
+    void overrideToAndroid() {
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    }
+
+    test('setPowerMode re-opens the live stream only on a mode change',
+        () async {
+      overrideToAndroid();
+      final _RecordingLocationService scripted = _RecordingLocationService();
+      final GpsTrackerService service =
+          GpsTrackerService(dailyStore: await openStore('_powermode'));
+
+      expect(await service.start(locations: scripted), isTrue);
+      expect(scripted.openCount, 1, reason: 'start() opens the stream once');
+      final AndroidSettings visible =
+          scripted.openedWith.single as AndroidSettings;
+      expect(visible.accuracy, LocationAccuracy.high);
+      expect(visible.intervalDuration, GpsTrackerService.defaultInterval);
+      expect(
+        visible.distanceFilter,
+        LocationService.trackingDistanceFilterMeters,
+      );
+
+      await service.setPowerMode(backgrounded: true);
+      expect(scripted.openCount, 2, reason: 'the mode change re-opens once');
+      final AndroidSettings background =
+          scripted.openedWith.last as AndroidSettings;
+      expect(background.accuracy, LocationAccuracy.medium);
+      expect(background.intervalDuration, GpsTrackerService.defaultInterval);
+
+      await service.setPowerMode(backgrounded: true);
+      expect(scripted.openCount, 2, reason: 'same mode: idempotent, no re-open');
+
+      await service.setPowerMode(backgrounded: false);
+      expect(scripted.openCount, 3, reason: 'returning to foreground re-opens');
+      expect(scripted.openedWith.last.accuracy, LocationAccuracy.high);
+
+      await service.stop();
+    });
+
+    test('applySampling re-opens only on a profile change and records it',
+        () async {
+      overrideToAndroid();
+      final _RecordingLocationService scripted = _RecordingLocationService();
+      final GpsTrackerService service =
+          GpsTrackerService(dailyStore: await openStore('_sampling'));
+
+      expect(await service.start(locations: scripted), isTrue);
+      expect(
+        (scripted.openedWith.single as AndroidSettings).intervalDuration,
+        GpsTrackerService.defaultInterval,
+        reason: 'no profile yet: the fixed 5 s baseline applies',
+      );
+
+      await service.applySampling(interval: const Duration(seconds: 15));
+      expect(scripted.openCount, 2, reason: 'a new profile re-opens once');
+      AndroidSettings sampled = scripted.openedWith.last as AndroidSettings;
+      expect(sampled.intervalDuration, const Duration(seconds: 15));
+      expect(sampled.accuracy, LocationAccuracy.high); // still foreground
+
+      await service.applySampling(interval: const Duration(seconds: 15));
+      expect(scripted.openCount, 2, reason: 'the same profile is idempotent');
+
+      // The stationary tier's 50 m movement filter reaches the request.
+      await service.applySampling(
+        interval: const Duration(seconds: 60),
+        accuracy: LocationAccuracy.lowest,
+        distanceFilter: 50,
+      );
+      expect(scripted.openCount, 3, reason: 'a tier change re-opens');
+      sampled = scripted.openedWith.last as AndroidSettings;
+      expect(sampled.intervalDuration, const Duration(seconds: 60));
+      expect(sampled.accuracy, LocationAccuracy.lowest);
+      expect(sampled.distanceFilter, 50);
+
+      await service.stop();
+    });
+
+    test('the background accuracy cap lifts only for transport speeds',
+        () async {
+      overrideToAndroid();
+      final _RecordingLocationService scripted = _RecordingLocationService();
+      final GpsTrackerService service =
+          GpsTrackerService(dailyStore: await openStore('_sampling_bg'));
+
+      expect(await service.start(locations: scripted), isTrue);
+      await service.setPowerMode(backgrounded: true);
+      expect(scripted.openCount, 2);
+      expect(scripted.openedWith.last.accuracy, LocationAccuracy.medium);
+
+      // A walking profile (medium) is already within the background budget.
+      await service.applySampling(
+        interval: const Duration(seconds: 15),
+        accuracy: LocationAccuracy.medium,
+        distanceFilter: 10,
+      );
+      expect(scripted.openedWith.last.accuracy, LocationAccuracy.medium);
+
+      // The vehicle tier is the *only* profile allowed to outspend the
+      // background budget.
+      await service.applySampling(
+        interval: const Duration(seconds: 1),
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 10,
+        transportSpeed: true,
+      );
+      expect(scripted.openedWith.last.accuracy, LocationAccuracy.high);
+
+      // …and losing the transport flag caps it back down.
+      await service.applySampling(
+        interval: const Duration(seconds: 1),
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 10,
+      );
+      expect(scripted.openedWith.last.accuracy, LocationAccuracy.medium);
+
+      await service.stop();
+    });
+
+    test('with an injected stream the sampling knobs change nothing',
+        () async {
+      overrideToAndroid();
+      final _RecordingLocationService scripted = _RecordingLocationService();
+      final GpsTrackerService service =
+          GpsTrackerService(dailyStore: await openStore('_sampling_injected'));
+      final StreamController<Position> controller =
+          StreamController<Position>();
+
+      expect(
+        await service.start(positions: controller.stream),
+        isTrue,
+      );
+      await service.applySampling(
+        interval: const Duration(seconds: 1),
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 10,
+        transportSpeed: true,
+      );
+      await service.setPowerMode(backgrounded: true);
+      expect(
+        scripted.openCount,
+        0,
+        reason: 'an injected stream is never re-opened by the knobs',
+      );
 
       await service.stop();
       await controller.close();

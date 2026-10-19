@@ -196,6 +196,75 @@ final Provider<ForegroundTrackingService> foregroundTrackingServiceProvider =
   (Ref ref) => ForegroundTrackingService(),
 );
 
+/// Sensor-driven sampling stack: the shared accelerometer feed, the transport
+/// classifier whose verdicts drive the adaptive sampling profile, the
+/// dead-reckoning engine and the slow battery poll.
+///
+/// Exactly one instance runs while **either** daily tracker records (the same
+/// rule the foreground service follows), so a stationary phone never keeps the
+/// accelerometer hardware or a 1 s GPS request alive merely because a toggle
+/// is on: the classifier's "stationary" verdict stretches the interval to
+/// 60 s behind a 50 m movement filter. The driving-behavior analyzer is
+/// deliberately *not* part of this stack — its lifecycle stays owned by
+/// `AutoMotionController`, because its events surface on the AutoMotion
+/// dashboard.
+class AdaptiveTrackingStack {
+  bool _running = false;
+  StreamSubscription<TransportMode>? _modes;
+
+  /// Whether the stack is currently running (diagnostics/tests).
+  bool get isRunning => _running;
+
+  /// Brings the stack in line with [needed]: starts it when needed and down,
+  /// stops it when it is running and no longer needed. Idempotent, so both
+  /// tracker controllers can fire it after every start/stop — a call that
+  /// finds the desired state already reached does nothing.
+  Future<void> sync({
+    required bool needed,
+    required MotionSensorHub hub,
+    required TransportClassifier classifier,
+    required DeadReckoningService deadReckoning,
+    required AdaptiveSamplingNotifier sampling,
+  }) async {
+    if (needed == _running) return;
+    _running = needed;
+    if (needed) {
+      // Hub first: the classifier and dead reckoning listen to its fan-out,
+      // which buffers nothing while unlistened.
+      await hub.start();
+      await classifier.start();
+      await deadReckoning.start();
+      // Classifier verdicts drive the shared profile (battery arrives through
+      // the poll); a disposed stack stops consuming them.
+      _modes = classifier.modes.listen(sampling.observeTransport);
+      sampling.startPolling();
+      return;
+    }
+    await _modes?.cancel();
+    _modes = null;
+    await classifier.stop();
+    await deadReckoning.stop();
+    sampling.stopPolling();
+    await hub.stop();
+  }
+
+  /// Tears down the subscription without touching the (provider-scoped)
+  /// services themselves — used when the provider is disposed.
+  void cancel() {
+    _running = false;
+    unawaited(_modes?.cancel());
+    _modes = null;
+  }
+}
+
+/// The shared sensor-driven sampling stack (see [AdaptiveTrackingStack]).
+final Provider<AdaptiveTrackingStack> adaptiveTrackingStackProvider =
+    Provider<AdaptiveTrackingStack>((Ref ref) {
+  final AdaptiveTrackingStack stack = AdaptiveTrackingStack();
+  ref.onDispose(stack.cancel);
+  return stack;
+});
+
 final Provider<NavigationService> navigationServiceProvider =
     Provider<NavigationService>((Ref ref) {
       // Rebuilt whenever the preferred-app setting changes, so every
@@ -1094,6 +1163,26 @@ class GpsTrackingController extends Notifier<GpsTrackingState> {
       ).copyWith(unavailable: state.unavailable, failure: state.failure);
     });
     ref.onDispose(updates.cancel);
+    // Profile changes (motion or battery) push the new cadence into the live
+    // tracker; while nothing tracks, the next start applies the profile.
+    ref.listen<SamplingProfile>(
+      adaptiveSamplingProvider,
+      (SamplingProfile? previous, SamplingProfile next) {
+        if (!ref.mounted || previous == next) return;
+        final GpsTrackerService watched = ref.read(gpsTrackerProvider);
+        if (!watched.isTracking) return;
+        unawaited(
+          queue.add(
+            () => watched.applySampling(
+              interval: next.interval,
+              accuracy: next.accuracy,
+              distanceFilter: next.distanceFilter,
+              transportSpeed: next.transportSpeeds,
+            ),
+          ),
+        );
+      },
+    );
     // Start/stop is driven purely by the enabled flag and every action is
     // chained onto the shared queue. `build` re-runs on each toggle change, so
     // an on→off→on flick queues stop-then-start and the stop always finishes
@@ -1125,6 +1214,7 @@ class GpsTrackingController extends Notifier<GpsTrackingState> {
     if (!ref.mounted) return;
     state = _snapshot(tracker, enabled: true, active: started)
         .copyWith(unavailable: !started, failure: tracker.failure);
+    if (started) await _startAdaptiveSampling(tracker);
     await _syncForegroundTracking();
   }
 
@@ -1132,7 +1222,25 @@ class GpsTrackingController extends Notifier<GpsTrackingState> {
     await tracker.stop();
     if (!ref.mounted) return;
     state = _snapshot(tracker, enabled: false);
+    await _syncAdaptiveStack();
     await _syncForegroundTracking();
+  }
+
+  /// Starts the shared sensor-driven sampling stack alongside the tracker and
+  /// applies the current profile, so the stream opens at the right cadence
+  /// from the first fix instead of always at the fixed 5 s baseline: a
+  /// stationary device drops to the 60 s / lowest / 50 m passive tier, a
+  /// vehicle trip to 1 s at GPS-grade accuracy.
+  Future<void> _startAdaptiveSampling(GpsTrackerService tracker) async {
+    await _syncAdaptiveStack();
+    if (!ref.mounted) return;
+    final SamplingProfile profile = ref.read(adaptiveSamplingProvider);
+    await tracker.applySampling(
+      interval: profile.interval,
+      accuracy: profile.accuracy,
+      distanceFilter: profile.distanceFilter,
+      transportSpeed: profile.transportSpeeds,
+    );
   }
 
   /// Runs the native foreground service for exactly as long as one of the two
@@ -1144,6 +1252,22 @@ class GpsTrackingController extends Notifier<GpsTrackingState> {
       ref.read(autoMotionServiceProvider),
       ref.read(foregroundTrackingServiceProvider),
     );
+  }
+
+  /// Runs the sensor-driven sampling stack for exactly as long as one of the
+  /// two trackers is live (see [AdaptiveTrackingStack]): classifier verdicts
+  /// and the battery poll keep the adaptive profile honest without keeping
+  /// the accelerometer hardware on for an idle toggle.
+  Future<void> _syncAdaptiveStack() async {
+    if (!ref.mounted) return;
+    await ref.read(adaptiveTrackingStackProvider).sync(
+          needed: ref.read(gpsTrackerProvider).isTracking ||
+              ref.read(autoMotionServiceProvider).isTracking,
+          hub: ref.read(motionSensorHubProvider),
+          classifier: ref.read(transportClassifierProvider),
+          deadReckoning: ref.read(deadReckoningServiceProvider),
+          sampling: ref.read(adaptiveSamplingProvider.notifier),
+        );
   }
 
   GpsTrackingState _snapshot(
@@ -1301,19 +1425,18 @@ class AutoMotionController extends Notifier<AutoMotionState> {
       ).copyWith(unavailable: state.unavailable, failure: state.failure);
     });
     ref.onDispose(updates.cancel);
-    // The transport classifier's verdicts drive the adaptive sampling
-    // profile and gate the driving-behavior analyzer to vehicle trips; a
-    // disposed controller must stop consuming them.
+    // The transport classifier's verdicts gate the driving-behavior analyzer
+    // to vehicle trips; a disposed controller must stop consuming them. (The
+    // verdicts reach the adaptive sampling profile through the shared
+    // [AdaptiveTrackingStack], which outlives this controller while either
+    // tracker records.)
     final TransportClassifier classifier =
         ref.read(transportClassifierProvider);
-    final AdaptiveSamplingNotifier sampling =
-        ref.read(adaptiveSamplingProvider.notifier);
     final MotionBehaviorAnalyzer analyzer =
         ref.read(motionBehaviorAnalyzerProvider);
     final StreamSubscription<TransportMode> modes =
         classifier.modes.listen((TransportMode mode) {
       if (!ref.mounted) return;
-      sampling.observeTransport(mode);
       analyzer.observeTransport(mode);
     });
     ref.onDispose(modes.cancel);
@@ -1330,6 +1453,8 @@ class AutoMotionController extends Notifier<AutoMotionState> {
             () => watched.applySampling(
               interval: next.interval,
               accuracy: next.accuracy,
+              distanceFilter: next.distanceFilter,
+              transportSpeed: next.transportSpeeds,
             ),
           ),
         );
@@ -1381,55 +1506,39 @@ class AutoMotionController extends Notifier<AutoMotionState> {
     await _syncForegroundTracking();
   }
 
-  /// Starts the sensor-driven sampling stack alongside the tracker: the
-  /// transport classifier and dead-reckoning engine consume the shared
-  /// accelerometer/gyroscope feed, the driving-behavior analyzer watches the
-  /// same feed for harsh maneuvers, and the battery poll drives the adaptive
-  /// profile. The current profile is applied immediately so the stream opens
-  /// at the right cadence from the first fix.
+  /// Starts the AutoMotion-owned pieces of the sensor stack alongside the
+  /// tracker — the driving-behavior analyzer watches the shared
+  /// accelerometer feed for harsh maneuvers — then reconciles the shared
+  /// sampling stack (transport classifier, dead reckoning, battery poll; see
+  /// [AdaptiveTrackingStack]) and applies the current profile so the stream
+  /// opens at the right cadence from the first fix.
   Future<void> _startIntelligentTracking(AutoMotionService tracker) async {
-    final MotionSensorHub hub = ref.read(motionSensorHubProvider);
-    final TransportClassifier classifier =
-        ref.read(transportClassifierProvider);
-    final DeadReckoningService deadReckoning =
-        ref.read(deadReckoningServiceProvider);
     final MotionBehaviorAnalyzer analyzer =
         ref.read(motionBehaviorAnalyzerProvider);
-    final AdaptiveSamplingNotifier sampling =
-        ref.read(adaptiveSamplingProvider.notifier);
     // Instantiate the events notifier before the first fix can arrive, so
     // maneuvers are captured even while the dashboard is closed.
     ref.read(drivingEventsProvider.notifier);
-    await hub.start();
-    await classifier.start();
-    await deadReckoning.start();
     await analyzer.start();
-    sampling.startPolling();
+    await _syncAdaptiveStack();
+    if (!ref.mounted) return;
     final SamplingProfile profile = ref.read(adaptiveSamplingProvider);
     await tracker.applySampling(
       interval: profile.interval,
       accuracy: profile.accuracy,
+      distanceFilter: profile.distanceFilter,
+      transportSpeed: profile.transportSpeeds,
     );
   }
 
-  /// Stops the sensor-driven sampling stack when tracking ends: releases the
-  /// shared hardware feed and cancels the battery poll. The detected events
+  /// Stops the AutoMotion-owned analyzer when tracking ends and reconciles
+  /// the shared sampling stack, which releases the hardware feed and the
+  /// battery poll once neither tracker records any more. The detected events
   /// themselves stay on show until the next trip resets them.
   Future<void> _stopIntelligentTracking() async {
-    final TransportClassifier classifier =
-        ref.read(transportClassifierProvider);
-    final DeadReckoningService deadReckoning =
-        ref.read(deadReckoningServiceProvider);
     final MotionBehaviorAnalyzer analyzer =
         ref.read(motionBehaviorAnalyzerProvider);
-    final AdaptiveSamplingNotifier sampling =
-        ref.read(adaptiveSamplingProvider.notifier);
-    final MotionSensorHub hub = ref.read(motionSensorHubProvider);
-    await classifier.stop();
-    await deadReckoning.stop();
     await analyzer.stop();
-    sampling.stopPolling();
-    await hub.stop();
+    await _syncAdaptiveStack();
   }
 
   /// Called while AutoMotion is switched off. Persists anything still in
@@ -1464,6 +1573,20 @@ class AutoMotionController extends Notifier<AutoMotionState> {
       ref.read(autoMotionServiceProvider),
       ref.read(foregroundTrackingServiceProvider),
     );
+  }
+
+  /// Runs the sensor-driven sampling stack for exactly as long as one of the
+  /// two trackers is live (see [AdaptiveTrackingStack]).
+  Future<void> _syncAdaptiveStack() async {
+    if (!ref.mounted) return;
+    await ref.read(adaptiveTrackingStackProvider).sync(
+          needed: ref.read(gpsTrackerProvider).isTracking ||
+              ref.read(autoMotionServiceProvider).isTracking,
+          hub: ref.read(motionSensorHubProvider),
+          classifier: ref.read(transportClassifierProvider),
+          deadReckoning: ref.read(deadReckoningServiceProvider),
+          sampling: ref.read(adaptiveSamplingProvider.notifier),
+        );
   }
 
   AutoMotionState _snapshot(

@@ -97,6 +97,7 @@ class SamplingProfile {
     required this.mode,
     required this.interval,
     required this.accuracy,
+    required this.distanceFilter,
     required this.battery,
   });
 
@@ -106,6 +107,7 @@ class SamplingProfile {
     mode: TransportMode.stationary,
     interval: stationaryInterval,
     accuracy: LocationAccuracy.lowest,
+    distanceFilter: stationaryDistanceFilterMeters,
     battery: BatteryStatus.unknown,
   );
 
@@ -118,13 +120,36 @@ class SamplingProfile {
   /// Accuracy the position stream should ask for.
   final LocationAccuracy accuracy;
 
+  /// Metres the device must move between two delivered fixes.
+  final int distanceFilter;
+
   /// Battery snapshot the profile was computed for.
   final BatteryStatus battery;
+
+  /// True when the device is moving at **transport speeds** (vehicle or
+  /// train).
+  ///
+  /// This is the only state that pays for GPS-grade (`high`) accuracy — in
+  /// every other tier the balanced-power tier is what the receiver gets,
+  /// which is what keeps the background duty cycle (and the battery) cheap.
+  /// The trackers use this to lift the background accuracy cap while moving
+  /// fast, where a coarse fix would turn a motorway into chords.
+  bool get transportSpeeds =>
+      mode == TransportMode.vehicle || mode == TransportMode.train;
 
   static const Duration vehicleInterval = Duration(seconds: 1);
   static const Duration trainInterval = Duration(seconds: 1);
   static const Duration walkingInterval = Duration(seconds: 15);
   static const Duration stationaryInterval = Duration(seconds: 60);
+
+  /// Movement filters per tier. 10 m lets every 1 s vehicle fix and every
+  /// 15 s walking fix through (both modes cover more than 10 m in a single
+  /// interval), while the stationary tier's 50 m swallows GPS jitter
+  /// outright, so a parked phone never wakes the fix callback at all.
+  static const int vehicleDistanceFilterMeters = 10;
+  static const int trainDistanceFilterMeters = 10;
+  static const int walkingDistanceFilterMeters = 10;
+  static const int stationaryDistanceFilterMeters = 50;
 
   @override
   bool operator ==(Object other) =>
@@ -132,35 +157,45 @@ class SamplingProfile {
       other.mode == mode &&
       other.interval == interval &&
       other.accuracy == accuracy &&
+      other.distanceFilter == distanceFilter &&
       other.battery == battery;
 
   @override
-  int get hashCode => Object.hash(mode, interval, accuracy, battery);
+  int get hashCode =>
+      Object.hash(mode, interval, accuracy, distanceFilter, battery);
 
   @override
   String toString() =>
-      'SamplingProfile($mode, ${interval.inSeconds}s, $accuracy, $battery)';
+      'SamplingProfile($mode, ${interval.inSeconds}s, $accuracy, '
+      '${distanceFilter}m, $battery)';
 }
 
 /// Pure decision rule: transport mode + battery → [SamplingProfile].
 ///
 /// The four motion tiers (documented in `AGENT_SKILLS.md`'s tracking section):
 ///
-/// * **vehicle / train** — 1 s intervals at best accuracy: at 30 m/s a 5 s
+/// * **vehicle / train** — 1 s intervals at `high` accuracy: at 30 m/s a 5 s
 ///   default would space fixes 150 m apart, turning a motorway into a
-///   polyline of chords; 1 s keeps the path on the road.
-/// * **walking** — 15 s at high accuracy: a walker covers ~20 m in that
-///   window, right at the 10 m movement filter, so the cadence tracks real
-///   progress without waking the receiver for nothing.
-/// * **stationary** — 60 s at *lowest* accuracy: this is the "pause" tier.
-///   Android's lowest maps to a passive request that costs almost no power;
-///   the accelerometer classifier keeps running and wakes sampling again the
-///   moment the device moves.
+///   polyline of chords; 1 s keeps the path on the road. Transport speeds
+///   ([SamplingProfile.transportSpeeds]) are the *only* tier that pays for
+///   GPS-grade fixes — in every other tier the receiver stays on the
+///   balanced-power tier.
+/// * **walking** — 15 s at `medium`: geolocator's `medium` *is* Android's
+///   `PRIORITY_BALANCED_POWER_ACCURACY`, the balanced-power tier (the enum
+///   has no literal `balanced` value). A walker covers ~20 m in that window,
+///   right at the 10 m movement filter, so the cadence tracks real progress
+///   without demanding a GPS lock for every step.
+/// * **stationary** — 60 s at *lowest* accuracy behind a 50 m movement
+///   filter: this is the "pause" tier. The filter swallows jitter outright
+///   so the callback is not woken at all; the accelerometer classifier keeps
+///   running and wakes sampling again the moment the device moves.
 ///
 /// Battery then modulates every tier: below [BatteryStatus.lowThreshold]
 /// (and not charging) the interval doubles and accuracy drops one notch;
 /// while charging the interval halves so a plugged-in trip is captured at
-/// maximum fidelity.
+/// maximum fidelity. The movement filter never changes with the battery —
+/// it is a property of how far the device moves in one interval, not of how
+/// much power is left.
 @visibleForTesting
 SamplingProfile computeProfile({
   required TransportMode mode,
@@ -168,19 +203,24 @@ SamplingProfile computeProfile({
 }) {
   Duration interval;
   LocationAccuracy accuracy;
+  int distanceFilter;
   switch (mode) {
     case TransportMode.vehicle:
       interval = SamplingProfile.vehicleInterval;
       accuracy = LocationAccuracy.high;
+      distanceFilter = SamplingProfile.vehicleDistanceFilterMeters;
     case TransportMode.train:
       interval = SamplingProfile.trainInterval;
       accuracy = LocationAccuracy.high;
+      distanceFilter = SamplingProfile.trainDistanceFilterMeters;
     case TransportMode.walking:
       interval = SamplingProfile.walkingInterval;
-      accuracy = LocationAccuracy.high;
+      accuracy = LocationAccuracy.medium;
+      distanceFilter = SamplingProfile.walkingDistanceFilterMeters;
     case TransportMode.stationary:
       interval = SamplingProfile.stationaryInterval;
       accuracy = LocationAccuracy.lowest;
+      distanceFilter = SamplingProfile.stationaryDistanceFilterMeters;
   }
   if (battery.isLow) {
     interval = interval * 2;
@@ -195,6 +235,7 @@ SamplingProfile computeProfile({
     mode: mode,
     interval: interval,
     accuracy: accuracy,
+    distanceFilter: distanceFilter,
     battery: battery,
   );
 }
