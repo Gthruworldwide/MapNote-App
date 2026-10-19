@@ -849,4 +849,94 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get compassCalculating => 'جاري الحساب...';
+
+  @override
+  String get savedPlacesVault => 'الخزنة المشفّرة';
+
+  @override
+  String get savedPlacesVaultSubtitle =>
+      'أماكن محمية بالمصادقة الحيوية ومشفّرة بـ AES-256';
+
+  @override
+  String get savedPlacesVaultLocked => 'الخزنة مقفلة';
+
+  @override
+  String get savedPlacesVaultLockedMessage =>
+      'تحقق من هويتك لقراءة الأماكن المحفوظة في الخزنة المشفّرة.';
+
+  @override
+  String get savedPlacesVaultUnlock => 'فتح الخزنة';
+
+  @override
+  String get savedPlacesVaultLock => 'قفل الخزنة';
+
+  @override
+  String get savedPlacesVaultEmpty => 'لا توجد أماكن مشفّرة بعد';
+
+  @override
+  String get savedPlacesVaultEmptyMessage =>
+      'انقل مكانًا محفوظًا إلى الخزنة لحمايته بقفل جهازك.';
+
+  @override
+  String get savedPlacesVaultUnlocked => 'تم فتح الخزنة';
+
+  @override
+  String get savedPlacesVaultUnavailable =>
+      'لا يمكن لهذا الجهاز التحقق من هويتك';
+
+  @override
+  String get moveToEncryptedVault => 'نقل إلى الخزنة المشفّرة';
+
+  @override
+  String get moveToEncryptedVaultDone => 'تم النقل إلى الخزنة المشفّرة';
+
+  @override
+  String get restoreFromEncryptedVault => 'إعادة إلى الأماكن المحفوظة';
+
+  @override
+  String get restoreFromEncryptedVaultDone =>
+      'تمت الإعادة إلى الأماكن المحفوظة';
+
+  @override
+  String get unlockToOpenSavedPlacesVault => 'تحقق لفتح الخزنة المشفّرة';
+
+  @override
+  String get unlockToMoveToEncryptedVault =>
+      'تحقق لنقل المكان إلى الخزنة المشفّرة';
+
+  @override
+  String get suggestedPlaceLinks => 'أماكن قد ترغب في ربطها';
+
+  @override
+  String get suggestedPlaceLinksSubtitle => 'بناءً على توقفات اليوم';
+
+  @override
+  String get suggestedPlaceOpenAction => 'فتح';
+
+  @override
+  String get suggestedPlaceSaveAction => 'حفظ';
+
+  @override
+  String suggestedPlaceStopDetails(int minutes) {
+    return 'توقفت لمدة $minutes دقيقة';
+  }
+
+  @override
+  String suggestedPlaceNearSaved(String name, int distance) {
+    return '\"$name\" على بعد $distance م';
+  }
+
+  @override
+  String get suggestedPlaceNoMatch => 'لا يوجد مكان محفوظ قريب';
+
+  @override
+  String suggestedPlaceLinked(String name) {
+    return 'تم الربط بـ $name';
+  }
+
+  @override
+  String get suggestedPlaceSaved => 'تم الحفظ في أماكنك';
+
+  @override
+  String get suggestedPlaceLinkFailed => 'تعذّر ربط المكان';
 }

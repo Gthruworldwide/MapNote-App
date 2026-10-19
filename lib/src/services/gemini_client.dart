@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 
 import '../core/config/app_config.dart';
 import '../data/models/agent_insight.dart';
+import 'key_rotation_service.dart';
 
 /// Raised when a cloud recommendation request fails.
 class AgentException implements Exception {
@@ -52,6 +53,11 @@ class AgentTool {
 /// [isConfigured] = false and the app stays fully offline-first. Only anonymous
 /// aggregate [metrics] are ever sent — never place names, notes or coordinates.
 ///
+/// The key pool comes from `--dart-define=GEMINI_API_KEY` (comma separated) and
+/// is rotated by a [KeyRotationService]: a rejected or over-quota key is put on
+/// cooldown and the request is retried with the next healthy key, so key
+/// exhaustion never takes the cloud features offline.
+///
 /// When [fetchInsights] is given [tools], the request declares them as Gemini
 /// functions. If the model answers with a `functionCall`, the tool is executed
 /// locally and the conversation continues with a `functionResponse` (up to
@@ -60,19 +66,26 @@ class GeminiClient {
   GeminiClient({
     http.Client? client,
     String? apiKey,
+    KeyRotationService? keyRotation,
     String? model,
     Duration? timeout,
   }) : _client = client ?? http.Client(),
-       _apiKey = apiKey ?? AppConfig.geminiApiKey,
+       _rotation =
+           keyRotation ??
+           KeyRotationService(
+             keys: apiKey != null
+                 ? AppConfig.parseGeminiApiKeys(apiKey)
+                 : AppConfig.geminiApiKeys,
+           ),
        _model = (model ?? AppConfig.geminiModel).trim(),
        _timeout = timeout ?? AppConfig.agentRequestTimeout;
 
   final http.Client _client;
-  final String _apiKey;
+  final KeyRotationService _rotation;
   final String _model;
   final Duration _timeout;
 
-  bool get isConfigured => _apiKey.isNotEmpty;
+  bool get isConfigured => _rotation.hasKeys;
 
   /// Asks Gemini for up to [AppConfig.maxAgentInsights] localized suggestions.
   ///
@@ -87,7 +100,7 @@ class GeminiClient {
 
     final Map<String, Object?> body = _buildBody(metrics, languageName, tools);
     for (int round = 0; round < AppConfig.agentToolRounds; round++) {
-      final http.Response response = await _post(body);
+      final http.Response response = await _postRotating(body);
       if (response.statusCode != 200) {
         throw AgentException(
           'Cloud suggestions failed (HTTP ${response.statusCode})',
@@ -181,9 +194,42 @@ class GeminiClient {
     return body;
   }
 
-  /// POSTs [body] to the model. Deliberately opaque on failure: a raw transport
-  /// error can embed the request URI and headers, so it is never surfaced.
-  Future<http.Response> _post(Map<String, Object?> body) async {
+  /// POSTs [body], rotating to the next configured key when the current one is
+  /// rejected (invalid / revoked / over quota). Returns the last response so the
+  /// caller keeps its existing status handling.
+  ///
+  /// A key failure never throws here: the loop simply exhausts the pool, and the
+  /// final non-200 response is surfaced exactly as before.
+  Future<http.Response> _postRotating(Map<String, Object?> body) async {
+    http.Response? response;
+    final int attempts = _rotation.length == 0 ? 1 : _rotation.length;
+    String? key = _rotation.currentKey;
+    for (int attempt = 0; attempt < attempts && key != null; attempt++) {
+      response = await _post(body, key);
+      if (response.statusCode == 200 ||
+          !KeyRotationService.looksLikeKeyError(
+            response.statusCode,
+            response.body,
+          )) {
+        _rotation.markSuccess(key);
+        return response;
+      }
+      _rotation.markFailure(key, statusCode: response.statusCode);
+      key = _rotation.currentKey;
+    }
+    if (response == null) {
+      throw const AgentException('Cloud suggestions unavailable');
+    }
+    return response;
+  }
+
+  /// POSTs [body] to the model with [apiKey]. Deliberately opaque on failure: a
+  /// raw transport error can embed the request URI and headers, so it is never
+  /// surfaced.
+  Future<http.Response> _post(
+    Map<String, Object?> body,
+    String apiKey,
+  ) async {
     final Uri uri = Uri.https(
       'generativelanguage.googleapis.com',
       '/v1beta/models/$_model:generateContent',
@@ -196,7 +242,7 @@ class GeminiClient {
               'Content-Type': 'application/json',
               // The key travels in a header, never the URL, so it can't leak
               // through request URIs embedded in error messages or logs.
-              'x-goog-api-key': _apiKey,
+              'x-goog-api-key': apiKey,
             },
             body: jsonEncode(body),
           )

@@ -1645,6 +1645,162 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Calculating...'**
   String get compassCalculating;
+
+  /// No description provided for @savedPlacesVault.
+  ///
+  /// In en, this message translates to:
+  /// **'Encrypted Vault'**
+  String get savedPlacesVault;
+
+  /// No description provided for @savedPlacesVaultSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Biometric-protected places, encrypted with AES-256'**
+  String get savedPlacesVaultSubtitle;
+
+  /// No description provided for @savedPlacesVaultLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Vault locked'**
+  String get savedPlacesVaultLocked;
+
+  /// No description provided for @savedPlacesVaultLockedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify your identity to read the places kept in the encrypted vault.'**
+  String get savedPlacesVaultLockedMessage;
+
+  /// No description provided for @savedPlacesVaultUnlock.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock vault'**
+  String get savedPlacesVaultUnlock;
+
+  /// No description provided for @savedPlacesVaultLock.
+  ///
+  /// In en, this message translates to:
+  /// **'Lock vault'**
+  String get savedPlacesVaultLock;
+
+  /// No description provided for @savedPlacesVaultEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No encrypted places yet'**
+  String get savedPlacesVaultEmpty;
+
+  /// No description provided for @savedPlacesVaultEmptyMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Move a saved place into the vault to protect it behind your device lock.'**
+  String get savedPlacesVaultEmptyMessage;
+
+  /// No description provided for @savedPlacesVaultUnlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Vault unlocked'**
+  String get savedPlacesVaultUnlocked;
+
+  /// No description provided for @savedPlacesVaultUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This device can\'t verify your identity'**
+  String get savedPlacesVaultUnavailable;
+
+  /// No description provided for @moveToEncryptedVault.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to encrypted vault'**
+  String get moveToEncryptedVault;
+
+  /// No description provided for @moveToEncryptedVaultDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Moved to the encrypted vault'**
+  String get moveToEncryptedVaultDone;
+
+  /// No description provided for @restoreFromEncryptedVault.
+  ///
+  /// In en, this message translates to:
+  /// **'Move back to saved places'**
+  String get restoreFromEncryptedVault;
+
+  /// No description provided for @restoreFromEncryptedVaultDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Moved back to saved places'**
+  String get restoreFromEncryptedVaultDone;
+
+  /// No description provided for @unlockToOpenSavedPlacesVault.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify to open the encrypted vault'**
+  String get unlockToOpenSavedPlacesVault;
+
+  /// No description provided for @unlockToMoveToEncryptedVault.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify to move the place into the encrypted vault'**
+  String get unlockToMoveToEncryptedVault;
+
+  /// No description provided for @suggestedPlaceLinks.
+  ///
+  /// In en, this message translates to:
+  /// **'Places you may want to link'**
+  String get suggestedPlaceLinks;
+
+  /// No description provided for @suggestedPlaceLinksSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Based on today\'s stops'**
+  String get suggestedPlaceLinksSubtitle;
+
+  /// No description provided for @suggestedPlaceOpenAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get suggestedPlaceOpenAction;
+
+  /// No description provided for @suggestedPlaceSaveAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get suggestedPlaceSaveAction;
+
+  /// No description provided for @suggestedPlaceStopDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Stopped for {minutes} min'**
+  String suggestedPlaceStopDetails(int minutes);
+
+  /// No description provided for @suggestedPlaceNearSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'\"{name}\" is {distance} m away'**
+  String suggestedPlaceNearSaved(String name, int distance);
+
+  /// No description provided for @suggestedPlaceNoMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'No saved place nearby'**
+  String get suggestedPlaceNoMatch;
+
+  /// No description provided for @suggestedPlaceLinked.
+  ///
+  /// In en, this message translates to:
+  /// **'Linked to {name}'**
+  String suggestedPlaceLinked(String name);
+
+  /// No description provided for @suggestedPlaceSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved to your places'**
+  String get suggestedPlaceSaved;
+
+  /// No description provided for @suggestedPlaceLinkFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t link the place'**
+  String get suggestedPlaceLinkFailed;
 }
 
 class _AppLocalizationsDelegate

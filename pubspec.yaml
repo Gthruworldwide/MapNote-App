@@ -18,7 +18,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # of the product and file versions while build-number is used as the build suffix.
 # Keep in sync with AppConfig.appVersion in
 # lib/src/core/config/app_config.dart.
-version: 1.0.4+10
+version: 1.0.5+11
 
 environment:
   sdk: ^3.12.2
@@ -49,22 +49,29 @@ dependencies:
   googleapis: ^17.0.0
   googleapis_auth: ^2.3.4
   workmanager: ^0.10.10
-  # 1.8.1 still applies the legacy Kotlin Gradle Plugin unconditionally; 1.9.0
-  # drops it, but that release needs AGP 9.2+ / Kotlin 2.4 / Gradle 9.4 /
-  # compileSdk 37 and brings breaking iOS changes (SwiftPM + SceneDelegate).
-  # This project builds on Gradle 9.1.0 / AGP 9.0.1, so stay on the last
-  # same-Dart-API 1.8.x release. See README > "Android / Kotlin build notes".
-  receive_sharing_intent: 1.8.1
+  # 1.8.1 applied the legacy Kotlin Gradle Plugin unconditionally, which is
+  # incompatible with built-in Kotlin. 1.9.0 drops it (the Dart API is byte-for-
+  # byte unchanged) and needs AGP 9.2+ / Kotlin 2.4 / Gradle 9.4 / compileSdk 37
+  # — all satisfied by the Android setup. See README > "Android / Kotlin build
+  # notes"; iOS SwiftPM/SceneDelegate follow-ups for 1.9.0 are tracked there.
+  receive_sharing_intent: ^1.9.0
   local_auth: ^3.0.2
+  # Stores the AES-256 key that encrypts the "saved places" vault box. The key
+  # lives in the platform keystore (Android Keystore / iOS Keychain) and is only
+  # read after a biometric/device-credential check (see
+  # features/saved_places/data/datasources/vault_key_store.dart). Its Android
+  # plugin does not apply the Kotlin Gradle Plugin, so it is built-in-Kotlin
+  # safe. See README > "Android / Kotlin build notes".
+  flutter_secure_storage: ^11.2.0
   qr_flutter: ^4.1.0
   quick_actions: ^1.1.0
   # Modern replacement for the removed `flutter_dynamic_icon` (whose legacy
   # Android plugin broke the Gradle build). Drives the light/dark launcher-icon
-  # switch in lib/src/services/dynamic_icon_service.dart. Its Android build still
-  # applies the legacy Kotlin Gradle Plugin unconditionally (latest release is
-  # 1.4.1), so it is one of the two plugins that keep
-  # `android.builtInKotlin=false` — see README > "Android / Kotlin build notes".
-  flutter_dynamic_icon_plus: ^1.2.1
+  # switch in lib/src/services/dynamic_icon_service.dart. Upstream still applies
+  # the legacy Kotlin Gradle Plugin unconditionally (1.6.0 included), which is
+  # incompatible with built-in Kotlin, so it is overridden below with a patched
+  # copy in third_party/. See README > "Android / Kotlin build notes".
+  flutter_dynamic_icon_plus: ^1.6.0
   # Draws the MapNote lockup (assets/brand/route_note_*.svg) as real vector, so
   # the cold-start splash can scale the mark up without any raster softness, and
   # the same assets serve iOS and Android. See lib/src/core/brand/.
@@ -105,6 +112,13 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
   flutter_launcher_icons: ^0.14.1
+
+# Patched copy of flutter_dynamic_icon_plus (see its dependency comment above):
+# its Android Gradle script applies the legacy Kotlin Gradle Plugin only when
+# built-in Kotlin is disabled. The Dart API matches the published release exactly.
+dependency_overrides:
+  flutter_dynamic_icon_plus:
+    path: third_party/flutter_dynamic_icon_plus
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

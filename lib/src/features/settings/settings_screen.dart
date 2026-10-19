@@ -18,6 +18,7 @@ import '../../services/daily_track_engine.dart';
 import '../../services/location_service.dart';
 import '../../services/lock_gate.dart';
 import '../../widgets/track_failure_text.dart';
+import '../saved_places/presentation/saved_places_vault_screen.dart';
 import 'hidden_vault_screen.dart';
 
 /// Settings, consolidated into four Apple-style grouped cards:
@@ -79,6 +80,7 @@ class SettingsScreen extends ConsumerWidget {
               _buildAccountCard(context, ref, l10n, auth),
               _buildSyncCard(context, ref, l10n, sync),
               _buildPrivacyCard(context, ref, l10n, hiddenCount),
+              _buildEncryptedVaultCard(context, l10n),
             ]),
           ),
           // 2. Location & Tracking: permissions, then the single merged
@@ -475,6 +477,27 @@ class SettingsScreen extends ConsumerWidget {
 
     await navigator.push(
       MaterialPageRoute<void>(builder: (_) => const HiddenVaultScreen()),
+    );
+  }
+
+  /// Entry point for the AES-256 encrypted vault. The verification prompt is
+  /// raised by the screen itself (it gates the decryption key, not the route),
+  /// so this only navigates.
+  Widget _buildEncryptedVaultCard(
+    BuildContext context,
+    AppLocalizations l10n,
+  ) {
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      leading: const Icon(Icons.enhanced_encryption_outlined),
+      title: Text(l10n.savedPlacesVault),
+      subtitle: Text(l10n.savedPlacesVaultSubtitle),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => const SavedPlacesVaultScreen(),
+        ),
+      ),
     );
   }
 

@@ -19,12 +19,13 @@ pluginManagement {
 
 plugins {
     id("dev.flutter.flutter-plugin-loader") version "1.0.0"
-    id("com.android.application") version "9.0.1" apply false
-    // Legacy Kotlin Gradle Plugin (KGP). Kept on the classpath because the app
-    // and its plugins still build through AGP 9's legacy Kotlin path while
-    // `android.builtInKotlin=false` (see android/gradle.properties). Required by
-    // flutter_dynamic_icon_plus and receive_sharing_intent until they migrate;
-    // remove it once every plugin uses AGP's built-in Kotlin.
+    id("com.android.application") version "9.2.1" apply false
+    // Legacy Kotlin Gradle Plugin (KGP). Built-in Kotlin is enabled
+    // (`android.builtInKotlin=true` — see android/gradle.properties), so no
+    // module applies KGP in the default build; it stays on the classpath only so
+    // the conditional `apply plugin: 'kotlin-android'` fallbacks in
+    // firebase_* / workmanager_android / the vendored flutter_dynamic_icon_plus
+    // still resolve when a build opts back into the legacy path.
     id("org.jetbrains.kotlin.android") version "2.4.21" apply false
     id("com.google.gms.google-services") version "4.5.0" apply false
     // Uploads the release mapping/symbol files so Crashlytics can deobfuscate

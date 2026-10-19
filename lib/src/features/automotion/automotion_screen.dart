@@ -8,6 +8,7 @@ import '../../providers/app_providers.dart';
 import '../../widgets/motion_metric.dart';
 import '../../widgets/track_failure_text.dart';
 import '../home/widgets/auto_motion_badge.dart';
+import '../saved_places/presentation/widgets/place_link_suggestions_card.dart';
 import 'widgets/driving_events_card.dart';
 import 'widgets/trip_route_card.dart';
 
@@ -37,6 +38,7 @@ class AutoMotionScreen extends ConsumerWidget {
           const SizedBox(height: 16),
           const TripRouteCard(),
           const SizedBox(height: 16),
+          const PlaceLinkSuggestionsCard(),
           const DrivingEventsCard(),
           const SizedBox(height: 16),
           _HistoryCard(history: history),

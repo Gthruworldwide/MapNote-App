@@ -40,6 +40,7 @@ import '../services/gemini_client.dart';
 import '../services/geocoding_service.dart';
 import '../services/gps_tracker_service.dart';
 import '../services/home_shortcut_service.dart';
+import '../services/key_rotation_service.dart';
 import '../services/local_insight_engine.dart';
 import '../services/location_service.dart';
 import '../services/milestone_name_resolver.dart';
@@ -392,11 +393,21 @@ final Provider<List<NavigatorObserver>> analyticsNavigatorObserversProvider =
 final Provider<LocalInsightEngine> localInsightEngineProvider =
     Provider<LocalInsightEngine>((Ref ref) => const LocalInsightEngine());
 
+/// Build-time Gemini API-key pool with cooldown-based rotation.
+///
+/// Empty when no key was compiled in, which keeps the cloud agent disabled.
+final Provider<KeyRotationService> keyRotationServiceProvider =
+    Provider<KeyRotationService>(
+      (Ref ref) => KeyRotationService(keys: AppConfig.geminiApiKeys),
+    );
+
 /// Optional Gemini client (only active when an API key is configured).
 final Provider<GeminiClient> geminiClientProvider = Provider<GeminiClient>((
   Ref ref,
 ) {
-  final GeminiClient client = GeminiClient();
+  final GeminiClient client = GeminiClient(
+    keyRotation: ref.watch(keyRotationServiceProvider),
+  );
   ref.onDispose(client.close);
   return client;
 });

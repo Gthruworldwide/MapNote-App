@@ -137,6 +137,15 @@ is the operating system's local storage plus the user's own Google Drive.
   UI latency) and the shape of the user's data, then suggests tidy-ups, sync
   reminders and optimisations. Works fully offline with a local rule engine; an
   optional Google Gemini layer adds localized tips when a key is configured.
+- 🔐 **Encrypted Saved Places vault** — move a place into a biometric-gated,
+  AES-256 encrypted Hive box (`secure_places`) that stays unreadable while the
+  vault is locked. The key lives in the device keystore, never in the app, and
+  is dropped as soon as you leave the vault screen. A device with no lock screen
+  at all still gets in — with an explicit warning, never silently.
+- 🧩 **Geofenced place suggestions** — today's trip stops where you dwelled for
+  more than five minutes are matched against your saved places, so the matched
+  place can be opened (or the stop saved) in one tap. Purely derived on-device:
+  nothing is stored, and no name, note or coordinate leaves the device.
 - 📈 **Crash & usage telemetry** — best-effort Firebase Crashlytics + Analytics so
   crashes are fixed before testers hit them (anonymous; never your places).
 
@@ -254,14 +263,26 @@ top three so the card stays subtle.
 
 ### Optional cloud layer (Gemini)
 
-The local engine always runs and needs no account. If the app is built with a
-restricted Gemini key:
+The local engine always runs and needs no account. If the app is built with one
+or more restricted Gemini keys:
 
 ```sh
 flutter run \
-  --dart-define=GEMINI_API_KEY=xxxx \
+  --dart-define=GEMINI_API_KEY=primary-key,fallback-key \
   --dart-define=GEMINI_MODEL=gemini-2.0-flash
 ```
+
+`GEMINI_API_KEY` is a **pool**: comma/semicolon/whitespace separated keys, tried
+in order. `KeyRotationService` puts a key that answers `401`, `403`, `429`, or a
+`400` `API_KEY_INVALID` on a 10-minute cooldown and retries the request with the
+next healthy key, so a single exhausted or revoked key cannot take the cloud
+layer offline. Keys are read from the environment only — never committed to the
+repository — and are never logged.
+
+For CI/release builds the key lives in the **`GEMINI_API_KEY` GitHub Actions
+repository secret** (Settings → Secrets and variables → Actions), which
+`.github/workflows/android-release.yml` forwards as a `--dart-define`. Put any
+fallback keys in the same secret, comma separated.
 
 …the agent additionally asks Gemini for up to three localized suggestions and
 merges them with the local ones. **Only anonymous aggregate metrics** (counts
@@ -358,7 +379,8 @@ lib/
                                    #   dynamic_icon_service, home_shortcut_service,
                                    #   app_health_logger, app_observer_service,
                                    #   app_logger, local_insight_engine,
-                                   #   gemini_client, agent_service
+                                   #   gemini_client, key_rotation_service,
+                                   #   agent_service
     providers/app_providers.dart   # all Riverpod providers & notifiers
     widgets/                       # shared UI: qibla_indicator, motion_metric,
                                    #   track_failure_text
@@ -371,6 +393,9 @@ lib/
       place_detail/                # view / navigate / delete
       settings/                    # sign-in, sync, restore, language, theme, agent
                                    #   + hidden_vault_screen (locked places)
+      saved_places/                # Clean Architecture encrypted vault
+                                   #   (domain/data/presentation): AES-256 Hive
+                                   #   box, biometric gate, geofenced suggestions
 test/                              # Hive-backed widget tests + parser/share tests (120)
 integration_test/app_test.dart     # on-device end-to-end UI flow tests
 ios/ShareExtension/                # iOS share-extension templates + README
@@ -574,7 +599,7 @@ injected with `--dart-define` (never hardcoded):
 | --- | --- | --- |
 | `GOOGLE_SERVER_CLIENT_ID` | Android (for sign-in) | `serverClientId` in `GoogleSignIn.instance.initialize` |
 | `GOOGLE_IOS_CLIENT_ID` | iOS (for sign-in) | `clientId` in `GoogleSignIn.instance.initialize` |
-| `GEMINI_API_KEY` | No — optional | Enables the optional cloud recommendation layer (`GeminiClient`); without it the agent runs fully offline |
+| `GEMINI_API_KEY` | No — optional | Enables the optional cloud recommendation layer (`GeminiClient`). A comma-separated **pool** rotated by `KeyRotationService`; in CI it comes from the `GEMINI_API_KEY` repository secret. Without it the agent runs fully offline |
 | `GEMINI_MODEL` | No — defaults to `gemini-2.0-flash` | Model used by the optional cloud recommendation layer |
 
 Firebase is configured natively (not through `--dart-define`); see
@@ -624,32 +649,33 @@ Already committed — the notes below explain what is in place.
   `android/app/build.gradle.kts`): `com.google.gms.google-services` and
   `com.google.firebase.crashlytics` (**3.0.8**) are applied for the
   `routenote-app` project, with the SDKs pinned by the Firebase **BoM 35.0.0**.
-- **Android / Kotlin build notes (KGP & built-in Kotlin):** the app builds
-  through AGP 9's *legacy* Kotlin path (`android.builtInKotlin=false` and
-  `android.newDsl=false` in `android/gradle.properties`), so every
-  `flutter build apk` prints Flutter's "plugins that apply Kotlin Gradle Plugin
-  (KGP)" notice. The notice is **non-fatal** — the build exits `0` — but Flutter
-  will remove the legacy path in a future release. Two dependencies block the
-  switch to built-in Kotlin today:
-  - `flutter_dynamic_icon_plus` **1.4.1** (latest release) applies
-    `kotlin-android` unconditionally and fails to configure under built-in
-    Kotlin (`Failed to apply plugin 'kotlin-android'`).
-  - `receive_sharing_intent` **1.8.1** does the same; **1.9.0** drops KGP but
-    requires AGP 9.2+ / Gradle 9.4 / compileSdk 37 plus SwiftPM + SceneDelegate
-    iOS changes.
-
-  The other four flagged plugins (`firebase_core`, `firebase_analytics`,
-  `firebase_crashlytics`, `workmanager_android`) are already
-  built-in-Kotlin-aware: they apply KGP only while `android.builtInKotlin=false`.
-  Flutter detects KGP by *textually scanning* each plugin's `build.gradle`, so it
-  keeps naming those four even after the switch — that part of the notice is a
-  false positive.
-
-  To finish the migration: bump `gradle-wrapper.properties` to **9.4.1**, AGP to
-  **9.2.1** and `compileSdk` to **37**, upgrade `receive_sharing_intent` to
-  **1.9.0**, replace `flutter_dynamic_icon_plus` with a migrated release or a
-  locally patched copy, then set `android.builtInKotlin=true`. See
-  <https://docs.flutter.dev/release/breaking-changes/migrate-to-built-in-kotlin>.
+- **Android / Kotlin build notes (KGP & built-in Kotlin):** the app builds with
+  **built-in Kotlin** (`android.builtInKotlin=true` in `android/gradle.properties`)
+  on **AGP 9.2.1 / Gradle 9.4.1 / compileSdk 37**, so **no module applies the
+  legacy Kotlin Gradle Plugin (KGP)** in the default build. This is the supported
+  path forward: a future Flutter release removes the legacy KGP shim, so the app
+  is already migrated.
+  - `receive_sharing_intent` was upgraded **1.8.1 → 1.9.0** and no longer applies
+    KGP (its Dart API is byte-for-byte unchanged). 1.9.0 also carries iOS SwiftPM
+    + SceneDelegate follow-ups; see `ios/ShareExtension/README.md`.
+  - `firebase_core`, `firebase_analytics`, `firebase_crashlytics` and
+    `workmanager_android` apply KGP **only while `android.builtInKotlin=false`**,
+    so they need no changes.
+  - `flutter_dynamic_icon_plus` still applies KGP unconditionally upstream in every
+    release (1.6.0 included), so it is **vendored** under
+    `third_party/flutter_dynamic_icon_plus` (pinned by `dependency_overrides` in
+    `pubspec.yaml`) with a patched `android/build.gradle` that applies KGP only
+    when built-in Kotlin is off. The Dart API matches the published release
+    exactly; drop the override once upstream ships a built-in-Kotlin release.
+  - `android.newDsl=false` stays: the app still uses the legacy AGP DSL types.
+  - **Residual notice:** Flutter detects KGP by *textually scanning* each plugin's
+    `build.gradle` (see `FlutterPluginUtils.kgpRegex*`), so it still prints
+    `plugins that apply Kotlin Gradle Plugin (KGP): firebase_analytics,
+    firebase_core, firebase_crashlytics, flutter_dynamic_icon_plus,
+    workmanager_android` even though all five guard on `android.builtInKotlin`.
+    That notice is a false positive only the upstream packages can remove; it is
+    non-fatal and the build exits `0`.
+  See <https://docs.flutter.dev/release/breaking-changes/migrate-to-built-in-kotlin>.
 - **Debug test-crash button** (`MainActivity.kt`): the Crashlytics guide's
   "Test Crash" button is added only when the activity is debuggable, so it never
   appears in a release or profile build.
@@ -738,7 +764,7 @@ firebase appdistribution:distribute \
   build/app/outputs/flutter-apk/app-release.apk \
   --app 1:679774190551:android:d7bf2f949f60ed62912992 \
   --groups testers \
-  --release-notes "MapNote 1.0.4 (5) — pilot build"
+  --release-notes "MapNote 1.0.5 (11) — pilot build"
 ```
 
 Testers receive an email invite and install through the **App Tester** app.
@@ -746,7 +772,7 @@ Testers receive an email invite and install through the **App Tester** app.
 On Windows the upload step is wrapped in a helper script:
 
 ```powershell
-.\scripts\distribute_app.ps1 -Groups testers -Notes "MapNote 1.0.4 (5) — pilot"
+.\scripts\distribute_app.ps1 -Groups testers -Notes "MapNote 1.0.5 (11) — pilot"
 ```
 
 > **Script blocked by execution policy?** Windows defaults to a `Restricted`

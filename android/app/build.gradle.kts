@@ -12,7 +12,11 @@ plugins {
 
 android {
     namespace = "com.routenote.routenote"
-    compileSdk = flutter.compileSdkVersion
+    // Pin the platform API explicitly: receive_sharing_intent 1.9.0 (needed for
+    // built-in Kotlin) compiles against API 37, and AGP requires consumers to
+    // compile against at least the same API level. `maxOf` keeps us at Flutter's
+    // default if a future Flutter release raises it further.
+    compileSdk = maxOf(flutter.compileSdkVersion, 37)
     ndkVersion = flutter.ndkVersion
 
     compileOptions {

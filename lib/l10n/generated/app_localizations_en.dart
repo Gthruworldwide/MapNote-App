@@ -856,4 +856,94 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get compassCalculating => 'Calculating...';
+
+  @override
+  String get savedPlacesVault => 'Encrypted Vault';
+
+  @override
+  String get savedPlacesVaultSubtitle =>
+      'Biometric-protected places, encrypted with AES-256';
+
+  @override
+  String get savedPlacesVaultLocked => 'Vault locked';
+
+  @override
+  String get savedPlacesVaultLockedMessage =>
+      'Verify your identity to read the places kept in the encrypted vault.';
+
+  @override
+  String get savedPlacesVaultUnlock => 'Unlock vault';
+
+  @override
+  String get savedPlacesVaultLock => 'Lock vault';
+
+  @override
+  String get savedPlacesVaultEmpty => 'No encrypted places yet';
+
+  @override
+  String get savedPlacesVaultEmptyMessage =>
+      'Move a saved place into the vault to protect it behind your device lock.';
+
+  @override
+  String get savedPlacesVaultUnlocked => 'Vault unlocked';
+
+  @override
+  String get savedPlacesVaultUnavailable =>
+      'This device can\'t verify your identity';
+
+  @override
+  String get moveToEncryptedVault => 'Move to encrypted vault';
+
+  @override
+  String get moveToEncryptedVaultDone => 'Moved to the encrypted vault';
+
+  @override
+  String get restoreFromEncryptedVault => 'Move back to saved places';
+
+  @override
+  String get restoreFromEncryptedVaultDone => 'Moved back to saved places';
+
+  @override
+  String get unlockToOpenSavedPlacesVault =>
+      'Verify to open the encrypted vault';
+
+  @override
+  String get unlockToMoveToEncryptedVault =>
+      'Verify to move the place into the encrypted vault';
+
+  @override
+  String get suggestedPlaceLinks => 'Places you may want to link';
+
+  @override
+  String get suggestedPlaceLinksSubtitle => 'Based on today\'s stops';
+
+  @override
+  String get suggestedPlaceOpenAction => 'Open';
+
+  @override
+  String get suggestedPlaceSaveAction => 'Save';
+
+  @override
+  String suggestedPlaceStopDetails(int minutes) {
+    return 'Stopped for $minutes min';
+  }
+
+  @override
+  String suggestedPlaceNearSaved(String name, int distance) {
+    return '\"$name\" is $distance m away';
+  }
+
+  @override
+  String get suggestedPlaceNoMatch => 'No saved place nearby';
+
+  @override
+  String suggestedPlaceLinked(String name) {
+    return 'Linked to $name';
+  }
+
+  @override
+  String get suggestedPlaceSaved => 'Saved to your places';
+
+  @override
+  String get suggestedPlaceLinkFailed => 'Couldn\'t link the place';
 }

@@ -1,0 +1,84 @@
+group 'com.solusibejo.flutter_dynamic_icon_plus'
+version '1.0-SNAPSHOT'
+
+buildscript {
+    ext.kotlin_version = '2.4.0'
+    repositories {
+        google()
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath 'com.android.tools.build:gradle:9.2.1'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+apply plugin: 'com.android.library'
+
+// AGP 9 ships built-in Kotlin and turns it on by default (Flutter opts in with
+// `android.builtInKotlin=true`). Applying the legacy Kotlin Gradle Plugin (KGP)
+// on top of built-in Kotlin is a build error, so only apply KGP when built-in
+// Kotlin is off (AGP < 9, or Flutter still on the legacy path). This mirrors the
+// conditional application already used by firebase_core / firebase_analytics /
+// firebase_crashlytics / workmanager_android. Upstream still applies KGP
+// unconditionally in every release, which is why this plugin is vendored in
+// `third_party/` (see README > "Android / Kotlin build notes").
+def agpMajor = com.android.Version.ANDROID_GRADLE_PLUGIN_VERSION.tokenize('.')[0] as int
+def builtInKotlin = agpMajor >= 9 &&
+    project.findProperty('android.builtInKotlin')?.toString() != 'false'
+if (!builtInKotlin) {
+    apply plugin: 'kotlin-android'
+}
+
+android {
+    if (project.android.hasProperty("namespace")) {
+        namespace 'com.solusibejo.flutter_dynamic_icon_plus'
+    }
+
+    compileSdk 37
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    sourceSets {
+        main.java.srcDirs += 'src/main/kotlin'
+        test.java.srcDirs += 'src/test/kotlin'
+    }
+
+    defaultConfig {
+        minSdkVersion 19
+    }
+
+    dependencies {
+        testImplementation 'org.jetbrains.kotlin:kotlin-test'
+        testImplementation 'org.mockito:mockito-core:5.0.0'
+    }
+
+    testOptions {
+        unitTests.all {
+            useJUnitPlatform()
+
+            testLogging {
+               events "passed", "skipped", "failed", "standardOut", "standardError"
+               outputs.upToDateWhen {false}
+               showStandardStreams = true
+            }
+        }
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+    }
+}

@@ -8,6 +8,8 @@ import '../../../core/utils/haptics.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../providers/app_providers.dart';
 import '../../../services/lock_gate.dart';
+import '../../saved_places/domain/usecases/unlock_vault.dart';
+import '../../saved_places/presentation/providers/saved_places_providers.dart';
 
 /// A result the sheet asks the caller to perform (needs a screen-level context).
 enum PlaceActionResult { shareQr }
@@ -92,6 +94,11 @@ class _PlaceActionsSheet extends ConsumerWidget {
                 label: l10n.hideLocation,
                 onTap: () => _hide(context, ref, l10n),
               ),
+            _ActionTile(
+              icon: Icons.enhanced_encryption_outlined,
+              label: l10n.moveToEncryptedVault,
+              onTap: () => _moveToVault(context, ref, l10n),
+            ),
             const SizedBox(height: 8),
           ],
         ),
@@ -250,6 +257,43 @@ class _PlaceActionsSheet extends ConsumerWidget {
     Navigator.of(context).pop();
     await notifier.setHidden(place.id, true);
     messenger.showSnackBar(SnackBar(content: Text(l10n.locationHidden)));
+  }
+
+  /// Moves this place into the AES-256 encrypted vault.
+  ///
+  /// The vault's unlock prompt is what releases the decryption key, so the
+  /// verification happens *before* anything is written. Resolved before the
+  /// sheet closes because the auth prompt outlives the pop.
+  Future<void> _moveToVault(
+    BuildContext context,
+    WidgetRef ref,
+    AppLocalizations l10n,
+  ) async {
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    final VaultPlacesNotifier vault = ref.read(vaultPlacesProvider.notifier);
+    Navigator.of(context).pop();
+
+    final VaultUnlockResult result = await vault.unlock(
+      reason: l10n.unlockToMoveToEncryptedVault,
+    );
+    if (result == VaultUnlockResult.denied) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.authenticationFailed)),
+      );
+      return;
+    }
+    if (result == VaultUnlockResult.unlockedUnverified) {
+      // Same escape hatch the other locked-location gates use: the move goes
+      // through, but the user is told no lock screen protects the device.
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.noDeviceSecurityWarning)),
+      );
+    }
+
+    await vault.moveIn(place);
+    messenger.showSnackBar(
+      SnackBar(content: Text(l10n.moveToEncryptedVaultDone)),
+    );
   }
 }
 

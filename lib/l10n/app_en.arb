@@ -367,5 +367,49 @@
   "qiblaAligned": "Aligned with Qibla",
   "compassNorth": "North",
   "headingInstruction": "Adjust phone direction to see Qibla",
-  "compassCalculating": "Calculating..."
+  "compassCalculating": "Calculating...",
+
+  "savedPlacesVault": "Encrypted Vault",
+  "savedPlacesVaultSubtitle": "Biometric-protected places, encrypted with AES-256",
+  "savedPlacesVaultLocked": "Vault locked",
+  "savedPlacesVaultLockedMessage": "Verify your identity to read the places kept in the encrypted vault.",
+  "savedPlacesVaultUnlock": "Unlock vault",
+  "savedPlacesVaultLock": "Lock vault",
+  "savedPlacesVaultEmpty": "No encrypted places yet",
+  "savedPlacesVaultEmptyMessage": "Move a saved place into the vault to protect it behind your device lock.",
+  "savedPlacesVaultUnlocked": "Vault unlocked",
+  "savedPlacesVaultUnavailable": "This device can't verify your identity",
+  "moveToEncryptedVault": "Move to encrypted vault",
+  "moveToEncryptedVaultDone": "Moved to the encrypted vault",
+  "restoreFromEncryptedVault": "Move back to saved places",
+  "restoreFromEncryptedVaultDone": "Moved back to saved places",
+  "unlockToOpenSavedPlacesVault": "Verify to open the encrypted vault",
+  "unlockToMoveToEncryptedVault": "Verify to move the place into the encrypted vault",
+
+  "suggestedPlaceLinks": "Places you may want to link",
+  "suggestedPlaceLinksSubtitle": "Based on today's stops",
+  "suggestedPlaceOpenAction": "Open",
+  "suggestedPlaceSaveAction": "Save",
+  "suggestedPlaceStopDetails": "Stopped for {minutes} min",
+  "@suggestedPlaceStopDetails": {
+    "placeholders": {
+      "minutes": { "type": "int" }
+    }
+  },
+  "suggestedPlaceNearSaved": "\"{name}\" is {distance} m away",
+  "@suggestedPlaceNearSaved": {
+    "placeholders": {
+      "name": { "type": "String" },
+      "distance": { "type": "int" }
+    }
+  },
+  "suggestedPlaceNoMatch": "No saved place nearby",
+  "suggestedPlaceLinked": "Linked to {name}",
+  "@suggestedPlaceLinked": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "suggestedPlaceSaved": "Saved to your places",
+  "suggestedPlaceLinkFailed": "Couldn't link the place"
 }

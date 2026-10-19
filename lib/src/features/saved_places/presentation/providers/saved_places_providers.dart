@@ -1,0 +1,166 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../../core/config/app_config.dart';
+import '../../../../data/models/place.dart';
+import '../../../../providers/app_providers.dart';
+import '../../data/datasources/flutter_secure_secret_store.dart';
+import '../../data/datasources/secret_store.dart';
+import '../../data/datasources/trip_stop_detector.dart';
+import '../../data/datasources/vault_key_store.dart';
+import '../../data/repositories/biometric_vault_authenticator.dart';
+import '../../data/repositories/hive_vault_repository.dart';
+import '../../domain/entities/place_link_suggestion.dart';
+import '../../domain/entities/trip_stop.dart';
+import '../../domain/repositories/vault_repository.dart';
+import '../../domain/services/place_link_suggester.dart';
+import '../../domain/services/vault_authenticator.dart';
+import '../../domain/usecases/unlock_vault.dart';
+
+// ---------------------------------------------------------------------------
+// Wiring
+// ---------------------------------------------------------------------------
+//
+// The conventions match `lib/src/providers/app_providers.dart`: small
+// `Provider`s for dependencies, an `AsyncNotifierProvider` for mutable state,
+// and every provider in this file is scoped to this feature so the vault can be
+// deleted without touching the rest of the app.
+
+/// Platform keystore/keychain store for the vault's AES key.
+final Provider<SecretStore> vaultSecretStoreProvider =
+    Provider<SecretStore>((Ref ref) => const FlutterSecureSecretStore());
+
+/// Generates and holds the AES-256 key that encrypts the vault box.
+final Provider<VaultKeyStore> vaultKeyStoreProvider = Provider<VaultKeyStore>(
+  (Ref ref) => VaultKeyStore(ref.watch(vaultSecretStoreProvider)),
+);
+
+/// The encrypted vault: an additive Hive box, encrypted with the keystore key.
+final Provider<VaultRepository> vaultRepositoryProvider =
+    Provider<VaultRepository>(
+      (Ref ref) => HiveVaultRepository(
+        keyStore: ref.watch(vaultKeyStoreProvider),
+        boxName: AppConfig.securePlacesBoxName,
+      ),
+    );
+
+/// Adapts `local_auth` to the domain's [VaultAuthenticator] port.
+final Provider<VaultAuthenticator> vaultAuthenticatorProvider =
+    Provider<VaultAuthenticator>(
+      (Ref ref) => BiometricVaultAuthenticator(
+        ref.watch(biometricServiceProvider),
+      ),
+    );
+
+/// Use case that verifies the user, then opens the encrypted box.
+final Provider<UnlockVault> unlockVaultProvider = Provider<UnlockVault>(
+  (Ref ref) => UnlockVault(
+    ref.watch(vaultAuthenticatorProvider),
+    ref.watch(vaultRepositoryProvider),
+  ),
+);
+
+// ---------------------------------------------------------------------------
+// State
+// ---------------------------------------------------------------------------
+
+/// The vaulted places.
+///
+/// `null` means the vault is **locked** — the box is closed and its key is not
+/// in memory. An empty list means it is open and genuinely contains nothing.
+final AsyncNotifierProvider<VaultPlacesNotifier, List<Place>?>
+vaultPlacesProvider =
+    AsyncNotifierProvider<VaultPlacesNotifier, List<Place>?>(
+      VaultPlacesNotifier.new,
+    );
+
+class VaultPlacesNotifier extends AsyncNotifier<List<Place>?> {
+  @override
+  Future<List<Place>?> build() async {
+    final VaultRepository vault = ref.watch(vaultRepositoryProvider);
+    if (!vault.isUnlocked) return null;
+    return vault.getAll();
+  }
+
+  /// Verifies the user, then opens the vault.
+  ///
+  /// The caller decides what to say: [VaultUnlockResult.denied] means "still
+  /// locked" and [VaultUnlockResult.unlockedUnverified] means the device could
+  /// not verify at all, so the UI must show `noDeviceSecurityWarning`.
+  Future<VaultUnlockResult> unlock({required String reason}) async {
+    final VaultUnlockResult result = await ref
+        .read(unlockVaultProvider)
+        .call(reason: reason);
+    if (result != VaultUnlockResult.denied) await _refresh();
+    return result;
+  }
+
+  /// Closes the vault and forgets the key.
+  ///
+  /// The state moves to locked *before* the (async) box close so the UI can
+  /// never show stale content, and so a call from a widget's `dispose` never
+  /// writes state after the container is gone.
+  Future<void> lock() async {
+    final VaultRepository vault = ref.read(vaultRepositoryProvider);
+    state = const AsyncValue<List<Place>?>.data(null);
+    await vault.lock();
+  }
+
+  /// Moves a saved place into the encrypted vault.
+  ///
+  /// Vault-first: the place is written to the encrypted box **before** it is
+  /// removed from the plain store, so a crash between the two writes leaves a
+  /// recoverable duplicate rather than a lost place.
+  Future<void> moveIn(Place place) async {
+    await ref.read(vaultRepositoryProvider).save(place);
+    await ref.read(placesProvider.notifier).delete(place.id);
+    await _refresh();
+  }
+
+  /// Restores a vaulted place to the plain store and removes it from the vault.
+  Future<void> moveOut(Place place) async {
+    await ref.read(placesProvider.notifier).save(place);
+    await ref.read(vaultRepositoryProvider).delete(place.id);
+    await _refresh();
+  }
+
+  Future<void> delete(String id) async {
+    await ref.read(vaultRepositoryProvider).delete(id);
+    await _refresh();
+  }
+
+  Future<void> _refresh() async {
+    final VaultRepository vault = ref.read(vaultRepositoryProvider);
+    state = AsyncValue<List<Place>?>.data(
+      vault.isUnlocked ? await vault.getAll() : null,
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Auto-geofencing suggestions (derived, never stored)
+// ---------------------------------------------------------------------------
+
+/// Detects the day's trip stops (dwell >= 5 min) from the AutoMotion path.
+///
+/// Watching [autoMotionFixesProvider] re-runs the detection on every accepted
+/// fix and on the midnight rollover, exactly like the milestone timeline.
+final Provider<List<TripStop>> tripStopsProvider = Provider<List<TripStop>>((
+  Ref ref,
+) {
+  ref.watch(autoMotionFixesProvider);
+  return const TripStopDetector().detect(
+    ref.read(autoMotionServiceProvider).smoothedPath,
+  );
+});
+
+/// Advisory links between today's stops and the saved places, newest stop
+/// first. Pure derivation: no persistence, no network, and no place name,
+/// note or coordinate ever leaves the device.
+final Provider<List<PlaceLinkSuggestion>> placeLinkSuggestionsProvider =
+    Provider<List<PlaceLinkSuggestion>>((Ref ref) {
+      final List<TripStop> stops = ref.watch(tripStopsProvider);
+      if (stops.isEmpty) return const <PlaceLinkSuggestion>[];
+      final List<Place> places =
+          ref.watch(placesProvider).value ?? const <Place>[];
+      return const PlaceLinkSuggester().suggest(stops: stops, places: places);
+    });

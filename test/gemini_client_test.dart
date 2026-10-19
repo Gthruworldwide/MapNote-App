@@ -345,4 +345,124 @@ void main() {
       throwsA(isA<AgentException>()),
     );
   });
+
+  group('key rotation', () {
+    test('retries with the fallback key when the primary is over quota',
+        () async {
+      final List<String> usedKeys = <String>[];
+      final GeminiClient client = GeminiClient(
+        apiKey: 'primary,fallback',
+        client: MockClient((http.Request request) async {
+          final String key = request.headers['x-goog-api-key']!;
+          usedKeys.add(key);
+          if (key == 'primary') return http.Response('quota', 429);
+          return _responseWith(<Map<String, String>>[
+            <String, String>{
+              'title': 'Recovered',
+              'body': 'The fallback key answered.',
+              'severity': 'info',
+            },
+          ]);
+        }),
+      );
+
+      final List<AgentInsight> insights = await client.fetchInsights(
+        metrics: const <String, Object?>{},
+        languageName: 'English',
+      );
+
+      expect(usedKeys, <String>['primary', 'fallback']);
+      expect(insights.single.customTitle, 'Recovered');
+    });
+
+    test('keeps using the healthy key on the next request', () async {
+      final List<String> usedKeys = <String>[];
+      final GeminiClient client = GeminiClient(
+        apiKey: 'primary,fallback',
+        client: MockClient((http.Request request) async {
+          final String key = request.headers['x-goog-api-key']!;
+          usedKeys.add(key);
+          if (key == 'primary') return http.Response('quota', 429);
+          return _responseWith(const <Map<String, String>>[]);
+        }),
+      );
+
+      await client.fetchInsights(
+        metrics: const <String, Object?>{},
+        languageName: 'English',
+      );
+      await client.fetchInsights(
+        metrics: const <String, Object?>{},
+        languageName: 'English',
+      );
+
+      // primary, fallback (rotated), then fallback again — no second probe of
+      // the key that is cooling down.
+      expect(usedKeys, <String>['primary', 'fallback', 'fallback']);
+    });
+
+    test('rotates on an API_KEY_INVALID 400 response', () async {
+      final List<String> usedKeys = <String>[];
+      final GeminiClient client = GeminiClient(
+        apiKey: 'primary,fallback',
+        client: MockClient((http.Request request) async {
+          final String key = request.headers['x-goog-api-key']!;
+          usedKeys.add(key);
+          if (key == 'primary') {
+            return http.Response('{"error":{"status":"INVALID_ARGUMENT",'
+                '"details":[{"reason":"API_KEY_INVALID"}]}}', 400);
+          }
+          return _responseWith(const <Map<String, String>>[]);
+        }),
+      );
+
+      await client.fetchInsights(
+        metrics: const <String, Object?>{},
+        languageName: 'English',
+      );
+
+      expect(usedKeys, <String>['primary', 'fallback']);
+    });
+
+    test('surfaces the failure once every key has been rejected', () async {
+      int requests = 0;
+      final GeminiClient client = GeminiClient(
+        apiKey: 'primary,fallback',
+        client: MockClient((http.Request request) async {
+          requests++;
+          return http.Response('quota', 429);
+        }),
+      );
+
+      await expectLater(
+        () => client.fetchInsights(
+          metrics: const <String, Object?>{},
+          languageName: 'English',
+        ),
+        throwsA(isA<AgentException>()),
+      );
+      // One attempt per configured key on the first round, then it gives up.
+      expect(requests, 2);
+    });
+
+    test('does not rotate on a transient server error', () async {
+      final List<String> usedKeys = <String>[];
+      final GeminiClient client = GeminiClient(
+        apiKey: 'primary,fallback',
+        client: MockClient((http.Request request) async {
+          usedKeys.add(request.headers['x-goog-api-key']!);
+          return http.Response('boom', 503);
+        }),
+      );
+
+      await expectLater(
+        () => client.fetchInsights(
+          metrics: const <String, Object?>{},
+          languageName: 'English',
+        ),
+        throwsA(isA<AgentException>()),
+      );
+      expect(usedKeys, <String>['primary']);
+    });
+  });
 }

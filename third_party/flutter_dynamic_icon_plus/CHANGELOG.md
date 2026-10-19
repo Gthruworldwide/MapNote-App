@@ -1,0 +1,47 @@
+## 1.6.0 - October 16, 2026
+* **Android:** never disable `MainActivity` or other real activities when switching icons. Only activity-aliases are toggled. Fixes the app not opening after an icon change [7](https://github.com/chandrabezzo/flutter_dynamic_icon_plus/issues/7), crashes when launching from Android Studio [11](https://github.com/chandrabezzo/flutter_dynamic_icon_plus/issues/11) and push notifications not opening the app [5](https://github.com/chandrabezzo/flutter_dynamic_icon_plus/issues/5). An activity left disabled by older versions is re-enabled on the next icon change.
+* **Android:** `setAlternateIconName(iconName: null)` restores the default icon again [8](https://github.com/chandrabezzo/flutter_dynamic_icon_plus/issues/8).
+* **Android:** icon names are matched against the declared aliases, so `icon_1`, `.icon_1` and the fully qualified name all work, also with `applicationIdSuffix`. Previously a bare name crashed the service with "Component class ... does not exist" [12](https://github.com/chandrabezzo/flutter_dynamic_icon_plus/issues/12).
+* **Android:** `supportsAlternateIcons` only counts activity-aliases, not activities added by other plugins.
+* Replace the leftover template unit test that broke `gradlew test` builds [19](https://github.com/chandrabezzo/flutter_dynamic_icon_plus/issues/19).
+* Example builds with current Flutter (Gradle 8.14.3, Kotlin 2.2.20) and uses the `.DEFAULT` alias setup.
+* README: `.DEFAULT` alias migration, when the Android icon changes [4](https://github.com/chandrabezzo/flutter_dynamic_icon_plus/issues/4), and iOS troubleshooting for blank icons [25](https://github.com/chandrabezzo/flutter_dynamic_icon_plus/issues/25) [18](https://github.com/chandrabezzo/flutter_dynamic_icon_plus/issues/18).
+* **Migration:** move the MAIN/LAUNCHER intent-filter from `MainActivity` to a `.DEFAULT` activity-alias (see README). Otherwise the default icon stays visible next to the alternative one.
+
+## 1.5.0 - October 16, 2026
+* Fix Swift Package Manager support: move iOS sources to `ios/flutter_dynamic_icon_plus/Sources/`, add `Package.swift` with the `FlutterFramework` dependency, and remove the root-level `Package.swift` from [30](https://github.com/chandrabezzo/flutter_dynamic_icon_plus/pull/30).
+* Restore the CocoaPods podspec so projects not yet on Swift Package Manager keep building.
+* **Breaking:** minimum iOS version raised to 13.0.
+
+## 1.4.1 - June 2, 2026
+* [26](https://github.com/chandrabezzo/flutter_dynamic_icon_plus/pull/26) Remove SwiftTryCatch
+  
+## 1.4.0 - October 6, 2025
+* [21](https://github.com/chandrabezzo/flutter_dynamic_icon_plus/pull/21) Updated all related stuff for AGP 8.13.
+
+## 1.3.1 - February 20, 2025
+* [16](https://github.com/chandrabezzo/flutter_dynamic_icon_plus/pull/16) Smart Case Issue on Android.
+
+## 1.3.0 - January 31, 2025
+* [10](https://github.com/chandrabezzo/flutter_dynamic_icon_plus/pull/10) Add Silent App Icon Change on iOS.
+* [13](https://github.com/chandrabezzo/flutter_dynamic_icon_plus/pull/13) Support higher kotlin version.
+
+## 1.2.1 - April 3, 2024
+* Fix crash issue when fill icon name with empty string or null
+
+## 1.2.0 - April 2, 2024
+* Fix [Issue 1](https://github.com/chandrabezzo/flutter_dynamic_icon_plus/issues/1), after check more detail found [problem](https://stackoverflow.com/questions/40660216/ontaskremoved-not-getting-called-in-huawei-and-xiaomi-devices) for specific device/brand. So, need to add parameters `blacklistBrands`, `blacklistManufactures`, and `blacklistModels` on `setAlternateIconName` to add blacklist brand that can't works with Service.
+* For blacklist brands, manufactures, and models will use approach force restart app to change the app icon with alternative icon on Android
+
+## 1.1.2 - February 21, 2024
+* Update Readme
+
+## 1.1.1 - February 21, 2024
+* To decrease bad experience user in Android, just change app icon on app closed via [Service](https://developer.android.com/develop/background-work/services)
+
+
+## 1.1.0 - February 21, 2024
+* To decrease bad experience user in Android, just change app icon on app closed via [Service](https://developer.android.com/develop/background-work/services)
+
+## 1.0.0 - February 19, 2024
+* Dynamic App Icon on Android and iOS
