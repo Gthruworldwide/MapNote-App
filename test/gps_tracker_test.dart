@@ -651,6 +651,78 @@ void main() {
       await service.stop();
     });
 
+    test('a paused profile closes the platform stream entirely', () async {
+      overrideToAndroid();
+      final _RecordingLocationService scripted = _RecordingLocationService();
+      final GpsTrackerService service =
+          GpsTrackerService(dailyStore: await openStore('_sampling_paused'));
+
+      expect(await service.start(locations: scripted), isTrue);
+      expect(scripted.openCount, 1);
+
+      // The orchestrator's idleStandby profile: the platform stream must be
+      // closed outright, not merely slowed, so the GNSS receiver can sleep.
+      // No new platform open happens — the engine is re-pointed at an empty
+      // stream instead.
+      await service.applySampling(
+        interval: const Duration(minutes: 10),
+        accuracy: LocationAccuracy.lowest,
+        distanceFilter: 200,
+        paused: true,
+      );
+      expect(
+        scripted.openCount,
+        1,
+        reason: 'pausing detaches without re-opening the platform stream',
+      );
+      expect(
+        service.isTracking,
+        isTrue,
+        reason: 'the session survives the pause — only the stream is closed',
+      );
+
+      // Resuming re-opens the platform stream at the driving profile.
+      await service.applySampling(
+        interval: const Duration(seconds: 1),
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 5,
+        transportSpeed: true,
+        paused: false,
+      );
+      expect(scripted.openCount, 2, reason: 'resuming re-opens');
+      final AndroidSettings resumed = scripted.openedWith.last as AndroidSettings;
+      expect(resumed.accuracy, LocationAccuracy.high);
+      expect(resumed.distanceFilter, 5);
+      expect(resumed.intervalDuration, const Duration(seconds: 1));
+
+      await service.stop();
+    });
+
+    test('a repeated paused profile never re-opens the stream', () async {
+      overrideToAndroid();
+      final _RecordingLocationService scripted = _RecordingLocationService();
+      final GpsTrackerService service =
+          GpsTrackerService(dailyStore: await openStore('_sampling_paused_twice'));
+
+      expect(await service.start(locations: scripted), isTrue);
+      await service.applySampling(
+        interval: const Duration(minutes: 10),
+        accuracy: LocationAccuracy.lowest,
+        distanceFilter: 200,
+        paused: true,
+      );
+      await service.applySampling(
+        interval: const Duration(minutes: 10),
+        accuracy: LocationAccuracy.lowest,
+        distanceFilter: 200,
+        paused: true,
+      );
+
+      expect(scripted.openCount, 1, reason: 'pausing is idempotent');
+
+      await service.stop();
+    });
+
     test('with an injected stream the sampling knobs change nothing',
         () async {
       overrideToAndroid();

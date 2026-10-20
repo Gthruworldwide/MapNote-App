@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:routenote/src/core/motion/activity_state_manager.dart';
 import 'package:routenote/src/core/orchestrator/adaptive_engine_orchestrator.dart';
 
@@ -420,6 +421,79 @@ void main() {
 
       expect(driving.locationInterval, lessThan(idle.locationInterval));
       expect(driving.distanceFilterMeters, lessThan(idle.distanceFilterMeters));
+    });
+  });
+
+  group('location power management', () {
+    test('standby closes the position stream outright', () {
+      final AdaptiveEngineOrchestrator orchestrator = AdaptiveEngineOrchestrator();
+
+      final EngineProfile idle =
+          orchestrator.observe(const EngineEvidence(trackingActive: false));
+
+      expect(idle.state, EngineState.idleStandby);
+      // A paused profile is what suppresses the OS "frequently checks your
+      // location" warning: the stream is unsubscribed, not merely slowed.
+      expect(idle.locationPaused, isTrue);
+      expect(idle.accuracy, LocationAccuracy.lowest);
+      expect(idle.distanceFilterMeters, greaterThanOrEqualTo(200));
+    });
+
+    test('every driving-capable state keeps the stream open', () {
+      final AdaptiveEngineOrchestrator orchestrator = AdaptiveEngineOrchestrator();
+
+      final EngineProfile tracking =
+          orchestrator.observe(const EngineEvidence(trackingActive: true));
+      expect(tracking.locationPaused, isFalse);
+
+      final EngineProfile driving = orchestrator.observe(
+        const EngineEvidence(
+          trackingActive: true,
+          activityState: ActivityState.vehicleDriving,
+        ),
+      );
+      expect(driving.state, EngineState.activeDriveAnalytics);
+      expect(driving.locationPaused, isFalse);
+      expect(driving.accuracy, LocationAccuracy.high);
+      expect(driving.distanceFilterMeters, lessThanOrEqualTo(5));
+      expect(driving.locationInterval, const Duration(seconds: 1));
+    });
+
+    test('only a confirmed drive asks for GPS-grade accuracy', () {
+      final AdaptiveEngineOrchestrator orchestrator = AdaptiveEngineOrchestrator();
+
+      final EngineProfile tracking =
+          orchestrator.observe(const EngineEvidence(trackingActive: true));
+      final EngineProfile driving = orchestrator.observe(
+        const EngineEvidence(
+          trackingActive: true,
+          activityState: ActivityState.vehicleDriving,
+        ),
+      );
+
+      expect(driving.accuracy.index, greaterThan(tracking.accuracy.index));
+      expect(tracking.accuracy.index, lessThanOrEqualTo(
+        LocationAccuracy.low.index,
+      ));
+    });
+
+    test('a tunnel backs the accuracy off from GPS grade', () {
+      final AdaptiveEngineOrchestrator orchestrator = AdaptiveEngineOrchestrator();
+
+      final EngineProfile tunnel = orchestrator.observe(
+        const EngineEvidence(
+          trackingActive: true,
+          activityState: ActivityState.vehicleDriving,
+          speedMps: 20,
+          speedFresh: true,
+          fixAge: Duration(seconds: 20),
+          tunnelSuspect: true,
+        ),
+      );
+
+      expect(tunnel.state, EngineState.tunnelDeadReckoning);
+      expect(tunnel.locationPaused, isFalse);
+      expect(tunnel.accuracy.index, lessThan(LocationAccuracy.high.index));
     });
   });
 

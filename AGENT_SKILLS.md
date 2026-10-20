@@ -366,6 +366,23 @@ no network, no PII.
   is *not* sufficient (it would still pay per-sample costs) and is a review
   failure. `test/motion_gate_test.dart` asserts `forwardedSamples == 0` for a
   walking feed.
+- **The profile owns the location stream too, and idle really pauses it.**
+  `EngineProfile` carries `locationPaused` and `accuracy` alongside the interval
+  and distance filter, and `applyEngineProfile` in `app_providers.dart` is the
+  single place that translates a profile into `applySampling` for **both** daily
+  trackers. `EngineState.idleStandby` sets `locationPaused: true`, which cancels
+  the platform position subscription outright — a stream open at *any* cadence
+  keeps the fused provider (and the GNSS receiver) awake, which the OS reports to
+  the user as "frequently checks your location". Merely stretching the interval
+  is not enough and is a review failure. `ActiveDriveAnalytics` is the **only**
+  state that asks for `LocationAccuracy.high` with a 5 m filter and passes
+  `transportSpeed: true`; a hardcoded `transportSpeed` flag (which grants
+  GPS-grade fixes while parked) must never return. Idle is a 10-minute / 200 m /
+  `lowest` safety net behind the pause, not the mechanism. The session survives a
+  pause — distance, max speed, the last fix and the outage window all persist, so
+  resuming re-opens the stream without restarting the trip. Covered by
+  `test/engine_profile_application_test.dart` and the pause cases in
+  `test/gps_tracker_test.dart`.
 - **Entering the vehicle state is strict; leaving it is slow.** Vehicle requires
   speed above 15 km/h **and** held (5 s continuous, gap-tolerant) vehicle-range
   vibration **and** step-cadence rejection (0.5–3 Hz band power share). Leaving

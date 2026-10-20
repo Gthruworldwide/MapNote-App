@@ -60,6 +60,7 @@ import '../services/milestone_name_resolver.dart';
 import '../services/motion_profiler.dart';
 import '../services/motion_sensor_hub.dart';
 import '../services/motion_signal.dart';
+import '../services/sampling_target.dart';
 import '../services/navigation_service.dart';
 import '../services/route_milestones.dart';
 import '../services/share_intent_service.dart';
@@ -1451,6 +1452,20 @@ class GpsTrackingController extends Notifier<GpsTrackingState> {
       ).copyWith(unavailable: state.unavailable, failure: state.failure);
     });
     ref.onDispose(updates.cancel);
+    // The orchestrator's profiles drive this tracker's stream too: the GPS
+    // tracker is the *other* position consumer, and before this it ignored the
+    // FSM entirely, so a parked phone kept a live GPS stream open. Routing both
+    // trackers through [applyEngineProfile] keeps one authority.
+    final StreamSubscription<EngineProfile> engineProfiles = ref
+        .read(adaptiveEngineOrchestratorProvider)
+        .profiles
+        .listen((EngineProfile profile) {
+      if (!ref.mounted) return;
+      final GpsTrackerService watched = ref.read(gpsTrackerProvider);
+      if (!watched.isTracking) return;
+      unawaited(queue.add(() => applyEngineProfile(watched, profile)));
+    });
+    ref.onDispose(engineProfiles.cancel);
     // Profile changes (motion or battery) push the new cadence into the live
     // tracker; while nothing tracks, the next start applies the profile.
     ref.listen<SamplingProfile>(
@@ -1622,6 +1637,33 @@ Future<void> applyTrackingPowerMode(
       .add(() => motion.setPowerMode(backgrounded: backgrounded));
 }
 
+/// Applies an [EngineProfile] to a tracker's live stream.
+///
+/// The profile is the central FSM's decision about what the location subsystem
+/// should be doing, so the three levers travel together and are translated in
+/// exactly one place: the request interval, the movement filter, the accuracy
+/// tier and — for `idleStandby` — the outright closure of the platform stream
+/// (`paused`). Passing a profile through this helper is what keeps the
+/// orchestrator's verdict authoritative over the coarser transport profile.
+///
+/// `transportSpeed` is derived from the state rather than hardcoded: only a
+/// confirmed drive may lift the background accuracy cap to GPS grade (see
+/// `GpsTrackerService._effectiveAccuracy`). A hardcoded `true` would hand out
+/// GPS-grade fixes to a parked phone — the "frequently checks your location"
+/// OS warning.
+Future<void> applyEngineProfile(
+  SamplingTarget tracker,
+  EngineProfile profile,
+) {
+  return tracker.applySampling(
+    interval: profile.locationInterval,
+    accuracy: profile.accuracy,
+    distanceFilter: profile.distanceFilterMeters,
+    transportSpeed: profile.state == EngineState.activeDriveAnalytics,
+    paused: profile.locationPaused,
+  );
+}
+
 // ---------------------------------------------------------------------------
 // AutoMotion
 // ---------------------------------------------------------------------------
@@ -1762,9 +1804,11 @@ class AutoMotionController extends Notifier<AutoMotionState> {
     // Orchestrator-driven cadence: when the central FSM reaches a decisive
     // state (idle, driving, tunnel) its profile *overrides* the transport-driven
     // adaptive profile, because it knows more — it has the activity gate's
-    // verdict and the fix age, not just a transport mode. Idle stretches the
-    // request out, driving tightens it to capture turns and braking, and a
-    // tunnel keeps asking at a middle cadence without hammering the radio.
+    // verdict and the fix age, not just a transport mode. Idle closes the
+    // stream outright (the OS "frequently checks your location" warning),
+    // driving tightens it to 1 s / 5 m at GPS grade to capture turns and
+    // braking, and a tunnel keeps asking at a middle cadence without hammering
+    // the radio.
     final StreamSubscription<EngineProfile> engineProfiles = ref
         .read(adaptiveEngineOrchestratorProvider)
         .profiles
@@ -1772,15 +1816,7 @@ class AutoMotionController extends Notifier<AutoMotionState> {
       if (!ref.mounted) return;
       final AutoMotionService watched = ref.read(autoMotionServiceProvider);
       if (!watched.isTracking) return;
-      unawaited(
-        queue.add(
-          () => watched.applySampling(
-            interval: profile.locationInterval,
-            distanceFilter: profile.distanceFilterMeters,
-            transportSpeed: true,
-          ),
-        ),
-      );
+      unawaited(queue.add(() => applyEngineProfile(watched, profile)));
     });
     ref.onDispose(engineProfiles.cancel);
     // Profile changes (motion or battery) push the new cadence into the live
@@ -1808,6 +1844,29 @@ class AutoMotionController extends Notifier<AutoMotionState> {
     // a stray stop against the next start on the one shared tracker.
     unawaited(queue.add(() => _applyEnabled(tracker, enabled)));
     return _snapshot(tracker, enabled: enabled);
+  }
+
+  /// The gate's activity verdicts, while a trip records. Lives here rather than
+  /// in a provider because it must be created and cancelled with the trip.
+  StreamSubscription<ActivityState>? _gateStates;
+
+  /// Translates one gate verdict into orchestrator evidence.
+  ///
+  /// The gate already rejects pedestrian gaits, so a `vehicleDriving` verdict is
+  /// the strongest "we are in a car" signal the app has; everything else is
+  /// still-or-walking. The GPS speed is attached so the FSM's own movement test
+  /// has a fresh reading.
+  void _onActivityState(ActivityState state) {
+    if (!ref.mounted) return;
+    final AutoMotionService tracker = ref.read(autoMotionServiceProvider);
+    ref.read(adaptiveEngineOrchestratorProvider).observe(
+          EngineEvidence(
+            trackingActive: tracker.isTracking,
+            activityState: state,
+            speedMps: tracker.currentSpeedKmh / 3.6,
+            speedFresh: true,
+          ),
+        );
   }
 
   /// Starts the tracker (called when the toggle turns on or the app opens).
@@ -1873,6 +1932,14 @@ class AutoMotionController extends Notifier<AutoMotionState> {
     final MotionGate gate = ref.read(motionGateProvider);
     gate.reset();
     await gate.start();
+    // Feed the orchestrator the gate's *own* verdict — the authoritative
+    // activity evidence — rather than the coarser transport classifier. The
+    // gate sees the raw feed and the GPS speed, so its transitions are what
+    // should open or close the location stream. Subscribed here (not in build)
+    // because the gate only runs while a trip is recording; it is cancelled
+    // with the trip in [_stopIntelligentTracking].
+    _gateStates?.cancel();
+    _gateStates = gate.manager.states.listen(_onActivityState);
     await analyzer.start();
     await ref.read(mlClassifierIsolateProvider).start();
     await _syncAdaptiveStack();
@@ -1893,6 +1960,8 @@ class AutoMotionController extends Notifier<AutoMotionState> {
   Future<void> _stopIntelligentTracking() async {
     final MotionBehaviorAnalyzer analyzer =
         ref.read(motionBehaviorAnalyzerProvider);
+    await _gateStates?.cancel();
+    _gateStates = null;
     await analyzer.stop();
     await ref.read(mlClassifierIsolateProvider).stop();
     // Shut the gate too, so nothing keeps judging windows once no trip records.

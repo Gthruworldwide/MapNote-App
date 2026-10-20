@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:geolocator/geolocator.dart';
+
 import '../motion/activity_state_manager.dart';
 
 /// The single system-level operating mode, owned by [AdaptiveEngineOrchestrator].
@@ -43,8 +45,10 @@ class EngineProfile {
     required this.state,
     required this.motionAnalysisEnabled,
     required this.deadReckoningEnabled,
+    required this.locationPaused,
     required this.locationInterval,
     required this.distanceFilterMeters,
+    required this.accuracy,
     required this.sensorRateHz,
   });
 
@@ -58,11 +62,30 @@ class EngineProfile {
   /// Whether inertial dead reckoning should be integrating to fill a GPS gap.
   final bool deadReckoningEnabled;
 
+  /// Whether the continuous position stream must be **unsubscribed** entirely.
+  ///
+  /// This is stronger than a long [locationInterval]: a stream that is open at
+  /// any cadence still holds the fused provider (and therefore the GNSS
+  /// receiver) awake, which is what the OS reports to the user as "frequently
+  /// checks your location". A paused profile closes the stream so the chip can
+  /// enter hardware sleep, and the activity gate re-opens it when the device
+  /// actually starts moving.
+  final bool locationPaused;
+
   /// Minimum interval between location requests in this mode.
   final Duration locationInterval;
 
   /// Metres the device must move between delivered fixes.
   final int distanceFilterMeters;
+
+  /// The power tier to request from the fused provider.
+  ///
+  /// Part of the profile rather than a constant because it is the single
+  /// biggest battery lever in the whole system: `high` demands a GNSS lock,
+  /// while `low`/`lowest` let the provider answer from Wi-Fi, cell and sensor
+  /// state. A profile that tightens the interval but leaves the accuracy at
+  /// `high` still burns the receiver, so the two must travel together.
+  final LocationAccuracy accuracy;
 
   /// Nominal accelerometer analysis rate. Informational: the hardware rate is
   /// fixed by the platform channel, but this documents the rate the pipeline is
@@ -72,7 +95,8 @@ class EngineProfile {
   @override
   String toString() => 'EngineProfile(${state.name}, analysis: '
       '$motionAnalysisEnabled, dr: $deadReckoningEnabled, '
-      'gps: ${locationInterval.inSeconds}s/${distanceFilterMeters}m)';
+      'gps: ${locationPaused ? 'paused' : '${locationInterval.inSeconds}s'}/'
+      '${distanceFilterMeters}m/$accuracy)';
 
   @override
   bool operator ==(Object other) =>
@@ -80,8 +104,10 @@ class EngineProfile {
       other.state == state &&
       other.motionAnalysisEnabled == motionAnalysisEnabled &&
       other.deadReckoningEnabled == deadReckoningEnabled &&
+      other.locationPaused == locationPaused &&
       other.locationInterval == locationInterval &&
       other.distanceFilterMeters == distanceFilterMeters &&
+      other.accuracy == accuracy &&
       other.sensorRateHz == sensorRateHz;
 
   @override
@@ -89,8 +115,10 @@ class EngineProfile {
         state,
         motionAnalysisEnabled,
         deadReckoningEnabled,
+        locationPaused,
         locationInterval,
         distanceFilterMeters,
+        accuracy,
         sensorRateHz,
       );
 }
@@ -179,14 +207,23 @@ class AdaptiveEngineOrchestrator {
   AdaptiveEngineOrchestrator({
     this.speedThresholdKmh = 15,
     this.tunnelFixAge = const Duration(seconds: 8),
-    this.idleLocationInterval = const Duration(seconds: 10),
-    this.trackingLocationInterval = const Duration(seconds: 10),
+    // The idle tier is deliberately *passive*: ten minutes between requests and
+    // a 200 m movement filter means a parked phone does not register with the
+    // fused provider in any practical sense, and `locationPaused` closes the
+    // stream outright on top of that. It is a safety net for "the stream could
+    // not be closed" rather than the mechanism that saves power.
+    this.idleLocationInterval = const Duration(minutes: 10),
+    this.trackingLocationInterval = const Duration(seconds: 30),
     this.drivingLocationInterval = const Duration(seconds: 1),
     this.tunnelLocationInterval = const Duration(seconds: 5),
-    this.idleDistanceFilterMeters = 50,
-    this.trackingDistanceFilterMeters = 25,
-    this.drivingDistanceFilterMeters = 10,
+    this.idleDistanceFilterMeters = 200,
+    this.trackingDistanceFilterMeters = 50,
+    this.drivingDistanceFilterMeters = 5,
     this.tunnelDistanceFilterMeters = 30,
+    this.idleAccuracy = LocationAccuracy.lowest,
+    this.trackingAccuracy = LocationAccuracy.low,
+    this.drivingAccuracy = LocationAccuracy.high,
+    this.tunnelAccuracy = LocationAccuracy.low,
   })  : assert(speedThresholdKmh >= 0),
         assert(idleLocationInterval > Duration.zero),
         assert(trackingLocationInterval > Duration.zero),
@@ -210,6 +247,12 @@ class AdaptiveEngineOrchestrator {
   final int trackingDistanceFilterMeters;
   final int drivingDistanceFilterMeters;
   final int tunnelDistanceFilterMeters;
+
+  /// Power tier per state (see [EngineProfile.accuracy]).
+  final LocationAccuracy idleAccuracy;
+  final LocationAccuracy trackingAccuracy;
+  final LocationAccuracy drivingAccuracy;
+  final LocationAccuracy tunnelAccuracy;
 
   final StreamController<EngineProfile> _profiles =
       StreamController<EngineProfile>.broadcast();
@@ -306,21 +349,31 @@ class AdaptiveEngineOrchestrator {
   EngineProfile _profileFor(EngineState state) {
     switch (state) {
       case EngineState.idleStandby:
+        // Stationary / indoor / walking: nothing to record, so the position
+        // stream is closed outright rather than merely slowed. An open stream
+        // — however long its interval — keeps the fused provider registered and
+        // is what the OS surfaces as a background-location warning.
         return EngineProfile(
           state: state,
           motionAnalysisEnabled: false,
           deadReckoningEnabled: false,
+          locationPaused: true,
           locationInterval: idleLocationInterval,
           distanceFilterMeters: idleDistanceFilterMeters,
+          accuracy: idleAccuracy,
           sensorRateHz: 0,
         );
       case EngineState.lowPowerTracking:
+        // Moving, but not in a confirmed road vehicle: a coarse tier is enough
+        // to tell "the user is walking somewhere" from "the user is parked".
         return EngineProfile(
           state: state,
           motionAnalysisEnabled: false,
           deadReckoningEnabled: false,
+          locationPaused: false,
           locationInterval: trackingLocationInterval,
           distanceFilterMeters: trackingDistanceFilterMeters,
+          accuracy: trackingAccuracy,
           sensorRateHz: 0,
         );
       case EngineState.activeDriveAnalytics:
@@ -328,17 +381,24 @@ class AdaptiveEngineOrchestrator {
           state: state,
           motionAnalysisEnabled: true,
           deadReckoningEnabled: true,
+          locationPaused: false,
           locationInterval: drivingLocationInterval,
           distanceFilterMeters: drivingDistanceFilterMeters,
+          accuracy: drivingAccuracy,
           sensorRateHz: 50,
         );
       case EngineState.tunnelDeadReckoning:
+        // Inside a tunnel there is no fix to be had, so asking at the driving
+        // cadence only burns the receiver. A moderate interval keeps the
+        // stream warm for the exit while dead reckoning carries the path.
         return EngineProfile(
           state: state,
           motionAnalysisEnabled: true,
           deadReckoningEnabled: true,
+          locationPaused: false,
           locationInterval: tunnelLocationInterval,
           distanceFilterMeters: tunnelDistanceFilterMeters,
+          accuracy: tunnelAccuracy,
           sensorRateHz: 50,
         );
     }

@@ -11,6 +11,7 @@ import 'location_service.dart';
 import 'motion_profiler.dart';
 import 'motion_signal.dart';
 import 'polyline_smoother.dart';
+import 'sampling_target.dart';
 
 export 'daily_track_engine.dart' show TrackStartFailure;
 
@@ -22,7 +23,7 @@ export 'daily_track_engine.dart' show TrackStartFailure;
 /// All measurement logic is shared with the GPS tracker through
 /// [DailyTrackEngine]; this façade keeps AutoMotion's own storage box and
 /// settings switch so the two features retain independent lifecycles.
-class AutoMotionService {
+class AutoMotionService implements SamplingTarget {
   AutoMotionService({
     required this.dailyStore,
     MotionSignal? motion,
@@ -71,6 +72,12 @@ class AutoMotionService {
   LocationAccuracy? _sampleAccuracy;
   int? _sampleDistanceFilter;
   bool _transportSpeed = false;
+
+  /// Whether the adaptive profile has closed the platform stream (see
+  /// [applySampling]'s `paused`). The session stays live — tallies, the last
+  /// fix and the outage window all survive — but nothing is subscribed, so the
+  /// receiver can enter hardware sleep.
+  bool _streamPaused = false;
 
   /// While tracking, the day's metrics are flushed on this cadence
   /// (see [DailyTrackEngine.persistInterval]).
@@ -192,9 +199,17 @@ class AutoMotionService {
     await _engine.reopen(_openFixes(locations));
   }
 
-  /// Applies an adaptive-sampling profile (see `AdaptiveSamplingNotifier`):
-  /// the minimum request interval, the accuracy tier and the movement filter
-  /// for how the device is moving and how much battery is left.
+  /// Applies an adaptive-sampling profile (see `AdaptiveSamplingNotifier` and
+  /// `AdaptiveEngineOrchestrator.profiles`): the minimum request interval, the
+  /// accuracy tier, the movement filter and whether the stream should be closed
+  /// outright, for how the device is moving and how much battery is left.
+  ///
+  /// [paused] is the orchestrator's `idleStandby` verdict: the session stays
+  /// live (distance, max speed, the last accepted fix and the outage window all
+  /// survive) but the platform subscription is **cancelled**, so the fused
+  /// provider lets the GNSS receiver sleep. Merely asking less often would not
+  /// achieve that — an open stream at any cadence is what the OS reports to the
+  /// user as a background-location warning.
   ///
   /// A [LocationAccuracy.lowest] profile is the *stationary* tier — effectively
   /// paused sampling that the accelerometer classifier can wake again — and
@@ -204,28 +219,38 @@ class AutoMotionService {
   /// accuracy even while backgrounded, because at 30 m/s a balanced-power
   /// fix would bend the recorded path into chords. Idempotent: an unchanged
   /// profile never re-opens the stream.
+  @override
   Future<void> applySampling({
     Duration? interval,
     LocationAccuracy? accuracy,
     int? distanceFilter,
     bool transportSpeed = false,
+    bool paused = false,
   }) async {
     if (interval == _sampleInterval &&
         accuracy == _sampleAccuracy &&
         distanceFilter == _sampleDistanceFilter &&
-        transportSpeed == _transportSpeed) {
+        transportSpeed == _transportSpeed &&
+        paused == _streamPaused) {
       return;
     }
     _sampleInterval = interval;
     _sampleAccuracy = accuracy;
     _sampleDistanceFilter = distanceFilter;
     _transportSpeed = transportSpeed;
+    _streamPaused = paused;
     final LocationService? locations = _activeLocations;
-    if (!_engine.isTracking || locations == null) return;
+    if (locations == null) return;
     // Same durability rule as [setPowerMode]: measured distance reaches disk
     // before the request cadence changes under the OS.
     await _engine.flush();
-    await _engine.reopen(_openFixes(locations));
+    // A paused profile detaches the stream entirely (see [_streamPaused]); a
+    // detached engine is still "tracking", so resuming re-opens it without
+    // restarting the session.
+    if (!_engine.isTracking) return;
+    await _engine.reopen(
+      paused ? const Stream<Position>.empty() : _openFixes(locations),
+    );
   }
 
   /// Opens the platform position stream for the current power mode and
