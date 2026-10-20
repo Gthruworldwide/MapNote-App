@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -25,6 +26,14 @@ import '../features/motion_analytics/data/motion_event_mapper.dart';
 import '../features/motion_analytics/domain/entities/motion_event.dart';
 import '../core/config/app_config.dart';
 import '../core/config/preferred_nav_app.dart';
+import '../core/memory/adaptive_profile_key_store.dart';
+import '../core/memory/adaptive_profile_repository.dart';
+import '../core/memory/self_diagnostic_monitor.dart';
+import '../core/motion/activity_state_manager.dart';
+import '../core/motion/motion_gate.dart';
+import '../core/orchestrator/adaptive_engine_orchestrator.dart';
+import '../core/security/session_guard.dart';
+import '../core/security/secure_session_token_store.dart';
 import '../services/adaptive_sampling_manager.dart';
 import '../services/agent_service.dart';
 import '../services/analytics_service.dart';
@@ -144,21 +153,23 @@ final Provider<TransportClassifier> transportClassifierProvider =
 /// builder that loads a trained `.tflite` asset and the whole pipeline follows,
 /// with no other change (see `MotionModel` for the tensor contract).
 ///
-/// Its lifecycle mirrors [motionBehaviorAnalyzerProvider]: started and stopped
-/// with AutoMotion tracking. Its stream is bridged into the analyzer (see
-/// [motionBehaviorAnalyzerProvider]), so classified maneuvers reach the same
-/// driving-event log as the speed-timeline ones.
+/// Its accelerometer feed is [motionGateProvider]'s **gated** stream, not the
+/// raw hub: while the activity gate says "still or walking", no sample reaches
+/// this classifier, so its 128-sample ring buffer never fills and the inference
+/// isolate is never asked to run. Its lifecycle otherwise mirrors
+/// [motionBehaviorAnalyzerProvider]: started and stopped with AutoMotion
+/// tracking, and its stream is bridged into the analyzer.
 final Provider<MLClassifierIsolate> mlClassifierIsolateProvider =
     Provider<MLClassifierIsolate>((Ref ref) {
       final MLClassifierIsolate classifier = MLClassifierIsolate.standard(
-        accelerometer: ref.watch(motionSensorHubProvider).accelerometer,
+        accelerometer: ref.watch(motionGateProvider).gated,
       );
       ref.onDispose(classifier.dispose);
       return classifier;
     });
 
 /// Driving-behavior profiler (harsh acceleration / hard braking) over the
-/// same shared accelerometer feed, mirroring the classifier's construction.
+/// same gated accelerometer feed, mirroring the classifier's construction.
 ///
 /// GPS speed reaches the analyzer through the AutoMotion tracker's engine
 /// (the engine fuses each fix's speed next to the motion signal), and the
@@ -175,7 +186,7 @@ final Provider<MLClassifierIsolate> mlClassifierIsolateProvider =
 final Provider<MotionBehaviorAnalyzer> motionBehaviorAnalyzerProvider =
     Provider<MotionBehaviorAnalyzer>((Ref ref) {
       final MotionBehaviorAnalyzer analyzer = MotionBehaviorAnalyzer(
-        accelerometer: ref.watch(motionSensorHubProvider).accelerometer,
+        accelerometer: ref.watch(motionGateProvider).gated,
       );
       final StreamSubscription<MotionEvent> classified = ref
           .watch(mlClassifierIsolateProvider)
@@ -392,6 +403,117 @@ final Provider<AppObserverService> appObserverServiceProvider =
     Provider<AppObserverService>((Ref ref) {
       return AppObserverService(ref.watch(appHealthLoggerProvider));
     });
+
+// ---------------------------------------------------------------------------
+// Adaptive engine: orchestrator, activity gate and adaptive memory
+// ---------------------------------------------------------------------------
+
+/// The central FSM coordinating every adaptive subsystem. Pure and cheap to
+/// build; it holds no resources, so nothing needs disposing.
+final Provider<AdaptiveEngineOrchestrator> adaptiveEngineOrchestratorProvider =
+    Provider<AdaptiveEngineOrchestrator>(
+  (Ref ref) => AdaptiveEngineOrchestrator(),
+);
+
+/// The activity gate: still/walking vs a confirmed road vehicle.
+///
+/// Owns the only cheap always-on window judgement in the app, and is the single
+/// authority on whether the expensive motion pipeline may run at all.
+final Provider<ActivityStateManager> activityStateManagerProvider =
+    Provider<ActivityStateManager>((Ref ref) {
+      final ActivityStateManager manager = ActivityStateManager();
+      ref.onDispose(manager.dispose);
+      return manager;
+    });
+
+/// The gate in front of the analysis pipeline.
+///
+/// Its [MotionGate.gated] stream — not the raw hub — is what
+/// [mlClassifierIsolateProvider] and [motionBehaviorAnalyzerProvider] consume,
+/// so while the user is indoors nothing reaches them: no ring buffer, no
+/// gravity EMA, no isolate request. That is the battery/thermal saving the
+/// whole gate exists for.
+final Provider<MotionGate> motionGateProvider = Provider<MotionGate>((Ref ref) {
+  final MotionGate gate = MotionGate(
+    manager: ref.watch(activityStateManagerProvider),
+    hub: ref.watch(motionSensorHubProvider),
+  );
+  ref.onDispose(gate.dispose);
+  return gate;
+});
+
+/// AES-256 key for the adaptive-profile box, kept in the platform keystore.
+final Provider<AdaptiveProfileKeyStore> adaptiveProfileKeyStoreProvider =
+    Provider<AdaptiveProfileKeyStore>(
+  (Ref ref) => const AdaptiveProfileKeyStore(
+    read: _readSecret,
+    write: _writeSecret,
+  ),
+);
+
+/// The learned per-device motion profile (vibration baselines, thresholds).
+///
+/// Holds only numbers — no user content — so it needs no biometric gate, and
+/// every failure degrades to the documented defaults rather than disabling
+/// classification.
+final Provider<AdaptiveProfileRepository> adaptiveProfileRepositoryProvider =
+    Provider<AdaptiveProfileRepository>((Ref ref) {
+      final AdaptiveProfileRepository repository = AdaptiveProfileRepository(
+        keyStore: ref.watch(adaptiveProfileKeyStoreProvider),
+      );
+      ref.onDispose(repository.close);
+      return repository;
+    });
+
+/// Locally-observed app health: frame pacing, memory, background time.
+///
+/// Entirely offline — the snapshot only ever feeds the local health log.
+final Provider<SelfDiagnosticMonitor> selfDiagnosticMonitorProvider =
+    Provider<SelfDiagnosticMonitor>((Ref ref) {
+      return SelfDiagnosticMonitor(readMemoryBytes: _readProcessMemory);
+    });
+
+/// Owns the authenticated session that keeps the encrypted vault unlocked.
+///
+/// The single place that decides when the vault must re-prompt: backgrounding
+/// past the grace period, inactivity past the timeout, or an explicit end. Its
+/// stream is what the app root listens to in order to actually lock the vault.
+final Provider<SessionGuard> sessionGuardProvider = Provider<SessionGuard>(
+  (Ref ref) {
+    final SessionGuard guard = SessionGuard(
+      tokenStore: ref.watch(sessionTokenStoreProvider),
+    );
+    ref.onDispose(guard.dispose);
+    return guard;
+  },
+);
+
+/// Platform-keystore-backed store for the opaque session token.
+final Provider<SessionTokenStore> sessionTokenStoreProvider =
+    Provider<SessionTokenStore>(
+  (Ref ref) => const SecureSessionTokenStore(),
+);
+
+/// Reads a secret from the platform keystore (adapter for the profile key).
+Future<String?> _readSecret(String key) =>
+    const SecureSessionTokenStore().read(key);
+
+/// Writes a secret to the platform keystore (adapter for the profile key).
+Future<void> _writeSecret(String key, String value) =>
+    const SecureSessionTokenStore().write(key, value);
+
+/// Reads the process resident set size in bytes.
+///
+/// Returns 0 when `dart:io` has no answer (a platform without `/proc`, or a
+/// test environment): the diagnostic monitor treats 0 as "unknown", and a
+/// health metric must never be the reason something throws.
+int _readProcessMemory() {
+  try {
+    return ProcessInfo.currentRss;
+  } catch (_) {
+    return 0;
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Analytics
@@ -1460,6 +1582,25 @@ class AutoMotionState {
   }
 }
 
+/// Maps a transport verdict onto the orchestrator's activity vocabulary.
+///
+/// A `vehicle` verdict is the only one that means "road vehicle"; a train is
+/// deliberately **not** mapped to driving, because the maneuver classifier's
+/// tires-and-road dynamics do not apply and the orchestrator's analytics would
+/// be classifying rail joints as potholes. `stationary` and `walking` both map
+/// to the gate's still/walking state, which is the honest description: neither
+/// is worth paying for vehicle analytics.
+ActivityState _activityFrom(TransportMode mode) {
+  switch (mode) {
+    case TransportMode.vehicle:
+      return ActivityState.vehicleDriving;
+    case TransportMode.stationary:
+    case TransportMode.walking:
+    case TransportMode.train:
+      return ActivityState.stationaryOrWalking;
+  }
+}
+
 /// Bridges the [AutoMotionService] stream into a widget-friendly state.
 ///
 /// [build] watches the enabled toggle and reconciles the tracker against it
@@ -1495,8 +1636,44 @@ class AutoMotionController extends Notifier<AutoMotionState> {
         classifier.modes.listen((TransportMode mode) {
       if (!ref.mounted) return;
       analyzer.observeTransport(mode);
+      // The same verdict drives the orchestrator's FSM: a vehicle trip is what
+      // lifts the app out of low-power tracking into full analytics. The gate
+      // itself judges from the raw accelerometer plus GPS speed, so this only
+      // steers the *profile*, never the gate's own evidence.
+      ref.read(adaptiveEngineOrchestratorProvider).observe(
+            EngineEvidence(
+              trackingActive: tracker.isTracking,
+              activityState: _activityFrom(mode),
+              speedMps: tracker.currentSpeedKmh / 3.6,
+              speedFresh: true,
+            ),
+          );
     });
     ref.onDispose(modes.cancel);
+    // Orchestrator-driven cadence: when the central FSM reaches a decisive
+    // state (idle, driving, tunnel) its profile *overrides* the transport-driven
+    // adaptive profile, because it knows more — it has the activity gate's
+    // verdict and the fix age, not just a transport mode. Idle stretches the
+    // request out, driving tightens it to capture turns and braking, and a
+    // tunnel keeps asking at a middle cadence without hammering the radio.
+    final StreamSubscription<EngineProfile> engineProfiles = ref
+        .read(adaptiveEngineOrchestratorProvider)
+        .profiles
+        .listen((EngineProfile profile) {
+      if (!ref.mounted) return;
+      final AutoMotionService watched = ref.read(autoMotionServiceProvider);
+      if (!watched.isTracking) return;
+      unawaited(
+        queue.add(
+          () => watched.applySampling(
+            interval: profile.locationInterval,
+            distanceFilter: profile.distanceFilterMeters,
+            transportSpeed: true,
+          ),
+        ),
+      );
+    });
+    ref.onDispose(engineProfiles.cancel);
     // Profile changes (motion or battery) push the new cadence into the live
     // tracker; while nothing tracks, the next start applies the profile.
     ref.listen<SamplingProfile>(
@@ -1581,6 +1758,12 @@ class AutoMotionController extends Notifier<AutoMotionState> {
     // Instantiate the events notifier before the first fix can arrive, so
     // maneuvers are captured even while the dashboard is closed.
     ref.read(drivingEventsProvider.notifier);
+    // Gate first: its gated stream is what both the analyzer and the classifier
+    // subscribe to, so it must be open before they start listening or their
+    // first samples would arrive through the raw hub and defeat the gate.
+    final MotionGate gate = ref.read(motionGateProvider);
+    gate.reset();
+    await gate.start();
     await analyzer.start();
     await ref.read(mlClassifierIsolateProvider).start();
     await _syncAdaptiveStack();
@@ -1603,6 +1786,9 @@ class AutoMotionController extends Notifier<AutoMotionState> {
         ref.read(motionBehaviorAnalyzerProvider);
     await analyzer.stop();
     await ref.read(mlClassifierIsolateProvider).stop();
+    // Shut the gate too, so nothing keeps judging windows once no trip records.
+    await ref.read(motionGateProvider).stop();
+    ref.read(adaptiveEngineOrchestratorProvider).suspend();
     await _syncAdaptiveStack();
   }
 

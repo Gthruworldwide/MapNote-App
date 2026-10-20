@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/config/app_config.dart';
+import '../../../../core/security/session_guard.dart';
 import '../../../../data/models/place.dart';
 import '../../../../providers/app_providers.dart';
 import '../../data/datasources/flutter_secure_secret_store.dart';
@@ -90,7 +93,13 @@ class VaultPlacesNotifier extends AsyncNotifier<List<Place>?> {
     final VaultUnlockResult result = await ref
         .read(unlockVaultProvider)
         .call(reason: reason);
-    if (result != VaultUnlockResult.denied) await _refresh();
+    if (result != VaultUnlockResult.denied) {
+      // A successful unlock opens the session window; the session guard is what
+      // later closes it (inactivity, backgrounding, or an explicit lock), so
+      // every unlock path gets an expiry without any screen having to set one.
+      await ref.read(sessionGuardProvider).beginSession();
+      await _refresh();
+    }
     return result;
   }
 
@@ -99,9 +108,17 @@ class VaultPlacesNotifier extends AsyncNotifier<List<Place>?> {
   /// The state moves to locked *before* the (async) box close so the UI can
   /// never show stale content, and so a call from a widget's `dispose` never
   /// writes state after the container is gone.
+  ///
+  /// The session ends **before** the first `await`, deliberately: this method
+  /// is called from a widget's `dispose`, and reading `ref` after an async gap
+  /// would throw `UnmountedRefException` once the provider is disposed. Ending
+  /// the session is also the semantically correct order — the user asked to
+  /// lock, so the session is over the moment they do.
   Future<void> lock() async {
     final VaultRepository vault = ref.read(vaultRepositoryProvider);
+    final SessionGuard guard = ref.read(sessionGuardProvider);
     state = const AsyncValue<List<Place>?>.data(null);
+    unawaited(guard.endSession(SessionEndReason.userInitiated));
     await vault.lock();
   }
 

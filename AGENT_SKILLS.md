@@ -340,6 +340,67 @@ nothing about it leaves the device.
 
 ---
 
+## 6. Adaptive engine: gating, session security & adaptive memory
+
+**Constraint.** `lib/src/core/orchestrator/adaptive_engine_orchestrator.dart`,
+`lib/src/core/motion/{activity_state_manager,motion_gate}.dart`,
+`lib/src/core/security/session_guard.dart` and `lib/src/core/memory/` form the
+central, offline "adaptive engine": one FSM decides what the expensive
+subsystems should do, an activity gate keeps them off while the user is
+stationary or walking, a session guard owns how long the encrypted vault may
+stay unlocked, and an encrypted profile box remembers anonymous per-device
+numbers. All of it is pure Dart over injected clocks and stores — no telemetry,
+no network, no PII.
+
+**Eval.**
+
+- **One authority per decision.** The orchestrator is the single place that maps
+  evidence (`ActivityState`, speed, fix age) to an `EngineProfile`. Subsystems
+  read the profile; they do not each re-derive "am I needed". `EngineProfile` is
+  declarative (interval, distance filter, flags), so the FSM is testable with no
+  sensor, GPS, isolate or Hive.
+- **The gate runs *in front of* the pipeline, not inside it.** While the state
+  is not a confirmed vehicle, `MotionGate.gated` forwards **zero** samples, so
+  `MotionBehaviorAnalyzer` and `MLClassifierIsolate` never see a sample — no ring
+  buffer, no gravity EMA, no isolate request. A boolean check inside the analyzer
+  is *not* sufficient (it would still pay per-sample costs) and is a review
+  failure. `test/motion_gate_test.dart` asserts `forwardedSamples == 0` for a
+  walking feed.
+- **Entering the vehicle state is strict; leaving it is slow.** Vehicle requires
+  speed above 15 km/h **and** held (5 s continuous, gap-tolerant) vehicle-range
+  vibration **and** step-cadence rejection (0.5–3 Hz band power share). Leaving
+  requires 2 minutes of consistent pedestrian/still evidence, so a red light
+  never stops analysis. Speed is compared in **m/s**, never through a km/h
+  round-trip (`15 / 3.6 * 3.6 != 15.0` in binary floating point).
+- **Session security is one owner.** `SessionGuard` is the only decider of when
+  the vault must re-prompt (background grace, inactivity, surface-idle short
+  clock, explicit end). Its token is **opaque and random** — never an account id,
+  email or place — and token-store I/O is best-effort and **not awaited** by
+  `beginSession`/`endSession`, so a keystore that never answers can never hang an
+  unlock or a lock. The vault's `lock()` ends the session *before* its first
+  `await`, because it is called from widget `dispose` and reading `ref` after an
+  async gap throws `UnmountedRefException` (regression-covered).
+- **Adaptive memory is fail-safe.** `AdaptiveProfile` holds **only numeric
+  scalars** (baselines, thresholds, counters) — nothing that could identify a
+  user or a place. It lives in its own AES-256 box (`adaptive_profile`) with its
+  **own key**, separate from the vault (which is biometric-gated) and from
+  `places`/`settings` (no schema change). Every failure — no keystore, corrupt
+  box, malformed record — degrades to `AdaptiveProfile.defaults`; a tuning file
+  must never disable classification. Adapted thresholds never fall below the
+  documented physical minima.
+- **Diagnostics stay local.** `SelfDiagnosticMonitor` tracks frame pacing, RSS
+  and background time through an injected reader; a throwing reader is swallowed.
+  Its snapshot carries numbers and coarse enum names only and is written solely
+  to the local health log — no telemetry, no analytics upload, no network.
+- **Tests.** `test/adaptive_engine_orchestrator_test.dart`,
+  `test/activity_state_manager_test.dart`, `test/motion_gate_test.dart`,
+  `test/session_guard_test.dart` and `test/adaptive_memory_test.dart` cover the
+  state transitions, boundary values, inability to open on ambiguous evidence,
+  step rejection, auto-standby timing, session expiry paths and profile
+  degradation.
+
+---
+
 ## Reporting
 
 When an agent completes a change, report:
@@ -351,6 +412,7 @@ Verification gate: analyze [pass/fail], tests [pass/fail]
 3 Location parsing accuracy ........ pass/fail
 4 UI/UX (dark mode, RTL) ........... pass/fail
 5 On-device motion analytics ....... pass/fail
+6 Adaptive engine (gate/security) ... pass/fail
 ```
 
 Each failure must cite the file/line and the standard violated, and be fixed

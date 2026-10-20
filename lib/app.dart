@@ -1,16 +1,20 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'l10n/generated/app_localizations.dart';
 import 'src/core/navigation/app_navigator.dart';
+import 'src/core/memory/self_diagnostic_monitor.dart';
+import 'src/core/security/session_guard.dart';
 import 'src/core/theme/app_theme.dart';
 import 'src/core/utils/haptics.dart';
 import 'src/data/models/place.dart';
 import 'src/features/add_place/add_place_screen.dart';
 import 'src/features/home/home_screen.dart';
+import 'src/features/saved_places/presentation/providers/saved_places_providers.dart';
 import 'src/features/splash/brand_splash.dart';
 import 'src/providers/app_providers.dart';
 import 'src/services/app_health_logger.dart';
@@ -41,6 +45,17 @@ class _MapNoteAppState extends ConsumerState<MapNoteApp>
   StreamSubscription<String>? _shareSubscription;
   StreamSubscription<String>? _shortcutSubscription;
 
+  /// Re-evaluates the session (inactivity, background grace, surface-idle) at a
+  /// low frequency. A minute is far cheaper than a per-frame check and still
+  /// bounds how long an unattended device can stay unlocked.
+  Timer? _sessionTimer;
+
+  /// Ends the vault session's stream subscription on dispose.
+  StreamSubscription<SessionEndReason>? _sessionEndSubscription;
+
+  /// Drains frame/memory diagnostics into the local health log periodically.
+  Timer? _diagnosticTimer;
+
   /// The last Plus Code the clipboard import was offered for, so a code the
   /// user ignored is not offered again on every resume.
   String? _lastOfferedPlusCode;
@@ -53,23 +68,93 @@ class _MapNoteAppState extends ConsumerState<MapNoteApp>
     _listenForSharedLocations();
     _listenForShortcuts();
     _listenForThemeIconChanges();
+    _startSessionWatch();
+    _startDiagnostics();
     // A Plus Code can already be on the clipboard at cold start.
     WidgetsBinding.instance.addPostFrameCallback((_) => _checkClipboard());
   }
 
   @override
   void dispose() {
+    _sessionTimer?.cancel();
+    _diagnosticTimer?.cancel();
+    _sessionEndSubscription?.cancel();
     _shareSubscription?.cancel();
     _shortcutSubscription?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
+  /// Reports frame timings to the diagnostic monitor and drives the periodic
+  /// drain into the local health log. Subscribed once, at startup, because the
+  /// engine's timings callback is process-wide rather than per-widget.
+  void _startDiagnostics() {
+    final SelfDiagnosticMonitor monitor = ref.read(selfDiagnosticMonitorProvider);
+    SchedulerBinding.instance.addTimingsCallback((List<FrameTiming> timings) {
+      for (final FrameTiming timing in timings) {
+        monitor.recordFrame(
+          buildMillis: timing.buildDuration.inMicroseconds / 1000,
+          rasterMillis: timing.rasterDuration.inMicroseconds / 1000,
+        );
+      }
+    });
+    _diagnosticTimer = Timer.periodic(const Duration(minutes: 5), (_) {
+      if (!mounted) return;
+      monitor.sampleMemory();
+      final DiagnosticSnapshot snapshot = monitor.drain();
+      // Local only: the health log is a bounded Hive ring buffer. Nothing here
+      // is transmitted, and no field carries user content.
+      if (snapshot.frames == 0 && snapshot.sampleCount == 0) return;
+      ref.read(appHealthLoggerProvider).log(
+            HealthEventType.uiLatency,
+            message: 'adaptive-diagnostics',
+            data: snapshot.toData(),
+          );
+    });
+  }
+
+  // --- Session & vault security ----------------------------------------------
+
+  /// Drives the [SessionGuard] on a timer and locks the vault when a session
+  /// ends. This is the *only* owner of the vault lock outside the explicit
+  /// user action, which is what keeps the two from racing.
+  void _startSessionWatch() {
+    _sessionEndSubscription = ref
+        .read(sessionGuardProvider)
+        .sessionEnds
+        .listen(_onSessionEnded);
+    _sessionTimer = Timer.periodic(const Duration(minutes: 1), (_) async {
+      if (!mounted) return;
+      final SessionGuard guard = ref.read(sessionGuardProvider);
+      // Report the surface-idle evidence the guard needs. The motion gate is
+      // already judging micro-movement; when a trip is not running we read the
+      // gate's own verdict rather than opening a second sensor stream.
+      guard.observeMovement(
+        moving: ref.read(motionGateProvider).isRunning,
+      );
+      await guard.tick();
+    });
+  }
+
+  Future<void> _onSessionEnded(SessionEndReason reason) async {
+    // Locking is idempotent and safe while already locked; the notifier moves
+    // its state to locked *before* the async close, so the UI cannot flash
+    // vaulted content.
+    await ref.read(vaultPlacesProvider.notifier).lock();
+    ref.read(appHealthLoggerProvider).log(
+          HealthEventType.serviceIssue,
+          message: 'session-ended',
+          data: <String, Object?>{'reason': reason.name},
+        );
+  }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     final AppHealthLogger health = ref.read(appHealthLoggerProvider);
+    final SessionGuard guard = ref.read(sessionGuardProvider);
     if (state == AppLifecycleState.resumed) {
       health.log(HealthEventType.appResume);
+      guard.onLifecycle(backgrounded: false);
       // Sync on resume is always silent: the user never sees a dialog, and a
       // signed-out device simply skips (SyncOutcome.skippedNotSignedIn).
       ref.read(syncControllerProvider.notifier).syncSilently();
@@ -89,6 +174,9 @@ class _MapNoteAppState extends ConsumerState<MapNoteApp>
       if (state == AppLifecycleState.paused) {
         health.log(HealthEventType.appPause);
       }
+      // Leaving the foreground starts the background grace clock: a long
+      // absence locks the encrypted vault, a quick app switch does not.
+      guard.onLifecycle(backgrounded: true);
       // Not visible any more: drop the trackers to balanced accuracy (battery)
       // and flush today's distance first, so an aggressive battery-optimisation
       // kill right after this point cannot drop a background position state.
@@ -96,6 +184,8 @@ class _MapNoteAppState extends ConsumerState<MapNoteApp>
       // transient `inactive` state (dialog, notification shade) is ignored on
       // purpose so a pull-down never churns the stream.
       unawaited(applyTrackingPowerMode(ref, backgrounded: true));
+      // A backgrounding is also not user interaction: nothing to note here, so
+      // the inactivity clock keeps running toward its own timeout.
     }
   }
 

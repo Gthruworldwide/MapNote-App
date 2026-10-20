@@ -64,6 +64,14 @@ class AppConfig {
   /// after the user passes the biometric gate.
   static const String securePlacesBoxName = 'secure_places';
 
+  /// AES-256 encrypted box holding the *adaptive profile*: anonymous numbers the
+  /// motion pipeline has learned about this device (vibration baselines and
+  /// adapted thresholds). Additive and separate from every other box, so it
+  /// changes no existing schema. Unlike the vault it needs no user prompt — it
+  /// holds no user content, only scalars — so it is opened by the analytics
+  /// pipeline itself and degrades to the defaults if it cannot be read.
+  static const String adaptiveProfileBoxName = 'adaptive_profile';
+
   /// How often the periodic background backup runs.
   static const Duration backgroundSyncFrequency = Duration(hours: 24);
 
