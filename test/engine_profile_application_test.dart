@@ -140,5 +140,55 @@ void main() {
       expect(target.calls.last['paused'], isFalse);
       expect(target.calls.last['transportSpeed'], isTrue);
     });
+
+    // Regression: the FSM only *emits* on a state change, so a tracker that
+    // starts while the machine is already idle never receives a transition and
+    // used to open a live GPS-grade stream that stayed open. The start path
+    // must therefore read the current `profile` rather than wait for an event.
+    test('the current profile pauses a stream that starts while already idle',
+        () async {
+      final _FakeSamplingTarget target = _FakeSamplingTarget();
+      final AdaptiveEngineOrchestrator orchestrator =
+          AdaptiveEngineOrchestrator();
+
+      // The machine sits in idleStandby: no transition will ever be emitted for
+      // this state, so anything driven by the stream alone would see nothing.
+      expect(orchestrator.state, EngineState.idleStandby);
+      expect(orchestrator.transitionCount, 0);
+
+      await applyEngineProfile(target, orchestrator.profile);
+
+      expect(target.calls.single['paused'], isTrue);
+      expect(target.calls.single['transportSpeed'], isFalse);
+    });
+
+    // Regression: the transport classifier is evidence, not an authority. When
+    // it emitted, its profile used to be pushed straight into `applySampling`
+    // with no `paused` argument, silently re-opening an idle stream — the exact
+    // background GPS drain the FSM exists to prevent.
+    test('a transport verdict cannot un-pause an idle stream', () async {
+      final _FakeSamplingTarget target = _FakeSamplingTarget();
+      final AdaptiveEngineOrchestrator orchestrator =
+          AdaptiveEngineOrchestrator();
+
+      // Idle: the stream is closed.
+      await applyEngineProfile(
+        target,
+        orchestrator.observe(const EngineEvidence(trackingActive: false)),
+      );
+      expect(target.calls.last['paused'], isTrue);
+
+      // A transport verdict arrives (battery poll / classifier tick) and is fed
+      // to the FSM as evidence only.
+      final EngineProfile afterVerdict = orchestrator.observe(
+        const EngineEvidence(trackingActive: true),
+      );
+      await applyEngineProfile(target, afterVerdict);
+
+      // The FSM decides, and for an unconfirmed activity it does not ask for GPS
+      // grade; the only state allowed to is a confirmed drive.
+      expect(afterVerdict.state, isNot(EngineState.activeDriveAnalytics));
+      expect(target.calls.last['transportSpeed'], isFalse);
+    });
   });
 }

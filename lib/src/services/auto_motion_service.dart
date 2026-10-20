@@ -7,6 +7,7 @@ import 'daily_track_engine.dart';
 import 'dead_reckoning_service.dart';
 import 'fused_location_service.dart';
 import 'gap_recovery_service.dart';
+import 'location_hub.dart';
 import 'location_service.dart';
 import 'motion_profiler.dart';
 import 'motion_signal.dart';
@@ -32,6 +33,7 @@ class AutoMotionService implements SamplingTarget {
     PolylineSmoother? smoother,
     MotionBehaviorAnalyzer? behavior,
     this._fused,
+    this._hub,
     Duration flushEvery = persistInterval,
   }) : _engine = DailyTrackEngine(
           store: dailyStore,
@@ -51,6 +53,13 @@ class AutoMotionService implements SamplingTarget {
   /// Fused high ⇄ network fallback for the live platform stream; `null` in
   /// unit tests that inject streams, where the plain settings apply.
   final FusedLocationService? _fused;
+
+  /// The app-wide single location client (see [LocationHub]); `null` in unit
+  /// tests that drive injected streams directly.
+  final LocationHub? _hub;
+
+  /// Whether this tracker currently holds a hub registration.
+  bool _hubHeld = false;
 
   /// The [LocationService] the live platform stream was opened with — `null`
   /// when a test injected the stream, which [setPowerMode] then leaves alone.
@@ -166,6 +175,7 @@ class AutoMotionService implements SamplingTarget {
   /// Tallies stay in memory afterwards so the dashboard card does not drop to
   /// zero; the next [start] re-seeds them from the store.
   Future<void> stop() async {
+    await _releaseHub();
     await _engine.detach();
     _activeStatus = null;
   }
@@ -246,11 +256,15 @@ class AutoMotionService implements SamplingTarget {
     await _engine.flush();
     // A paused profile detaches the stream entirely (see [_streamPaused]); a
     // detached engine is still "tracking", so resuming re-opens it without
-    // restarting the session.
+    // restarting the session. With a hub wired in this *releases the OS
+    // handle*, taking the app's client count to zero while idle.
     if (!_engine.isTracking) return;
-    await _engine.reopen(
-      paused ? const Stream<Position>.empty() : _openFixes(locations),
-    );
+    if (paused) {
+      await _releaseHub();
+      await _engine.reopen(const Stream<Position>.empty());
+      return;
+    }
+    await _engine.reopen(_openFixes(locations));
   }
 
   /// Opens the platform position stream for the current power mode and
@@ -260,6 +274,14 @@ class AutoMotionService implements SamplingTarget {
   /// back when the OS reports GPS usable again — see [FusedLocationService].
   Stream<Position> _openFixes(LocationService locations) {
     void onError(Object _, StackTrace _) => noteOutage();
+    final LocationHub? hub = _hub;
+    if (hub != null) {
+      // One shared OS client for the whole app. The hub serves the strongest
+      // tier any consumer wants and re-opens its single handle when that
+      // changes, so this tracker never registers a second one.
+      _hubHeld = true;
+      return hub.acquire(this, accuracy: _effectiveAccuracy);
+    }
     final FusedLocationService? fused = _fused;
     if (fused == null) {
       return locations.trackingPositionStream(
@@ -277,6 +299,17 @@ class AutoMotionService implements SamplingTarget {
       onError: onError,
       serviceStatus: _activeStatus,
     );
+  }
+
+  /// Drops this tracker's [LocationHub] registration if it holds one.
+  ///
+  /// Without it a paused or stopped tracker would keep the app registered on
+  /// `FusedLocationProvider` even though nothing listens to the fixes.
+  Future<void> _releaseHub() async {
+    final LocationHub? hub = _hub;
+    if (hub == null || !_hubHeld) return;
+    _hubHeld = false;
+    await hub.release(this);
   }
 
   /// Stream settings for the current power mode (see [setPowerMode]) and

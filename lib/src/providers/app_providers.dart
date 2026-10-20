@@ -55,6 +55,7 @@ import '../services/gps_tracker_service.dart';
 import '../services/home_shortcut_service.dart';
 import '../services/key_rotation_service.dart';
 import '../services/local_insight_engine.dart';
+import '../services/location_hub.dart';
 import '../services/location_service.dart';
 import '../services/milestone_name_resolver.dart';
 import '../services/motion_profiler.dart';
@@ -114,6 +115,24 @@ final Provider<AutoMotionDataSource> autoMotionDataSourceProvider =
 
 final Provider<LocationService> locationServiceProvider =
     Provider<LocationService>((Ref ref) => const LocationService());
+
+/// The single owner of MapNote's live OS location subscription.
+///
+/// Everything that wants position fixes — the two daily trackers and the Qibla
+/// compass — acquires this hub instead of calling `getPositionStream` itself,
+/// so the app registers **one** `FusedLocationProvider` client rather than one
+/// per consumer. It is reference-counted: the moment the last consumer releases
+/// (a tracked stop, or an idle pause) the handle is cancelled outright and the
+/// receiver can sleep. See [LocationHub] and `AGENT_SKILLS.md` §6.
+final Provider<LocationHub> locationHubProvider = Provider<LocationHub>(
+  (Ref ref) {
+    final LocationHub hub = LocationHub(
+      locations: ref.watch(locationServiceProvider),
+    );
+    ref.onDispose(hub.dispose);
+    return hub;
+  },
+);
 
 /// The single subscriber to the native motion channel: it fans sensor samples
 /// out to the trackers' movement signal, the transport-mode classifier and
@@ -233,6 +252,7 @@ final Provider<GpsTrackerService> gpsTrackerProvider =
         gapRecovery: ref.watch(gapRecoveryServiceProvider),
         deadReckoning: ref.watch(deadReckoningServiceProvider),
         fused: ref.watch(fusedLocationServiceProvider),
+        hub: ref.watch(locationHubProvider),
       );
     });
 
@@ -246,6 +266,7 @@ final Provider<AutoMotionService> autoMotionServiceProvider =
         deadReckoning: ref.watch(deadReckoningServiceProvider),
         behavior: ref.watch(motionBehaviorAnalyzerProvider),
         fused: ref.watch(fusedLocationServiceProvider),
+        hub: ref.watch(locationHubProvider),
       );
     });
 
@@ -1466,21 +1487,30 @@ class GpsTrackingController extends Notifier<GpsTrackingState> {
       unawaited(queue.add(() => applyEngineProfile(watched, profile)));
     });
     ref.onDispose(engineProfiles.cancel);
-    // Profile changes (motion or battery) push the new cadence into the live
-    // tracker; while nothing tracks, the next start applies the profile.
+    // The transport classifier's verdicts are *evidence* for the FSM, not a
+    // separate authority over the stream: feeding them to the orchestrator lets
+    // it decide, and its profile is what reaches the tracker. Routing them
+    // straight into `applySampling` (as this used to) would silently un-pause
+    // an idle stream every time the classifier emitted, which is exactly the
+    // background GPS drain the FSM exists to prevent.
     ref.listen<SamplingProfile>(
       adaptiveSamplingProvider,
       (SamplingProfile? previous, SamplingProfile next) {
         if (!ref.mounted || previous == next) return;
         final GpsTrackerService watched = ref.read(gpsTrackerProvider);
         if (!watched.isTracking) return;
+        ref.read(adaptiveEngineOrchestratorProvider).observe(
+              EngineEvidence(
+                trackingActive: true,
+                speedMps: watched.currentSpeedKmh / 3.6,
+                speedFresh: true,
+              ),
+            );
         unawaited(
           queue.add(
-            () => watched.applySampling(
-              interval: next.interval,
-              accuracy: next.accuracy,
-              distanceFilter: next.distanceFilter,
-              transportSpeed: next.transportSpeeds,
+            () => applyEngineProfile(
+              watched,
+              ref.read(adaptiveEngineOrchestratorProvider).profile,
             ),
           ),
         );
@@ -1517,32 +1547,48 @@ class GpsTrackingController extends Notifier<GpsTrackingState> {
     if (!ref.mounted) return;
     state = _snapshot(tracker, enabled: true, active: started)
         .copyWith(unavailable: !started, failure: tracker.failure);
-    if (started) await _startAdaptiveSampling(tracker);
+    if (started) {
+      // Tell the FSM a trip is live *before* the stream is opened, so the
+      // orchestrator's first profile is the one that shapes it. Without this the
+      // FSM still believes nothing is tracking and answers `idleStandby` for a
+      // trip that is actually running.
+      ref.read(adaptiveEngineOrchestratorProvider).observe(
+            EngineEvidence(
+              trackingActive: true,
+              speedMps: tracker.currentSpeedKmh / 3.6,
+              speedFresh: true,
+            ),
+          );
+      await _startAdaptiveSampling(tracker);
+    }
     await _syncForegroundTracking();
   }
 
   Future<void> _stopNow(GpsTrackerService tracker) async {
     await tracker.stop();
     if (!ref.mounted) return;
+    // The trip is over: the FSM must not keep a driving profile (or a live
+    // location stream) alive for a session that no longer exists.
+    ref.read(adaptiveEngineOrchestratorProvider).suspend();
     state = _snapshot(tracker, enabled: false);
     await _syncAdaptiveStack();
     await _syncForegroundTracking();
   }
 
   /// Starts the shared sensor-driven sampling stack alongside the tracker and
-  /// applies the current profile, so the stream opens at the right cadence
-  /// from the first fix instead of always at the fixed 5 s baseline: a
-  /// stationary device drops to the 60 s / lowest / 50 m passive tier, a
-  /// vehicle trip to 1 s at GPS-grade accuracy.
+  /// applies the orchestrator's current profile, so the stream opens at the
+  /// right cadence from the very first fix.
+  ///
+  /// The orchestrator's profile — not the transport profile — is authoritative
+  /// here: a device that is idle when tracking begins must open *paused*, and
+  /// only the FSM knows that. The transport profile would open a live
+  /// GPS-grade stream and leave it open until the FSM happened to transition.
   Future<void> _startAdaptiveSampling(GpsTrackerService tracker) async {
     await _syncAdaptiveStack();
     if (!ref.mounted) return;
-    final SamplingProfile profile = ref.read(adaptiveSamplingProvider);
-    await tracker.applySampling(
-      interval: profile.interval,
-      accuracy: profile.accuracy,
-      distanceFilter: profile.distanceFilter,
-      transportSpeed: profile.transportSpeeds,
+    await applyEngineProfile(
+      tracker,
+      ref.read(adaptiveEngineOrchestratorProvider).profile,
     );
   }
 
@@ -1819,21 +1865,28 @@ class AutoMotionController extends Notifier<AutoMotionState> {
       unawaited(queue.add(() => applyEngineProfile(watched, profile)));
     });
     ref.onDispose(engineProfiles.cancel);
-    // Profile changes (motion or battery) push the new cadence into the live
-    // tracker; while nothing tracks, the next start applies the profile.
+    // The transport classifier's verdicts are *evidence* for the FSM, not a
+    // separate authority over the stream (see the GPS controller for the full
+    // rationale): applying them directly would un-pause an idle stream every
+    // time the classifier emitted.
     ref.listen<SamplingProfile>(
       adaptiveSamplingProvider,
       (SamplingProfile? previous, SamplingProfile next) {
         if (!ref.mounted || previous == next) return;
         final AutoMotionService watched = ref.read(autoMotionServiceProvider);
         if (!watched.isTracking) return;
+        ref.read(adaptiveEngineOrchestratorProvider).observe(
+              EngineEvidence(
+                trackingActive: true,
+                speedMps: watched.currentSpeedKmh / 3.6,
+                speedFresh: true,
+              ),
+            );
         unawaited(
           queue.add(
-            () => watched.applySampling(
-              interval: next.interval,
-              accuracy: next.accuracy,
-              distanceFilter: next.distanceFilter,
-              transportSpeed: next.transportSpeeds,
+            () => applyEngineProfile(
+              watched,
+              ref.read(adaptiveEngineOrchestratorProvider).profile,
             ),
           ),
         );
@@ -1897,6 +1950,15 @@ class AutoMotionController extends Notifier<AutoMotionState> {
       // would classify the parking-lot exit together with the last 2.56 s of
       // the previous trip.
       ref.read(mlClassifierIsolateProvider).clear();
+      // Tell the FSM a trip is live before the stream is shaped, so its first
+      // profile is the one applied (see the GPS controller's `_startNow`).
+      ref.read(adaptiveEngineOrchestratorProvider).observe(
+            EngineEvidence(
+              trackingActive: true,
+              speedMps: tracker.currentSpeedKmh / 3.6,
+              speedFresh: true,
+            ),
+          );
       unawaited(
         ref
             .read(analyticsServiceProvider)
@@ -1944,12 +2006,9 @@ class AutoMotionController extends Notifier<AutoMotionState> {
     await ref.read(mlClassifierIsolateProvider).start();
     await _syncAdaptiveStack();
     if (!ref.mounted) return;
-    final SamplingProfile profile = ref.read(adaptiveSamplingProvider);
-    await tracker.applySampling(
-      interval: profile.interval,
-      accuracy: profile.accuracy,
-      distanceFilter: profile.distanceFilter,
-      transportSpeed: profile.transportSpeeds,
+    await applyEngineProfile(
+      tracker,
+      ref.read(adaptiveEngineOrchestratorProvider).profile,
     );
   }
 

@@ -7,6 +7,7 @@ import 'daily_track_engine.dart';
 import 'dead_reckoning_service.dart';
 import 'fused_location_service.dart';
 import 'gap_recovery_service.dart';
+import 'location_hub.dart';
 import 'location_service.dart';
 import 'motion_signal.dart';
 import 'sampling_target.dart';
@@ -19,6 +20,15 @@ import 'sampling_target.dart';
 /// midnight rollover, periodic persistence) lives in the shared
 /// [DailyTrackEngine]. This façade owns only the GPS-specific storage box and
 /// surfaces the typed [TrackStartFailure] the Settings tile reports.
+///
+/// ## One OS location handle
+///
+/// When a [LocationHub] is wired in (the production path) the live feed comes
+/// from the hub, so this tracker and every other consumer — the Qibla compass
+/// included — share **one** `FusedLocationProvider` client instead of each
+/// registering their own. The tracker remains the refcount: it acquires the
+/// hub while it records and releases it when it stops or pauses, which is what
+/// drops the app's client count to zero during `IdleStandby`.
 class GpsTrackerService implements SamplingTarget {
   GpsTrackerService({
     required this.dailyStore,
@@ -26,6 +36,7 @@ class GpsTrackerService implements SamplingTarget {
     GapRecoveryService? gapRecovery,
     DistanceEstimator? deadReckoning,
     this._fused,
+    this._hub,
     Duration flushEvery = persistInterval,
   }) : _engine = DailyTrackEngine(
           store: dailyStore,
@@ -43,6 +54,14 @@ class GpsTrackerService implements SamplingTarget {
   /// Fused high ⇄ network fallback for the live platform stream; `null` in
   /// unit tests that inject streams, where the plain settings apply.
   final FusedLocationService? _fused;
+
+  /// The app-wide single location client (see [LocationHub]); `null` in unit
+  /// tests that drive injected streams directly.
+  final LocationHub? _hub;
+
+  /// Whether this tracker currently holds a hub registration, so a release is
+  /// never sent for an interest that was never acquired.
+  bool _hubHeld = false;
 
   /// The [LocationService] the live platform stream was opened with — `null`
   /// when a test injected the stream, which [setPowerMode] then leaves alone.
@@ -151,7 +170,11 @@ class GpsTrackerService implements SamplingTarget {
   ///
   /// Tallies are kept in memory afterwards so the Settings tile does not drop
   /// to zero; the next [start] re-seeds them from the store.
+  ///
+  /// The hub registration is released here, so a stopped tracker holds no OS
+  /// location client at all.
   Future<void> stop() async {
+    await _releaseHub();
     await _engine.detach();
     _activeStatus = null;
   }
@@ -234,11 +257,15 @@ class GpsTrackerService implements SamplingTarget {
     await _engine.flush();
     // A paused profile detaches the stream entirely (see [_streamPaused]); a
     // detached engine is still "tracking", so resuming re-opens it without
-    // restarting the session.
+    // restarting the session. With a hub wired in this *releases the OS
+    // handle*, which is what takes the app's client count to zero while idle.
     if (!_engine.isTracking) return;
-    await _engine.reopen(
-      paused ? const Stream<Position>.empty() : _openFixes(locations),
-    );
+    if (paused) {
+      await _releaseHub();
+      await _engine.reopen(const Stream<Position>.empty());
+      return;
+    }
+    await _engine.reopen(_openFixes(locations));
   }
 
   /// Opens the platform position stream for the current power mode. When a
@@ -248,6 +275,14 @@ class GpsTrackerService implements SamplingTarget {
   /// again — see [FusedLocationService].
   Stream<Position> _openFixes(LocationService locations) {
     void onError(Object _, StackTrace _) => noteOutage();
+    final LocationHub? hub = _hub;
+    if (hub != null) {
+      // One shared OS client for the whole app. The hub serves the strongest
+      // tier any consumer wants and re-opens its single handle when that
+      // changes, so this tracker never registers a second one.
+      _hubHeld = true;
+      return hub.acquire(this, accuracy: _effectiveAccuracy);
+    }
     final FusedLocationService? fused = _fused;
     if (fused == null) {
       return locations.trackingPositionStream(
@@ -265,6 +300,18 @@ class GpsTrackerService implements SamplingTarget {
       onError: onError,
       serviceStatus: _activeStatus,
     );
+  }
+
+  /// Drops this tracker's [LocationHub] registration if it holds one.
+  ///
+  /// This is what strands no client behind: without it, a paused or stopped
+  /// tracker would keep the app registered on `FusedLocationProvider` even
+  /// though nothing is listening to the fixes.
+  Future<void> _releaseHub() async {
+    final LocationHub? hub = _hub;
+    if (hub == null || !_hubHeld) return;
+    _hubHeld = false;
+    await hub.release(this);
   }
 
   /// Stream settings for the current power mode (see [setPowerMode]) and

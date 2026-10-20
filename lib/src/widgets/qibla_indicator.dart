@@ -6,6 +6,7 @@ import 'package:flutter_compass/flutter_compass.dart';
 import 'package:geolocator/geolocator.dart';
 
 import 'package:routenote/l10n/generated/app_localizations.dart';
+import 'package:routenote/src/services/location_hub.dart';
 import 'package:routenote/src/services/location_service.dart';
 import 'package:routenote/src/utils/magnetic_declination.dart';
 import 'package:routenote/src/utils/qibla_calculator.dart';
@@ -33,6 +34,7 @@ class QiblaIndicator extends StatefulWidget {
   const QiblaIndicator({
     super.key,
     this.locationService = const LocationService(),
+    this.locationHub,
     this.compassEvents,
     this.declination = MagneticDeclination.degreesAt,
   });
@@ -40,6 +42,15 @@ class QiblaIndicator extends StatefulWidget {
   /// Location source. Injectable so tests can drive fixes deterministically
   /// without touching the geolocator platform channels.
   final LocationService locationService;
+
+  /// The app-wide single location client (see [LocationHub]).
+  ///
+  /// When present the compass shares the one OS subscription with the daily
+  /// trackers instead of opening a second `FusedLocationProvider` client, and
+  /// releases its registration — not just its listener — when it is disposed.
+  /// `null` in standalone embeds and most widget tests, which then fall back to
+  /// a private stream.
+  final LocationHub? locationHub;
 
   /// Magnetometer source. Defaults to [FlutterCompass.events]; injectable so
   /// tests can emit headings without the platform event channel.
@@ -65,6 +76,11 @@ class _QiblaIndicatorState extends State<QiblaIndicator> {
 
   StreamSubscription<CompassEvent>? _compassSub;
   StreamSubscription<Position>? _positionSub;
+
+  /// Whether [_positionSub] is a [LocationHub] registration that must be
+  /// *released* on teardown, not merely cancelled — cancelling the listener
+  /// alone would leave the app registered as a location client.
+  bool _hubSubscriptionHeld = false;
 
   /// Bumped by every [_startLocation] call and by [dispose], so a slow platform
   /// call that resolves after the widget is gone (or after a newer attempt has
@@ -102,7 +118,22 @@ class _QiblaIndicatorState extends State<QiblaIndicator> {
     // then cancel whatever is live.
     _locationAttempt++;
     _compassSub?.cancel();
-    _positionSub?.cancel();
+    _compassSub = null;
+    // A hub registration must be *released*, not just cancelled: cancelling the
+    // listener would leave the app registered as a location client and keep the
+    // receiver awake. The release is un-awaited (dispose cannot be async) but
+    // runs synchronously up to its first await, which is where the bookkeeping
+    // happens.
+    final bool heldHub = _hubSubscriptionHeld;
+    _hubSubscriptionHeld = false;
+    final StreamSubscription<Position>? positionSub = _positionSub;
+    _positionSub = null;
+    if (positionSub != null) {
+      unawaited(positionSub.cancel());
+    }
+    if (heldHub) {
+      unawaited(widget.locationHub?.release(this));
+    }
     super.dispose();
   }
 
@@ -139,6 +170,12 @@ class _QiblaIndicatorState extends State<QiblaIndicator> {
   /// subscription created after disposal would leak for the app's lifetime.
   Future<void> _startLocation() async {
     final int attempt = ++_locationAttempt;
+    // Drop any previous registration completely — a hub release included —
+    // before starting a new one, so a retry never stacks two OS handles.
+    if (_hubSubscriptionHeld) {
+      _hubSubscriptionHeld = false;
+      unawaited(widget.locationHub?.release(this));
+    }
     await _positionSub?.cancel();
     _positionSub = null;
     if (!mounted || attempt != _locationAttempt) return;
@@ -172,31 +209,54 @@ class _QiblaIndicatorState extends State<QiblaIndicator> {
         _updateQiblaFromPosition(lastKnown);
       }
 
-      // Use the shared reconnecting stream so a dropped/closed platform stream
-      // is re-opened (with capped backoff) instead of silently freezing the
-      // compass — the same resilience the daily trackers rely on.
-      final StreamSubscription<Position> subscription = locations
-          .trackingPositionStream(
-            settings: const LocationSettings(
-              accuracy: LocationAccuracy.high,
-              distanceFilter: 25,
-            ),
-            onError: (Object _, StackTrace _) {
-              // Transient failure; the wrapper reconnects, we keep the last fix.
-            },
-          )
-          .listen(
-            _updateQiblaFromPosition,
-            onError: (Object _) {
-              // A transient stream error keeps the last known fix.
-            },
-            cancelOnError: false,
-          );
+      // Use the app-wide single location client rather than opening a second
+      // OS subscription: two `getPositionStream` handles means two
+      // `FusedLocationProvider` clients, which is what makes Android report a
+      // background-location drain. The hub shares one handle with the daily
+      // trackers and is reference-counted, so closing this sheet releases it.
+      final LocationHub? hub = widget.locationHub;
+      final StreamSubscription<Position> subscription;
+      if (hub != null) {
+        subscription = hub
+            .acquire(this, accuracy: LocationAccuracy.high)
+            .listen(
+              _updateQiblaFromPosition,
+              onError: (Object _) {
+                // A transient stream error keeps the last known fix.
+              },
+              cancelOnError: false,
+            );
+        _hubSubscriptionHeld = true;
+      } else {
+        // No hub wired in (tests, or a standalone embed): fall back to a
+        // private stream, still cancelled with the widget.
+        subscription = locations
+            .trackingPositionStream(
+              settings: const LocationSettings(
+                accuracy: LocationAccuracy.high,
+                distanceFilter: 25,
+              ),
+              onError: (Object _, StackTrace _) {
+                // Transient failure; the wrapper reconnects, we keep the fix.
+              },
+            )
+            .listen(
+              _updateQiblaFromPosition,
+              onError: (Object _) {
+                // A transient stream error keeps the last known fix.
+              },
+              cancelOnError: false,
+            );
+      }
 
       // The platform calls above may have resolved after disposal, or a newer
       // attempt may have superseded this one: never hold a subscription the
       // state can no longer cancel.
       if (!mounted || attempt != _locationAttempt) {
+        if (_hubSubscriptionHeld) {
+          _hubSubscriptionHeld = false;
+          unawaited(widget.locationHub?.release(this));
+        }
         await subscription.cancel();
         return;
       }

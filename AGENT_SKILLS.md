@@ -383,6 +383,37 @@ no network, no PII.
   resuming re-opens the stream without restarting the trip. Covered by
   `test/engine_profile_application_test.dart` and the pause cases in
   `test/gps_tracker_test.dart`.
+- **The FSM stream is not the only way a profile reaches a tracker.** The
+  orchestrator emits on *state change*, so a tracker that starts while the
+  machine is already `idleStandby` receives no transition and would open a live
+  GPS-grade stream. Every start path must therefore apply the orchestrator's
+  **current** `profile` (the getter), never wait for an emission. The transport
+  classifier's `SamplingProfile` is **evidence, not an authority**: feeding it
+  straight into `applySampling` (with no `paused` argument) silently re-opens an
+  idle stream on every classifier tick, which on a real device shows up as a
+  `HIGH_ACCURACY, minUpdateInterval=0, hiddenFromAppOps` fused registration that
+  never goes away. Only `applyEngineProfile` may call `applySampling`, and both
+  controllers must `observe(trackingActive: true)` on start and `suspend()` on
+  stop so the FSM is never stale. Verified on device with
+  `adb shell dumpsys location` / `cmd appops get … MONITOR_HIGH_POWER_LOCATION`:
+  the `(running)` flag and the fused request must be absent once the app is
+  backgrounded while idle.
+- **One OS location client, owned by `LocationHub`.** `getPositionStream` is
+  never called by a feature. Android registers the app as a separate location
+  client for **every** open request, so each extra Dart subscription is another
+  `WorkSource` entry and another reason to keep the receiver awake. All
+  consumers (both daily trackers, the Qibla compass) acquire the app-wide
+  `LocationHub` (`lib/src/services/location_hub.dart`, provider
+  `locationHubProvider`); it opens **exactly one** platform subscription,
+  reference-counts its consumers, serves the **strongest** tier any of them
+  wants, and re-opens that single handle only when the resolved tier changes —
+  replacing, never stacking. `release`/`pauseAll` cancel the handle outright the
+  moment the last consumer leaves, which is the state `idleStandby` requires.
+  The handle's registration is **synchronous** with `acquire`/`release` (the
+  platform cancel is the only awaited part), so there is never a window where
+  the app reads "active" with no consumer, or "paused" with a live client. A
+  hub subscription must be *released*, not merely cancelled: cancelling the
+  listener alone leaves the app registered. Covered by `test/location_hub_test.dart`.
 - **Entering the vehicle state is strict; leaving it is slow.** Vehicle requires
   speed above 15 km/h **and** held (5 s continuous, gap-tolerant) vehicle-range
   vibration **and** step-cadence rejection (0.5–3 Hz band power share). Leaving

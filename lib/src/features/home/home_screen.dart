@@ -343,9 +343,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeInOut,
             child: _isCompassExpanded
-                ? const Padding(
-                    padding: EdgeInsetsDirectional.fromSTEB(16, 8, 16, 0),
-                    child: QiblaIndicator(),
+                ? Padding(
+                    padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 0),
+                    child: QiblaIndicator(
+                      locationHub: ref.read(locationHubProvider),
+                    ),
                   )
                 : const SizedBox.shrink(),
           ),
@@ -521,7 +523,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 style: Theme.of(sheetContext).textTheme.titleMedium,
               ),
               const SizedBox(height: 16),
-              const QiblaIndicator(),
+              QiblaIndicator(locationHub: ref.read(locationHubProvider)),
             ],
           ),
         ),
