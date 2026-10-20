@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'l10n/generated/app_localizations.dart';
 import 'src/core/navigation/app_navigator.dart';
 import 'src/core/memory/self_diagnostic_monitor.dart';
+import 'src/core/security/device_lock_detector.dart';
 import 'src/core/security/session_guard.dart';
 import 'src/core/theme/app_theme.dart';
 import 'src/core/utils/haptics.dart';
@@ -118,25 +119,32 @@ class _MapNoteAppState extends ConsumerState<MapNoteApp>
   /// Drives the [SessionGuard] on a timer and locks the vault when a session
   /// ends. This is the *only* owner of the vault lock outside the explicit
   /// user action, which is what keeps the two from racing.
+  ///
+  /// The hand-held / surface-idle verdict comes from
+  /// [deviceLockDetectorProvider], which reads accelerometer micro-movements
+  /// while a session is open. The detector is started with the session (see
+  /// [_onSessionEnded] and the vault's unlock path) so the sensor is not held
+  /// open when there is nothing to protect.
   void _startSessionWatch() {
     _sessionEndSubscription = ref
         .read(sessionGuardProvider)
         .sessionEnds
         .listen(_onSessionEnded);
-    _sessionTimer = Timer.periodic(const Duration(minutes: 1), (_) async {
+    _sessionTimer = Timer.periodic(const Duration(seconds: 30), (_) async {
       if (!mounted) return;
       final SessionGuard guard = ref.read(sessionGuardProvider);
-      // Report the surface-idle evidence the guard needs. The motion gate is
-      // already judging micro-movement; when a trip is not running we read the
-      // gate's own verdict rather than opening a second sensor stream.
-      guard.observeMovement(
-        moving: ref.read(motionGateProvider).isRunning,
-      );
+      final DeviceLockDetector detector = ref.read(deviceLockDetectorProvider);
+      // A real micro-movement verdict, not a proxy: "moving" collapses to the
+      // guard's hand-held context, "still" lets it reach surface-idle.
+      guard.observeMovement(moving: detector.isHandHeld);
       await guard.tick();
     });
   }
 
   Future<void> _onSessionEnded(SessionEndReason reason) async {
+    // The session is over, so the micro-movement detector has nothing left to
+    // protect: release the sensor so an idle app holds no hardware open.
+    unawaited(ref.read(deviceLockDetectorProvider).stop());
     // Locking is idempotent and safe while already locked; the notifier moves
     // its state to locked *before* the async close, so the UI cannot flash
     // vaulted content.
@@ -169,23 +177,47 @@ class _MapNoteAppState extends ConsumerState<MapNoteApp>
       unawaited(applyTrackingPowerMode(ref, backgrounded: false));
       // They may also have copied a Plus Code from Maps or a chat app.
       _checkClipboard();
-    } else if (state == AppLifecycleState.hidden ||
-        state == AppLifecycleState.paused) {
-      if (state == AppLifecycleState.paused) {
-        health.log(HealthEventType.appPause);
-      }
-      // Leaving the foreground starts the background grace clock: a long
-      // absence locks the encrypted vault, a quick app switch does not.
-      guard.onLifecycle(backgrounded: true);
+    } else if (state == AppLifecycleState.hidden) {
+      // `hidden` is the reliable "left the foreground" signal on every
+      // platform, and on Android it is also what the OS emits when the **device
+      // lock screen** appears (the sequence is resumed → inactive → hidden).
+      // A session that is open therefore ends *immediately*: the phone has left
+      // the user's hands — into a pocket, onto a table — and the vault must not
+      // sit unlocked in memory. This is stricter than the background grace,
+      // which still applies for the softer paused-without-lock case below.
+      unawaited(_handleDeviceLock(guard));
       // Not visible any more: drop the trackers to balanced accuracy (battery)
       // and flush today's distance first, so an aggressive battery-optimisation
       // kill right after this point cannot drop a background position state.
+      unawaited(applyTrackingPowerMode(ref, backgrounded: true));
+    } else if (state == AppLifecycleState.paused) {
+      health.log(HealthEventType.appPause);
+      // A plain background (home button, app switch) without a device lock:
+      // start the grace clock rather than locking outright, so a quick glance at
+      // a notification does not force a biometric prompt.
+      guard.onLifecycle(backgrounded: true);
       // `setPowerMode` is idempotent, so hidden→paused repeating is free; the
       // transient `inactive` state (dialog, notification shade) is ignored on
       // purpose so a pull-down never churns the stream.
       unawaited(applyTrackingPowerMode(ref, backgrounded: true));
       // A backgrounding is also not user interaction: nothing to note here, so
       // the inactivity clock keeps running toward its own timeout.
+    }
+  }
+
+  /// Ends the session when the OS reports the device lock screen.
+  ///
+  /// The guard owns the decision (including the user's [lockOnDeviceLock]
+  /// preference); this only reflects the outcome into the health log. The vault
+  /// itself is locked by the `sessionEnds` listener, so there is exactly one
+  /// lock path.
+  Future<void> _handleDeviceLock(SessionGuard guard) async {
+    final bool ended = await guard.onDeviceLocked();
+    if (ended) {
+      ref.read(appHealthLoggerProvider).log(
+            HealthEventType.serviceIssue,
+            message: 'device-locked',
+          );
     }
   }
 

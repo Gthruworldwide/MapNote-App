@@ -373,13 +373,38 @@ no network, no PII.
   never stops analysis. Speed is compared in **m/s**, never through a km/h
   round-trip (`15 / 3.6 * 3.6 != 15.0` in binary floating point).
 - **Session security is one owner.** `SessionGuard` is the only decider of when
-  the vault must re-prompt (background grace, inactivity, surface-idle short
-  clock, explicit end). Its token is **opaque and random** — never an account id,
-  email or place — and token-store I/O is best-effort and **not awaited** by
-  `beginSession`/`endSession`, so a keystore that never answers can never hang an
-  unlock or a lock. The vault's `lock()` ends the session *before* its first
-  `await`, because it is called from widget `dispose` and reading `ref` after an
-  async gap throws `UnmountedRefException` (regression-covered).
+  the vault must re-prompt (OS device lock, background grace, inactivity,
+  surface-idle short clock, explicit end). Its token is **opaque and random** —
+  never an account id, email or place — and token-store I/O is best-effort and
+  **not awaited** by `beginSession`/`endSession`, so a keystore that never answers
+  can never hang an unlock or a lock. The vault's `lock()` ends the session
+  *before* its first `await`, because it is called from widget `dispose` and
+  reading `ref` after an async gap throws `UnmountedRefException`
+  (regression-covered).
+- **The device lock is stricter than backgrounding.** An OS device-lock event
+  (`AppLifecycleState.hidden` on Android) ends the session **immediately**, with
+  no grace period, via `onDeviceLocked()`; a plain background (home button, app
+  switch, `paused`) only starts the background grace clock. Both are routed
+  through the same `sessionEnds` stream, so there is exactly one vault-lock path.
+  `lockOnDeviceLock` is user-configurable and defaults to on.
+- **The inactivity window is configurable and clamped.** `inactivityTimeout`
+  comes from `settingsBox` key `session_timeout_minutes`
+  (`SettingsRepository.sessionTimeoutMinutes`) and must be one of
+  `SessionGuard.selectableInactivityMinutes`; a hand-edited or corrupt box value
+  degrades to the 15-minute default rather than to an instantly-locking vault.
+  `setInactivityTimeout` applies live — the next `tick` uses the new value.
+  `sessionGuardProvider` reads the settings **best-effort** (a container without a
+  Hive box gets the safe defaults instead of a poisoned provider), because the
+  guard sits on the vault's critical path.
+- **Hand-held vs surface-idle is measured, not proxied.**
+  `DeviceLockDetector` judges orientation drift (a slow low-pass of the gravity
+  vector) plus a residual-motion gate from the accelerometer, and publishes the
+  verdict on `contextChanges` **only when it actually changes**. It is the only
+  source of the guard's `observeMovement` boolean; a stopped or absent sensor
+  leaves the verdict `unknown`, which the guard treats as hand-held (the longer
+  clock), so a broken sensor can never lock a session early. The privacy dimmer
+  renders strictly from `ColorScheme` and treats `unknown` as hand-held — it must
+  never cover content on a guess.
 - **Adaptive memory is fail-safe.** `AdaptiveProfile` holds **only numeric
   scalars** (baselines, thresholds, counters) — nothing that could identify a
   user or a place. It lives in its own AES-256 box (`adaptive_profile`) with its
@@ -394,10 +419,11 @@ no network, no PII.
   to the local health log — no telemetry, no analytics upload, no network.
 - **Tests.** `test/adaptive_engine_orchestrator_test.dart`,
   `test/activity_state_manager_test.dart`, `test/motion_gate_test.dart`,
-  `test/session_guard_test.dart` and `test/adaptive_memory_test.dart` cover the
-  state transitions, boundary values, inability to open on ambiguous evidence,
-  step rejection, auto-standby timing, session expiry paths and profile
-  degradation.
+  `test/session_guard_test.dart`, `test/device_lock_detector_test.dart`,
+  `test/vault_privacy_dimmer_test.dart` and `test/adaptive_memory_test.dart` cover
+  the state transitions, boundary values, inability to open on ambiguous evidence,
+  step rejection, auto-standby timing, session expiry paths, device-lock
+  immediacy, configurable-timeout clamping and profile degradation.
 
 ---
 

@@ -622,6 +622,48 @@ class AppLocalizationsEn extends AppLocalizations {
       'Locations you hide will appear here, protected by your device lock.';
 
   @override
+  String get vaultProtectionTitle => 'Vault protection';
+
+  @override
+  String get vaultProtectionSubtitle =>
+      'How long the Hidden Vault stays unlocked, and whether it locks when the screen does.';
+
+  @override
+  String get sessionTimeoutTitle => 'Auto-lock after inactivity';
+
+  @override
+  String get sessionTimeoutSubtitle =>
+      'The vault re-locks after this long without use.';
+
+  @override
+  String sessionTimeoutMinutes(int minutes) {
+    String _temp0 = intl.Intl.pluralLogic(
+      minutes,
+      locale: localeName,
+      other: '$minutes minutes',
+      one: '1 minute',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get lockOnDeviceLockTitle => 'Lock when the device locks';
+
+  @override
+  String get lockOnDeviceLockSubtitle =>
+      'Ends the vault session as soon as the screen locks, with no grace period.';
+
+  @override
+  String get vaultDimmingNotice =>
+      'For your privacy, the screen dims while the device is resting unattended.';
+
+  @override
+  String get sessionTimeoutUpdated => 'Auto-lock timeout updated';
+
+  @override
+  String get lockOnDeviceLockUpdated => 'Device-lock protection updated';
+
+  @override
   String get qrCodeTitle => 'Share via QR code';
 
   @override

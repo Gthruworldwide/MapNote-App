@@ -255,6 +255,22 @@
   "hiddenVaultEmpty": "No hidden locations",
   "hiddenVaultEmptyMessage": "Locations you hide will appear here, protected by your device lock.",
 
+  "vaultProtectionTitle": "Vault protection",
+  "vaultProtectionSubtitle": "How long the Hidden Vault stays unlocked, and whether it locks when the screen does.",
+  "sessionTimeoutTitle": "Auto-lock after inactivity",
+  "sessionTimeoutSubtitle": "The vault re-locks after this long without use.",
+  "sessionTimeoutMinutes": "{minutes, plural, =1{1 minute} other{{minutes} minutes}}",
+  "@sessionTimeoutMinutes": {
+    "placeholders": {
+      "minutes": { "type": "int" }
+    }
+  },
+  "lockOnDeviceLockTitle": "Lock when the device locks",
+  "lockOnDeviceLockSubtitle": "Ends the vault session as soon as the screen locks, with no grace period.",
+  "vaultDimmingNotice": "For your privacy, the screen dims while the device is resting unattended.",
+  "sessionTimeoutUpdated": "Auto-lock timeout updated",
+  "lockOnDeviceLockUpdated": "Device-lock protection updated",
+
   "qrCodeTitle": "Share via QR code",
   "qrCodeHint": "Scan to open this location in a maps app",
   "copyLink": "Copy link",

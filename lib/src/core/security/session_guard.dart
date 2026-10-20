@@ -24,6 +24,11 @@ enum SessionEndReason {
   /// The app was backgrounded long enough that the vault must not stay open.
   appBackgrounded,
 
+  /// The OS reported the device lock screen (the user pressed power, or the
+  /// screen timed out). This is an **immediate** end, not a grace period: the
+  /// device is out of the user's hands and may be in a pocket or on a table.
+  deviceLocked,
+
   /// No user interaction for longer than the configured inactivity timeout.
   inactivityTimeout,
 
@@ -58,6 +63,11 @@ enum InteractionContext {
 ///
 /// * **Explicit end wins.** [endSession] closes the window immediately, whatever
 ///   the other signals say.
+/// * **The device lock screen locks.** When the OS reports that the device went
+///   to its lock screen, the session ends **immediately** (unless
+///   [lockOnDeviceLock] is off). This is not the background grace: the phone is
+///   out of the user's hands, and a pocketed or café-table phone must not keep
+///   an opened vault in memory for two minutes.
 /// * **Backgrounding locks.** Moving to `paused`/`hidden` starts the background
 ///   grace clock; once [backgroundGrace] elapses the session ends. A quick app
 ///   switch (a second or two) does not, because re-prompting for biometrics
@@ -77,34 +87,83 @@ class SessionGuard {
   SessionGuard({
     required this.tokenStore,
     this.tokenKey = defaultTokenKey,
-    this.inactivityTimeout = const Duration(minutes: 15),
-    this.backgroundGrace = const Duration(minutes: 2),
-    this.surfaceIdleTimeout = const Duration(minutes: 3),
-    this.surfaceIdleThreshold = const Duration(minutes: 1),
+    Duration inactivityTimeout = defaultInactivityTimeout,
+    Duration backgroundGrace = defaultBackgroundGrace,
+    Duration surfaceIdleTimeout = defaultSurfaceIdleTimeout,
+    Duration surfaceIdleThreshold = defaultSurfaceIdleThreshold,
+    this._lockOnDeviceLock = true,
     DateTime Function()? clock,
-  })  : assert(inactivityTimeout > Duration.zero),
-        assert(backgroundGrace > Duration.zero),
-        assert(surfaceIdleTimeout > Duration.zero),
-        assert(surfaceIdleThreshold > Duration.zero),
+  })  : _inactivityTimeout = _validated(inactivityTimeout, 'inactivityTimeout'),
+        _backgroundGrace = _validated(backgroundGrace, 'backgroundGrace'),
+        _surfaceIdleTimeout =
+            _validated(surfaceIdleTimeout, 'surfaceIdleTimeout'),
+        _surfaceIdleThreshold =
+            _validated(surfaceIdleThreshold, 'surfaceIdleThreshold'),
         _clock = clock ?? DateTime.now;
 
   /// Key under which the session token is stored. Declared once, here.
   static const String defaultTokenKey = 'mapnote_session_token';
 
+  /// How long the vault may stay open without interaction, by default.
+  static const Duration defaultInactivityTimeout = Duration(minutes: 15);
+
+  /// How long the app may stay backgrounded before the session ends, by default.
+  static const Duration defaultBackgroundGrace = Duration(minutes: 2);
+
+  /// The stricter timeout applied to an unattended (surface-idle) device.
+  static const Duration defaultSurfaceIdleTimeout = Duration(minutes: 3);
+
+  /// How long without micro-movement before the device counts as surface-idle.
+  static const Duration defaultSurfaceIdleThreshold = Duration(minutes: 1);
+
+  /// The inactivity timeouts the user may pick from in Settings, in minutes.
+  static const List<int> selectableInactivityMinutes = <int>[1, 5, 15, 30, 60];
+
   final SessionTokenStore tokenStore;
   final String tokenKey;
 
+  Duration _inactivityTimeout;
+  final Duration _backgroundGrace;
+  final Duration _surfaceIdleTimeout;
+  final Duration _surfaceIdleThreshold;
+  bool _lockOnDeviceLock;
+
   /// No [noteActivity] for this long ends the session in any context.
-  final Duration inactivityTimeout;
+  Duration get inactivityTimeout => _inactivityTimeout;
 
   /// How long the app may stay backgrounded before the session ends.
-  final Duration backgroundGrace;
+  Duration get backgroundGrace => _backgroundGrace;
 
   /// Inactivity timeout used while the device is [InteractionContext.surfaceIdle].
-  final Duration surfaceIdleTimeout;
+  Duration get surfaceIdleTimeout => _surfaceIdleTimeout;
 
   /// How long without micro-movement before the device counts as surface-idle.
-  final Duration surfaceIdleThreshold;
+  Duration get surfaceIdleThreshold => _surfaceIdleThreshold;
+
+  /// Whether an OS device-lock event ends the session immediately.
+  bool get lockOnDeviceLock => _lockOnDeviceLock;
+
+  /// Replaces the inactivity timeout at runtime (Settings → session timeout).
+  ///
+  /// Applied live: the next [tick] uses the new value, and an already-elapsed
+  /// window is honoured on that same tick, so shortening the timeout from 15 to
+  /// 1 minute locks an idle vault within a minute rather than hanging on to the
+  /// old value until the next launch.
+  void setInactivityTimeout(Duration value) {
+    _inactivityTimeout = _validated(value, 'inactivityTimeout');
+  }
+
+  /// Turns the device-lock auto-lock on or off.
+  void setLockOnDeviceLock(bool value) {
+    _lockOnDeviceLock = value;
+  }
+
+  static Duration _validated(Duration value, String name) {
+    if (value <= Duration.zero) {
+      throw ArgumentError.value(value, name, 'must be greater than zero');
+    }
+    return value;
+  }
 
   final DateTime Function() _clock;
 
@@ -206,6 +265,25 @@ class SessionGuard {
       _lastMovementAt = now;
       _context = InteractionContext.handHeld;
     }
+  }
+
+  /// Reports that the OS put the device on its lock screen.
+  ///
+  /// Ends the session **immediately** — no grace period — because the phone has
+  /// left the user's hands. Returns whether this call actually ended a session,
+  /// so a caller can skip a redundant vault lock.
+  ///
+  /// Honours [lockOnDeviceLock]: when the user has switched the auto-lock off,
+  /// the event is recorded (the background grace still applies if the app also
+  /// backgrounds) but the session is left open.
+  Future<bool> onDeviceLocked({DateTime? at}) async {
+    final DateTime now = at ?? _clock();
+    // A locked device is by definition not being interacted with or held.
+    _lastMovementAt = now;
+    if (!_lockOnDeviceLock) return false;
+    if (!_active) return false;
+    await endSession(SessionEndReason.deviceLocked, at: now);
+    return true;
   }
 
   /// Re-evaluates the session against the clocks. Returns `true` when the

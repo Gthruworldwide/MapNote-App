@@ -215,6 +215,22 @@
   "hiddenVaultEmpty": "لا توجد أماكن مخفية",
   "hiddenVaultEmptyMessage": "ستظهر الأماكن التي تخفيها هنا، محمية بقفل جهازك.",
 
+  "vaultProtectionTitle": "حماية الخزنة",
+  "vaultProtectionSubtitle": "كم تبقى الخزنة المخفية مفتوحة، وما إذا كانت تُقفل عند قفل الشاشة.",
+  "sessionTimeoutTitle": "القفل التلقائي عند عدم الاستخدام",
+  "sessionTimeoutSubtitle": "تُقفل الخزنة مرة أخرى بعد هذه المدة من عدم الاستخدام.",
+  "sessionTimeoutMinutes": "{minutes, plural, =1{دقيقة واحدة} =2{دقيقتان} few{{minutes} دقائق} many{{minutes} دقيقة} other{{minutes} دقيقة}}",
+  "@sessionTimeoutMinutes": {
+    "placeholders": {
+      "minutes": { "type": "int" }
+    }
+  },
+  "lockOnDeviceLockTitle": "القفل عند قفل الجهاز",
+  "lockOnDeviceLockSubtitle": "ينهي جلسة الخزنة بمجرد قفل الشاشة، دون أي مهلة.",
+  "vaultDimmingNotice": "لخصوصيتك، تخفت الشاشة عندما يكون الجهاز في وضع السكون دون مراقبة.",
+  "sessionTimeoutUpdated": "تم تحديث مدة القفل التلقائي",
+  "lockOnDeviceLockUpdated": "تم تحديث الحماية عند قفل الجهاز",
+
   "qrCodeTitle": "مشاركة عبر رمز QR",
   "qrCodeHint": "امسح الرمز لفتح هذا الموقع في تطبيق الخرائط",
   "copyLink": "نسخ الرابط",

@@ -95,9 +95,14 @@ class VaultPlacesNotifier extends AsyncNotifier<List<Place>?> {
         .call(reason: reason);
     if (result != VaultUnlockResult.denied) {
       // A successful unlock opens the session window; the session guard is what
-      // later closes it (inactivity, backgrounding, or an explicit lock), so
-      // every unlock path gets an expiry without any screen having to set one.
+      // later closes it (device lock, inactivity, backgrounding, or an explicit
+      // lock), so every unlock path gets an expiry without any screen having to
+      // set one.
       await ref.read(sessionGuardProvider).beginSession();
+      // With a session open there is now something to protect, so watch the
+      // accelerometer for the hand-held / surface-idle verdict that decides
+      // whether the idle clock is the long one or the short one.
+      unawaited(ref.read(deviceLockDetectorProvider).start());
       await _refresh();
     }
     return result;

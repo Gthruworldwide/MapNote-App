@@ -619,6 +619,51 @@ class AppLocalizationsAr extends AppLocalizations {
       'ستظهر الأماكن التي تخفيها هنا، محمية بقفل جهازك.';
 
   @override
+  String get vaultProtectionTitle => 'حماية الخزنة';
+
+  @override
+  String get vaultProtectionSubtitle =>
+      'كم تبقى الخزنة المخفية مفتوحة، وما إذا كانت تُقفل عند قفل الشاشة.';
+
+  @override
+  String get sessionTimeoutTitle => 'القفل التلقائي عند عدم الاستخدام';
+
+  @override
+  String get sessionTimeoutSubtitle =>
+      'تُقفل الخزنة مرة أخرى بعد هذه المدة من عدم الاستخدام.';
+
+  @override
+  String sessionTimeoutMinutes(int minutes) {
+    String _temp0 = intl.Intl.pluralLogic(
+      minutes,
+      locale: localeName,
+      other: '$minutes دقيقة',
+      many: '$minutes دقيقة',
+      few: '$minutes دقائق',
+      two: 'دقيقتان',
+      one: 'دقيقة واحدة',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get lockOnDeviceLockTitle => 'القفل عند قفل الجهاز';
+
+  @override
+  String get lockOnDeviceLockSubtitle =>
+      'ينهي جلسة الخزنة بمجرد قفل الشاشة، دون أي مهلة.';
+
+  @override
+  String get vaultDimmingNotice =>
+      'لخصوصيتك، تخفت الشاشة عندما يكون الجهاز في وضع السكون دون مراقبة.';
+
+  @override
+  String get sessionTimeoutUpdated => 'تم تحديث مدة القفل التلقائي';
+
+  @override
+  String get lockOnDeviceLockUpdated => 'تم تحديث الحماية عند قفل الجهاز';
+
+  @override
   String get qrCodeTitle => 'مشاركة عبر رمز QR';
 
   @override

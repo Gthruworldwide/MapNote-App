@@ -8,6 +8,7 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../core/brand/brand_lockup.dart';
 import '../../core/config/app_config.dart';
 import '../../core/config/preferred_nav_app.dart';
+import '../../core/security/session_guard.dart';
 import '../../core/utils/date_formats.dart';
 import '../../core/utils/haptics.dart';
 import '../../data/models/place.dart';
@@ -81,6 +82,8 @@ class SettingsScreen extends ConsumerWidget {
               _buildSyncCard(context, ref, l10n, sync),
               _buildPrivacyCard(context, ref, l10n, hiddenCount),
               _buildEncryptedVaultCard(context, l10n),
+              _subHeader(context, l10n.vaultProtectionTitle),
+              _buildVaultProtectionCard(context, ref, l10n),
             ]),
           ),
           // 2. Location & Tracking: permissions, then the single merged
@@ -497,6 +500,65 @@ class SettingsScreen extends ConsumerWidget {
         MaterialPageRoute<void>(
           builder: (_) => const SavedPlacesVaultScreen(),
         ),
+      ),
+    );
+  }
+
+  // --- Vault protection ------------------------------------------------------
+
+  /// The two vault-session controls: how long the vault may stay unlocked, and
+  /// whether reaching the device lock screen ends the session at once.
+  Widget _buildVaultProtectionCard(
+    BuildContext context,
+    WidgetRef ref,
+    AppLocalizations l10n,
+  ) {
+    final ThemeData theme = Theme.of(context);
+    final int minutes = ref.watch(sessionTimeoutProvider);
+    final bool lockOnDeviceLock = ref.watch(lockOnDeviceLockProvider);
+
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: Icon(
+              Icons.timer_outlined,
+              color: theme.colorScheme.primary,
+            ),
+            title: Text(l10n.sessionTimeoutTitle),
+            subtitle: Text(l10n.sessionTimeoutSubtitle),
+            trailing: DropdownButton<int>(
+              value: minutes,
+              underline: const SizedBox.shrink(),
+              onChanged: (int? value) {
+                if (value == null) return;
+                ref.read(sessionTimeoutProvider.notifier).setMinutes(value);
+              },
+              items: <DropdownMenuItem<int>>[
+                for (final int option in SessionGuard.selectableInactivityMinutes)
+                  DropdownMenuItem<int>(
+                    value: option,
+                    child: Text(l10n.sessionTimeoutMinutes(option)),
+                  ),
+              ],
+            ),
+          ),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            secondary: Icon(
+              Icons.phonelink_lock_outlined,
+              color: theme.colorScheme.primary,
+            ),
+            title: Text(l10n.lockOnDeviceLockTitle),
+            subtitle: Text(l10n.lockOnDeviceLockSubtitle),
+            value: lockOnDeviceLock,
+            onChanged: (bool value) =>
+                ref.read(lockOnDeviceLockProvider.notifier).setEnabled(value),
+          ),
+        ],
       ),
     );
   }

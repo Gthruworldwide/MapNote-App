@@ -1,6 +1,7 @@
 import 'package:hive_ce/hive.dart';
 
 import '../../core/config/preferred_nav_app.dart';
+import '../../core/security/session_guard.dart';
 
 /// Small key/value store for app preferences backed by a Hive box.
 class SettingsRepository {
@@ -19,6 +20,8 @@ class SettingsRepository {
   static const String _smartInsightsEnabledKey = 'smart_insights_enabled';
   static const String _gpsTrackingEnabledKey = 'gps_tracking_enabled';
   static const String _autoMotionEnabledKey = 'enable_auto_motion';
+  static const String _sessionTimeoutMinutesKey = 'session_timeout_minutes';
+  static const String _lockOnDeviceLockKey = 'lock_on_device_lock';
 
   /// BCP-47 language code of the selected locale, or null for system default.
   String? get localeCode => _box.get(_localeKey) as String?;
@@ -127,6 +130,46 @@ class SettingsRepository {
 
   Future<void> setAutoMotionEnabled(bool enabled) async {
     await _box.put(_autoMotionEnabledKey, enabled);
+  }
+
+  /// How many minutes the encrypted vault may stay unlocked without
+  /// interaction, as chosen in Settings.
+  ///
+  /// Defaults to [SessionGuard.defaultInactivityTimeout] (15 min) when the user
+  /// has never set it, so an existing install keeps its behaviour and a fresh
+  /// install gets a sane window. The value is *clamped* to the selectable set on
+  /// read, so a hand-edited or corrupted box can never produce a nonsensical
+  /// timeout (e.g. zero, which would lock the vault instantly).
+  int get sessionTimeoutMinutes {
+    final Object? raw = _box.get(_sessionTimeoutMinutesKey);
+    final int fallback = SessionGuard.defaultInactivityTimeout.inMinutes;
+    if (raw is! num) return fallback;
+    final int value = raw.toInt();
+    if (SessionGuard.selectableInactivityMinutes.contains(value)) return value;
+    return fallback;
+  }
+
+  Future<void> setSessionTimeoutMinutes(int minutes) async {
+    if (!SessionGuard.selectableInactivityMinutes.contains(minutes)) {
+      throw ArgumentError.value(
+        minutes,
+        'minutes',
+        'must be one of ${SessionGuard.selectableInactivityMinutes}',
+      );
+    }
+    await _box.put(_sessionTimeoutMinutesKey, minutes);
+  }
+
+  /// Whether reaching the device lock screen must lock the encrypted vault
+  /// immediately (the default).
+  ///
+  /// Defaults to true: a phone that has left the user's hands must not keep an
+  /// unlocked vault in memory.
+  bool get isLockOnDeviceLockEnabled =>
+      (_box.get(_lockOnDeviceLockKey) as bool?) ?? true;
+
+  Future<void> setLockOnDeviceLockEnabled(bool enabled) async {
+    await _box.put(_lockOnDeviceLockKey, enabled);
   }
 
   /// Stable ids of insights the user has dismissed, so the agent stops

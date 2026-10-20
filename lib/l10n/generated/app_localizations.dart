@@ -1232,6 +1232,66 @@ abstract class AppLocalizations {
   /// **'Locations you hide will appear here, protected by your device lock.'**
   String get hiddenVaultEmptyMessage;
 
+  /// No description provided for @vaultProtectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Vault protection'**
+  String get vaultProtectionTitle;
+
+  /// No description provided for @vaultProtectionSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How long the Hidden Vault stays unlocked, and whether it locks when the screen does.'**
+  String get vaultProtectionSubtitle;
+
+  /// No description provided for @sessionTimeoutTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-lock after inactivity'**
+  String get sessionTimeoutTitle;
+
+  /// No description provided for @sessionTimeoutSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The vault re-locks after this long without use.'**
+  String get sessionTimeoutSubtitle;
+
+  /// No description provided for @sessionTimeoutMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes, plural, =1{1 minute} other{{minutes} minutes}}'**
+  String sessionTimeoutMinutes(int minutes);
+
+  /// No description provided for @lockOnDeviceLockTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Lock when the device locks'**
+  String get lockOnDeviceLockTitle;
+
+  /// No description provided for @lockOnDeviceLockSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Ends the vault session as soon as the screen locks, with no grace period.'**
+  String get lockOnDeviceLockSubtitle;
+
+  /// No description provided for @vaultDimmingNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'For your privacy, the screen dims while the device is resting unattended.'**
+  String get vaultDimmingNotice;
+
+  /// No description provided for @sessionTimeoutUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-lock timeout updated'**
+  String get sessionTimeoutUpdated;
+
+  /// No description provided for @lockOnDeviceLockUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Device-lock protection updated'**
+  String get lockOnDeviceLockUpdated;
+
   /// No description provided for @qrCodeTitle.
   ///
   /// In en, this message translates to:

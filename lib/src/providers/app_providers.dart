@@ -32,6 +32,7 @@ import '../core/memory/self_diagnostic_monitor.dart';
 import '../core/motion/activity_state_manager.dart';
 import '../core/motion/motion_gate.dart';
 import '../core/orchestrator/adaptive_engine_orchestrator.dart';
+import '../core/security/device_lock_detector.dart';
 import '../core/security/session_guard.dart';
 import '../core/security/secure_session_token_store.dart';
 import '../services/adaptive_sampling_manager.dart';
@@ -475,18 +476,126 @@ final Provider<SelfDiagnosticMonitor> selfDiagnosticMonitorProvider =
 
 /// Owns the authenticated session that keeps the encrypted vault unlocked.
 ///
-/// The single place that decides when the vault must re-prompt: backgrounding
-/// past the grace period, inactivity past the timeout, or an explicit end. Its
-/// stream is what the app root listens to in order to actually lock the vault.
+/// The single place that decides when the vault must re-prompt: the device lock
+/// screen, backgrounding past the grace period, inactivity past the timeout, or
+/// an explicit end. Its stream is what the app root listens to in order to
+/// actually lock the vault.
+///
+/// The timeout and the device-lock behaviour come from [SettingsRepository], so
+/// the user's choice in Settings is honoured from the very first session. The
+/// settings read is *best-effort*: a container without a Hive box (widget tests,
+/// or a corrupt box) must still get a working guard with the safe defaults rather
+/// than throwing, because the guard is on the vault's critical path.
 final Provider<SessionGuard> sessionGuardProvider = Provider<SessionGuard>(
   (Ref ref) {
+    final SettingsRepository? settings = _tryReadSettings(ref);
     final SessionGuard guard = SessionGuard(
       tokenStore: ref.watch(sessionTokenStoreProvider),
+      inactivityTimeout: Duration(
+        minutes: settings?.sessionTimeoutMinutes ??
+            SessionGuard.defaultInactivityTimeout.inMinutes,
+      ),
+      lockOnDeviceLock: settings?.isLockOnDeviceLockEnabled ?? true,
     );
     ref.onDispose(guard.dispose);
     return guard;
   },
 );
+
+/// Reads [settingsRepositoryProvider], or `null` when it is unavailable.
+///
+/// Reading a provider that throws (no Hive box) would poison this provider's
+/// state permanently in Riverpod, so the failure is contained here.
+SettingsRepository? _tryReadSettings(Ref ref) {
+  try {
+    return ref.watch(settingsRepositoryProvider);
+  } catch (_) {
+    return null;
+  }
+}
+
+/// How long the encrypted vault may stay unlocked without interaction, in
+/// minutes, as chosen in Settings.
+///
+/// Changing it also applies it to the already-built [sessionGuardProvider] so the
+/// new window takes effect on the next tick rather than on the next launch.
+class SessionTimeoutController extends Notifier<int> {
+  @override
+  int build() => ref.watch(settingsRepositoryProvider).sessionTimeoutMinutes;
+
+  Future<void> setMinutes(int minutes) async {
+    await ref.read(settingsRepositoryProvider).setSessionTimeoutMinutes(minutes);
+    ref.read(sessionGuardProvider).setInactivityTimeout(
+          Duration(minutes: minutes),
+        );
+    state = minutes;
+  }
+}
+
+/// The user's choice of inactivity window (minutes).
+final NotifierProvider<SessionTimeoutController, int> sessionTimeoutProvider =
+    NotifierProvider<SessionTimeoutController, int>(
+      SessionTimeoutController.new,
+    );
+
+/// Whether reaching the device lock screen ends the vault session immediately.
+///
+/// Changing it also updates the live [sessionGuardProvider] so the switch takes
+/// effect without a restart.
+class LockOnDeviceLockController extends Notifier<bool> {
+  @override
+  bool build() => ref.watch(settingsRepositoryProvider).isLockOnDeviceLockEnabled;
+
+  Future<void> setEnabled(bool value) async {
+    await ref
+        .read(settingsRepositoryProvider)
+        .setLockOnDeviceLockEnabled(value);
+    ref.read(sessionGuardProvider).setLockOnDeviceLock(value);
+    state = value;
+  }
+}
+
+/// Whether the vault locks the moment the device does.
+final NotifierProvider<LockOnDeviceLockController, bool>
+    lockOnDeviceLockProvider =
+    NotifierProvider<LockOnDeviceLockController, bool>(
+      LockOnDeviceLockController.new,
+    );
+
+/// Distinguishes a hand-held device from one lying still on a surface, from
+/// accelerometer micro-movements.
+///
+/// Feeds the [SessionGuard]'s surface-idle verdict, which shortens the vault's
+/// inactivity window when the phone has been abandoned on a table. The stream is
+/// opened only when a session is worth protecting; a stopped detector leaves the
+/// verdict `unknown`, which the guard treats as hand-held (the longer clock), so
+/// a missing sensor can never lock a session early.
+final Provider<DeviceLockDetector> deviceLockDetectorProvider =
+    Provider<DeviceLockDetector>((Ref ref) {
+      final DeviceLockDetector detector = DeviceLockDetector(
+        hub: ref.watch(motionSensorHubProvider),
+      );
+      ref.onDispose(detector.dispose);
+      return detector;
+    });
+
+/// The current hand-held / surface-idle verdict, as reactive state.
+///
+/// A stream over [DeviceLockDetector.contextChanges]: the detector publishes a
+/// value only when the verdict actually changes, so this costs nothing between
+/// transitions and needs no polling timer. The current value is emitted first,
+/// so a screen that opens mid-stillness dims at once rather than waiting for the
+/// next transition.
+final StreamProvider<InteractionContext> interactionContextProvider =
+    StreamProvider<InteractionContext>((Ref ref) {
+  final DeviceLockDetector detector = ref.watch(deviceLockDetectorProvider);
+  return _contextStream(detector);
+});
+
+Stream<InteractionContext> _contextStream(DeviceLockDetector detector) async* {
+  yield detector.context;
+  yield* detector.contextChanges;
+}
 
 /// Platform-keystore-backed store for the opaque session token.
 final Provider<SessionTokenStore> sessionTokenStoreProvider =

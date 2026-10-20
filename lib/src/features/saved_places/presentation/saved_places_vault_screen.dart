@@ -8,6 +8,7 @@ import '../../../data/models/place.dart';
 import '../../../providers/app_providers.dart';
 import '../domain/usecases/unlock_vault.dart';
 import 'providers/saved_places_providers.dart';
+import 'widgets/vault_privacy_dimmer.dart';
 
 /// The biometric-gated, AES-256 encrypted "saved places" vault.
 ///
@@ -89,23 +90,25 @@ class _SavedPlacesVaultScreenState
             ),
         ],
       ),
-      body: vault.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (Object error, StackTrace stackTrace) =>
-            Center(child: Text(l10n.errorGeneric)),
-        data: (List<Place>? places) {
-          if (places == null) return _LockedVault(l10n: l10n, onUnlock: _unlock);
-          if (places.isEmpty) return _EmptyVault(l10n: l10n);
-          return ListView.separated(
-            padding: const EdgeInsets.all(16),
-            itemCount: places.length,
-            separatorBuilder: (_, _) => const SizedBox(height: 8),
-            itemBuilder: (BuildContext context, int index) => _VaultedPlaceCard(
-              place: places[index],
-              l10n: l10n,
-            ),
-          );
-        },
+      body: VaultPrivacyDimmer(
+        child: vault.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (Object error, StackTrace stackTrace) =>
+              Center(child: Text(l10n.errorGeneric)),
+          data: (List<Place>? places) {
+            if (places == null) return _LockedVault(l10n: l10n, onUnlock: _unlock);
+            if (places.isEmpty) return _EmptyVault(l10n: l10n);
+            return ListView.separated(
+              padding: const EdgeInsets.all(16),
+              itemCount: places.length,
+              separatorBuilder: (_, _) => const SizedBox(height: 8),
+              itemBuilder: (BuildContext context, int index) => _VaultedPlaceCard(
+                place: places[index],
+                l10n: l10n,
+              ),
+            );
+          },
+        ),
       ),
     );
   }

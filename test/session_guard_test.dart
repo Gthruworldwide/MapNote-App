@@ -275,4 +275,74 @@ void main() {
       expect(guard.isActive, isTrue);
     });
   });
+
+  group('device lock', () {
+    test('ends the session immediately, with no grace period', () async {
+      await guard.beginSession();
+      final Future<SessionEndReason> ended = guard.sessionEnds.first;
+
+      final bool didEnd = await guard.onDeviceLocked();
+
+      expect(didEnd, isTrue);
+      expect(guard.isActive, isFalse);
+      expect(await ended, SessionEndReason.deviceLocked);
+    });
+
+    test('is a no-op when no session is open', () async {
+      expect(await guard.onDeviceLocked(), isFalse);
+      expect(guard.endCount, 0);
+    });
+
+    test('honours the lockOnDeviceLock preference when it is off', () async {
+      guard = SessionGuard(
+        tokenStore: store,
+        lockOnDeviceLock: false,
+        clock: () => now,
+      );
+      await guard.beginSession();
+
+      expect(await guard.onDeviceLocked(), isFalse);
+      // Still open: the softer background grace is what protects it instead.
+      expect(guard.isActive, isTrue);
+    });
+
+    test('setLockOnDeviceLock toggles the behaviour at runtime', () async {
+      await guard.beginSession();
+
+      guard.setLockOnDeviceLock(false);
+      expect(await guard.onDeviceLocked(), isFalse);
+      expect(guard.isActive, isTrue);
+
+      guard.setLockOnDeviceLock(true);
+      expect(await guard.onDeviceLocked(), isTrue);
+      expect(guard.isActive, isFalse);
+    });
+  });
+
+  group('configurable inactivity timeout', () {
+    test('setInactivityTimeout applies to the next tick', () async {
+      await guard.beginSession();
+      guard.setInactivityTimeout(const Duration(minutes: 2));
+
+      now = now.add(const Duration(minutes: 3));
+      expect(await guard.tick(), isFalse);
+      expect(guard.isActive, isFalse);
+    });
+
+    test('shortening the window locks an already-idle session', () async {
+      await guard.beginSession();
+      now = now.add(const Duration(minutes: 2));
+
+      // The old 15-minute window had not elapsed, but the new one has.
+      guard.setInactivityTimeout(const Duration(minutes: 1));
+      expect(await guard.tick(), isFalse);
+    });
+
+    test('rejects a non-positive timeout', () {
+      expect(
+        () => guard.setInactivityTimeout(Duration.zero),
+        throwsArgumentError,
+      );
+    });
+  });
 }
