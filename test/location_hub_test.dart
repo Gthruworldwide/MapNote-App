@@ -27,6 +27,10 @@ class _FakeLocationService extends LocationService {
   /// The accuracy each open asked for, in order.
   final List<LocationAccuracy> requestedAccuracies = <LocationAccuracy>[];
 
+  /// The settings each open was made with, in order — so a test can assert the
+  /// shared handle actually carries the consumer's cadence and filter.
+  final List<LocationSettings> requestedSettings = <LocationSettings>[];
+
   /// How many handed-out streams are still alive. Must reach 0 once every
   /// consumer releases — that is the OS handle being dropped.
   int get liveCount =>
@@ -50,6 +54,7 @@ class _FakeLocationService extends LocationService {
   }) {
     openCount++;
     requestedAccuracies.add(settings?.accuracy ?? LocationAccuracy.high);
+    if (settings != null) requestedSettings.add(settings);
     final StreamController<Position> controller =
         StreamController<Position>.broadcast(
       onCancel: () {
@@ -239,6 +244,57 @@ void main() {
       locations.emit(_position(3, 4));
       await Future<void>.delayed(Duration.zero);
       expect(seen.single.longitude, 4);
+    });
+
+    test('the shared handle carries the consumer cadence, not a default',
+        () async {
+      // Regression: opening the handle without the consumer's interval left
+      // Android holding a request at the 5 s default (`@+5s0ms` in
+      // `dumpsys location`) even when the profile asked for something else.
+      hub.acquire(
+        Object(),
+        accuracy: LocationAccuracy.high,
+        interval: const Duration(seconds: 1),
+        distanceFilter: 5,
+      ).listen((_) {});
+      await pumpEventQueue();
+
+      expect(locations.requestedSettings, isNotEmpty);
+      final LocationSettings settings = locations.requestedSettings.last;
+      expect(settings.accuracy, LocationAccuracy.high);
+      expect(settings.distanceFilter, 5);
+      // AndroidSettings carries the pinned interval; the plain settings do not.
+      if (settings is AndroidSettings) {
+        expect(settings.intervalDuration, const Duration(seconds: 1));
+      }
+    });
+
+    test('a changed cadence re-opens the one handle', () async {
+      final Object consumer = Object();
+      hub
+          .acquire(
+            consumer,
+            accuracy: LocationAccuracy.high,
+            interval: const Duration(seconds: 1),
+          )
+          .listen((_) {});
+      expect(locations.openCount, 1);
+
+      hub
+          .acquire(
+            consumer,
+            accuracy: LocationAccuracy.high,
+            interval: const Duration(seconds: 10),
+          )
+          .listen((_) {});
+
+      // Still a single client — but at the new cadence.
+      expect(hub.consumerCount, 1);
+      expect(locations.openCount, 2);
+      final LocationSettings settings = locations.requestedSettings.last;
+      if (settings is AndroidSettings) {
+        expect(settings.intervalDuration, const Duration(seconds: 10));
+      }
     });
   });
 }

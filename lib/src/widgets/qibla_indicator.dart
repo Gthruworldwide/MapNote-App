@@ -218,7 +218,12 @@ class _QiblaIndicatorState extends State<QiblaIndicator> {
       final StreamSubscription<Position> subscription;
       if (hub != null) {
         subscription = hub
-            .acquire(this, accuracy: LocationAccuracy.high)
+            .acquire(
+              this,
+              accuracy: LocationAccuracy.high,
+              interval: const Duration(seconds: 1),
+              distanceFilter: 25,
+            )
             .listen(
               _updateQiblaFromPosition,
               onError: (Object _) {

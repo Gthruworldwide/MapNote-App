@@ -413,7 +413,11 @@ no network, no PII.
   platform cancel is the only awaited part), so there is never a window where
   the app reads "active" with no consumer, or "paused" with a live client. A
   hub subscription must be *released*, not merely cancelled: cancelling the
-  listener alone leaves the app registered. Covered by `test/location_hub_test.dart`.
+  listener alone leaves the app registered. A consumer's **cadence** is part of
+  its request (`interval`/`distanceFilter`), never left to the 5 s default:
+  opening the shared handle without the profile's interval leaves Android
+  holding a `@+5s0ms` request that no engine wanted. Covered by
+  `test/location_hub_test.dart`.
 - **Entering the vehicle state is strict; leaving it is slow.** Vehicle requires
   speed above 15 km/h **and** held (5 s continuous, gap-tolerant) vehicle-range
   vibration **and** step-cadence rejection (0.5–3 Hz band power share). Leaving

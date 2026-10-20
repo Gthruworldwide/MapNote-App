@@ -53,12 +53,12 @@ class LocationHub {
   final StreamController<Position> _positions =
       StreamController<Position>.broadcast(sync: true);
 
-  /// Consumers currently holding the handle open, with the accuracy each wants.
-  final Map<Object, LocationAccuracy> _consumers =
-      <Object, LocationAccuracy>{};
+  /// Consumers currently holding the handle open, with the request each wants.
+  final Map<Object, LocationRequest> _consumers =
+      <Object, LocationRequest>{};
 
-  /// The accuracy the live handle was opened at, or `null` when none is open.
-  LocationAccuracy? _openAccuracy;
+  /// The request the live handle was opened with, or `null` when none is open.
+  LocationRequest? _openRequest;
 
   StreamSubscription<Position>? _subscription;
   Timer? _reconnectTimer;
@@ -74,19 +74,25 @@ class LocationHub {
   int get consumerCount => _consumers.length;
 
   /// The accuracy the open handle runs at, or `null` when closed.
-  LocationAccuracy? get openAccuracy => _openAccuracy;
+  LocationAccuracy? get openAccuracy => _openRequest?.accuracy;
 
-  /// Requests a fix feed for [consumer] at [accuracy], re-opening the single
-  /// shared handle if this raises the resolved tier.
+  /// Requests a fix feed for [consumer], re-opening the single shared handle if
+  /// this changes the resolved request.
   ///
   /// Idempotent per consumer: calling it again only changes that consumer's
-  /// requested tier. Returns the shared stream.
+  /// request. Returns the shared stream.
   Stream<Position> acquire(
     Object consumer, {
     LocationAccuracy accuracy = LocationAccuracy.high,
+    Duration? interval,
+    int? distanceFilter,
   }) {
     if (_closed) return const Stream<Position>.empty();
-    _consumers[consumer] = accuracy;
+    _consumers[consumer] = LocationRequest(
+      accuracy: accuracy,
+      interval: interval,
+      distanceFilter: distanceFilter,
+    );
     // Open (or lift) the single handle *synchronously*: a consumer that calls
     // `acquire` must be able to observe `isOpen` right away, and the soonest
     // possible registration is the point — deferring it a microtask would leave
@@ -115,7 +121,7 @@ class LocationHub {
     // Detach in this turn: `isOpen` must read false the instant the pause is
     // requested, not after the platform cancel resolves.
     _subscription = null;
-    _openAccuracy = null;
+    _openRequest = null;
     _reconnectTimer?.cancel();
     _reconnectTimer = null;
     await subscription?.cancel();
@@ -137,14 +143,15 @@ class LocationHub {
   /// `acquire`/`release`; only the platform cancel is awaited.
   Future<void> _syncHandle() async {
     if (_closed) return;
-    final LocationAccuracy? wanted = _resolveAccuracy();
+    final LocationRequest? wanted = _resolveRequest();
 
     if (wanted == null) {
       // Everyone left: drop the handle so no client is registered at all.
       await pauseAll();
       return;
     }
-    if (wanted == _openAccuracy && _subscription != null) {
+    if (_openRequest != null && wanted.matches(_openRequest!) &&
+        _subscription != null) {
       return;
     }
 
@@ -152,30 +159,34 @@ class LocationHub {
     // so the app is at most one client on the fused provider at any instant.
     final StreamSubscription<Position>? previous = _subscription;
     _subscription = null;
-    _openAccuracy = null;
+    _openRequest = null;
     _reconnectTimer?.cancel();
     _reconnectTimer = null;
     _open(wanted);
     await previous?.cancel();
   }
 
-  /// The strongest tier any live consumer has asked for, or `null` when there
-  /// are none. Enum order is precision order, so `max` is the strongest.
-  LocationAccuracy? _resolveAccuracy() {
+  /// The strongest request any live consumer has asked for, or `null` when
+  /// there are none. Enum order is precision order, so `max` is the strongest.
+  LocationRequest? _resolveRequest() {
     if (_consumers.isEmpty) return null;
     return _consumers.values.reduce(
-      (LocationAccuracy a, LocationAccuracy b) =>
-          a.index >= b.index ? a : b,
+      (LocationRequest a, LocationRequest b) =>
+          a.accuracy.index >= b.accuracy.index ? a : b,
     );
   }
 
-  void _open(LocationAccuracy accuracy) {
+  void _open(LocationRequest request) {
     if (_closed) return;
-    _openAccuracy = accuracy;
+    _openRequest = request;
     try {
       _subscription = locations
           .trackingPositionStream(
-            settings: LocationService.trackingSettingsFor(accuracy: accuracy),
+            settings: LocationService.trackingSettingsFor(
+              accuracy: request.accuracy,
+              intervalDuration: request.interval,
+              distanceFilter: request.distanceFilter,
+            ),
           )
           .listen(
         (Position position) {
@@ -185,20 +196,20 @@ class LocationHub {
         onError: (Object _) {
           // The reconnecting wrapper underneath normally absorbs these; if one
           // escapes, re-open rather than leaving a dead handle behind.
-          _scheduleReconnect(accuracy);
+          _scheduleReconnect(request);
         },
-        onDone: () => _scheduleReconnect(accuracy),
+        onDone: () => _scheduleReconnect(request),
         cancelOnError: true,
       );
     } catch (_) {
       // Platform channel unavailable (tests / unsupported platform): stay
       // closed rather than pretending a handle exists.
       _subscription = null;
-      _openAccuracy = null;
+      _openRequest = null;
     }
   }
 
-  void _scheduleReconnect(LocationAccuracy accuracy) {
+  void _scheduleReconnect(LocationRequest request) {
     // The handle is *not* cleared here. The connected platform stream can
     // complete transiently — a provider hiccup, or the fused provider
     // re-registering — while the app still legitimately holds the handle. The
@@ -211,10 +222,35 @@ class LocationHub {
     _reconnectTimer = Timer(reconnectDelay, () {
       _reconnectTimer = null;
       if (_closed || _subscription != null) return;
-      _open(_resolveAccuracy() ?? accuracy);
+      _open(_resolveRequest() ?? request);
     });
   }
 
   @visibleForTesting
   bool get hasPendingReconnect => _reconnectTimer?.isActive ?? false;
+}
+
+/// What one consumer wants from the shared handle.
+///
+/// [accuracy] orders the request (enum order is precision order); [interval] and
+/// [distanceFilter] are applied to the winning request. `null` means "use the
+/// tracker's own default", which is how a consumer that does not care about
+/// cadence defers to [LocationService.trackingSettingsFor].
+@immutable
+class LocationRequest {
+  const LocationRequest({
+    required this.accuracy,
+    this.interval,
+    this.distanceFilter,
+  });
+
+  final LocationAccuracy accuracy;
+  final Duration? interval;
+  final int? distanceFilter;
+
+  /// Whether the currently open handle already satisfies this request.
+  bool matches(LocationRequest other) =>
+      accuracy == other.accuracy &&
+      interval == other.interval &&
+      distanceFilter == other.distanceFilter;
 }

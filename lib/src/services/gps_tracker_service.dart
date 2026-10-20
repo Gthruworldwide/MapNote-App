@@ -281,7 +281,12 @@ class GpsTrackerService implements SamplingTarget {
       // tier any consumer wants and re-opens its single handle when that
       // changes, so this tracker never registers a second one.
       _hubHeld = true;
-      return hub.acquire(this, accuracy: _effectiveAccuracy);
+      return hub.acquire(
+        this,
+        accuracy: _effectiveAccuracy,
+        interval: _sampleInterval,
+        distanceFilter: _effectiveDistanceFilter,
+      );
     }
     final FusedLocationService? fused = _fused;
     if (fused == null) {
