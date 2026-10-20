@@ -142,12 +142,35 @@ the first frame. Flow: `AuthNotifier.build` → `_signInSilentlyInBackground()` 
 > `attemptLightweightAuthentication()` is its silent replacement. Drive token
 > validation (`_validateDriveAccess`) is non-interactive; nothing prompts.
 
+> **`attemptLightweightAuthentication()` is *not guaranteed* UI-free.** The
+> plugin contract explicitly leaves "the amount of allowable UI" to the
+> platform. On Android it routes through **Credential Manager**
+> (`CredentialManager.getCredentialAsync(activity, …)`), which launches
+> `CredentialChooserActivity` / `AssistedSignInActivity` when it cannot
+> auto-select. Those run **inside MapNote's own task**, so opening the chooser
+> backgrounds MapNote and dismissing it foregrounds MapNote again — a restore
+> that re-enters on that rebuild loops forever. The restore must therefore be
+> (a) attempted **only when a session was actually persisted** (`is_logged_in`,
+> `auth_user`) and (b) **single-flight per process** (`AuthNotifier.
+> _restoreAttempted`, a `static` field precisely so it survives provider
+> rebuilds). Reset it through `AuthNotifier.resetRestoreGuard()` in tests only.
+
 **Eval.**
 
 - `signInSilently` is used **only** as the app-level method name on
   `AuthService`/`GoogleAuthService` — never as a `GoogleSignIn` instance
   method.
-- Silent restore failure → signed-out state, no crash, no error UI.
+- A **signed-out launch never calls `signInSilently()`** — there is nothing to
+  restore, so the attempt (and its platform chooser) must not be made.
+  Regression-covered in `auth_session_test.dart`.
+- The restore is **single-flight across `AuthNotifier` rebuilds**;
+  `container.invalidate(authProvider)` must not produce a second attempt.
+- A `null`/throwing silent result **keeps** the cached session — a transient
+  refusal is never a silent sign-out.
+- Silent restore failure → no crash, no error UI.
+- Both restore entry points obey the precondition: `AuthNotifier.build` **and**
+  the headless `backgroundSyncDispatcher` (a backup job with nothing to back up
+  when signed out) check the persisted session before attempting.
 - **Restore semantics:** Drive restore runs only when the local places list is
   **empty and a backup exists** (`SyncRepository`); non-empty local data is
   **never** overwritten silently.

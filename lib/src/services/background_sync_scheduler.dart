@@ -31,13 +31,26 @@ void backgroundSyncDispatcher() {
 
       final AuthService auth = GoogleAuthService();
       await auth.initialize();
+
+      // Gate the silent restore on a *persisted* session. There is no UI to
+      // drive from a headless isolate, and on Android
+      // `attemptLightweightAuthentication()` is routed through Credential
+      // Manager, which is allowed to launch its chooser. Signed-out means there
+      // is nothing to restore *and* nothing to back up, so skip before the
+      // attempt rather than after it (AGENT_SKILLS §2.1: restore is silent and
+      // only re-establishes a session that already existed).
+      final SettingsRepository settings = SettingsRepository(
+        database.settingsBox,
+      );
+      if (!settings.isLoggedIn) return true; // Nothing to do offline.
+
       await auth.signInSilently();
-      if (!auth.isSignedIn) return true; // Nothing to do offline.
+      if (!auth.isSignedIn) return true; // Session could not be restored.
 
       final SyncRepository sync = SyncRepository(
         placeRepository: PlaceRepository(PlaceLocalDataSource(database)),
         driveService: GoogleDriveService(auth),
-        settingsRepository: SettingsRepository(database.settingsBox),
+        settingsRepository: settings,
         authService: auth,
       );
       await sync.backupToDrive();

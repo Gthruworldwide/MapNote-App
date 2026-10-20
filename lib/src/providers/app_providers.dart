@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -905,7 +906,20 @@ class PlacesNotifier extends AsyncNotifier<List<Place>> {
 }
 
 class AuthNotifier extends AsyncNotifier<AuthUser?> {
-  bool _validating = false;
+  /// Guards the silent restore against re-entering itself.
+  ///
+  /// **Process-wide on purpose.** `AuthNotifier` is recreated whenever the
+  /// provider is rebuilt (theme, locale, a `ref.watch` upstream), and an
+  /// instance field would reset with it. The restore must be single-flight
+  /// across those rebuilds: on Android
+  /// `GoogleSignIn.instance.attemptLightweightAuthentication()` routes through
+  /// Credential Manager, which is allowed to show its chooser UI. That chooser
+  /// is an Activity *in MapNote's own task*, so opening it backgrounds MapNote
+  /// and dismissing it foregrounds MapNote again — a rebuild that re-enters the
+  /// restore would launch the chooser again, forever. Exactly one attempt per
+  /// process is therefore the rule (AGENT_SKILLS §2.1: restore is silent and
+  /// never prompts).
+  static bool _restoreAttempted = false;
 
   @override
   FutureOr<AuthUser?> build() {
@@ -914,10 +928,21 @@ class AuthNotifier extends AsyncNotifier<AuthUser?> {
     // then refreshes/validates the session in the background.
     final AuthUser? cached = _cachedUser(ref.read(settingsRepositoryProvider));
 
-    // Kick off the silent validation without blocking the initial build.
-    unawaited(_signInSilentlyInBackground());
+    // Only a device that *had* a session should ever try to restore one.
+    // Attempting it signed-out is what summons the Credential Manager chooser:
+    // there is no stored account to restore, so the platform offers to create
+    // one. A signed-out launch must stay completely silent.
+    if (cached != null && !_restoreAttempted) {
+      _restoreAttempted = true;
+      // Kick off the silent validation without blocking the initial build.
+      unawaited(_signInSilentlyInBackground());
+    }
     return cached;
   }
+
+  /// Re-arms the one-shot restore guard. For tests only.
+  @visibleForTesting
+  static void resetRestoreGuard() => _restoreAttempted = false;
 
   /// The user we persisted on the last successful sign-in, if any.
   AuthUser? _cachedUser(SettingsRepository settings) {
@@ -936,10 +961,10 @@ class AuthNotifier extends AsyncNotifier<AuthUser?> {
 
   /// Restores the Google session and validates the Drive token *after* the
   /// provider has already surfaced the cached session to the UI.
+  ///
+  /// Called at most once per process (see [_restoreAttempted]); the caller
+  /// guarantees a cached session exists.
   Future<void> _signInSilentlyInBackground() async {
-    if (_validating) return;
-    _validating = true;
-
     final AuthService auth = ref.read(authServiceProvider);
     final SettingsRepository settings = ref.read(settingsRepositoryProvider);
     try {
@@ -948,12 +973,23 @@ class AuthNotifier extends AsyncNotifier<AuthUser?> {
 
       if (user != null) {
         await _persist(user);
-        state = AsyncValue<AuthUser?>.data(user);
-      } else if (settings.isLoggedIn) {
-        // The account is genuinely gone: drop the stale cached session.
-        await settings.saveAuthSession(null);
         if (!ref.mounted) return;
-        state = const AsyncValue<AuthUser?>.data(null);
+        state = AsyncValue<AuthUser?>.data(user);
+      } else {
+        // The platform had no restorable session. That is *not* proof the
+        // account is gone: `attemptLightweightAuthentication` legitimately
+        // returns null while a chooser is pending, when the device is
+        // temporarily unavailable, or when the user dismissed it. Keep the
+        // cached session so the UI stays signed in and the next explicit
+        // sign-in can re-establish it — a transient refusal must never sign
+        // the user out (AGENT_SKILLS §2.1: silent restore failure means
+        // "stay as you are", not "clear the session").
+        if (kDebugMode) {
+          debugPrint(
+            'MapNote: silent restore found no session; keeping cached state '
+            '(logged in = ${settings.isLoggedIn})',
+          );
+        }
       }
     } catch (error, stackTrace) {
       // Offline or transient failure: keep the cached session so the UI stays
@@ -975,8 +1011,6 @@ class AuthNotifier extends AsyncNotifier<AuthUser?> {
               stackTrace: stackTrace.toString(),
             );
       }
-    } finally {
-      _validating = false;
     }
   }
 
