@@ -337,6 +337,21 @@ nothing about it leaves the device.
   timeout degrades to "no events" and respawns on the next window; window
   buffering, hop cadence, per-kind cooldown and start/stop/dispose are covered by
   `test/ml_classifier_isolate_test.dart`, including a real-isolate path.
+- **Every channel and port is released on the way out.** A `ReceivePort`'s
+  `listen` subscription is stored and cancelled *before* the port is closed, or
+  the reference outlives the port; the worker's own `ReceivePort` is released by
+  sending it a graceful shutdown message before `Isolate.kill`, not by killing it
+  mid-listen. `IsolateMotionInferenceRunner.dispose` is idempotent, fails pending
+  completers, drops the worker and closes every port.
+- **Process-wide hooks are removed on dispose.** `SchedulerBinding
+  .addTimingsCallback` registers for the lifetime of the *binding*, not the
+  widget: the callback must be held in a field and handed to
+  `removeTimingsCallback` in `dispose()`, otherwise it keeps the state object and
+  its monitor reachable and keeps firing after the widget is gone.
+- **Shared hubs are closed, not just parked.** `MotionSensorHub.dispose` cancels
+  the native subscription *and* closes both broadcast controllers, so a later
+  `start()` cannot revive a hub the container already dropped. Covered by
+  `test/resource_leak_audit_test.dart`.
 
 ---
 

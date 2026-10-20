@@ -113,6 +113,8 @@ class IsolateMotionInferenceRunner implements MotionInferenceRunner {
   Completer<SendPort?>? _handshake;
   ReceivePort? _errors;
   ReceivePort? _exits;
+  StreamSubscription<Object?>? _errorsSubscription;
+  StreamSubscription<Object?>? _exitsSubscription;
   int _nextRequestId = 0;
   bool _disposed = false;
 
@@ -203,13 +205,13 @@ class IsolateMotionInferenceRunner implements MotionInferenceRunner {
       _workerLost();
       return;
     }
-    errors.listen((Object? message) {
+    _errorsSubscription = errors.listen((Object? message) {
       if (kDebugMode) {
         debugPrint('MapNote: motion inference isolate error ($message)');
       }
       _workerLost();
     });
-    exits.listen((Object? _) => _workerLost());
+    _exitsSubscription = exits.listen((Object? _) => _workerLost());
   }
 
   void _onReply(Object? message) {
@@ -226,6 +228,24 @@ class IsolateMotionInferenceRunner implements MotionInferenceRunner {
     }
   }
 
+  /// Cancels the error/exit listeners and closes their ports.
+  ///
+  /// Order matters: a `ReceivePort` must be closed *after* its subscription is
+  /// cancelled, otherwise the listener would be torn down by the port close
+  /// while still stored here — the reference would outlive the port.
+  void _closeWorkerPorts() {
+    final StreamSubscription<Object?>? errors = _errorsSubscription;
+    _errorsSubscription = null;
+    unawaited(errors?.cancel());
+    final StreamSubscription<Object?>? exits = _exitsSubscription;
+    _exitsSubscription = null;
+    unawaited(exits?.cancel());
+    _errors?.close();
+    _errors = null;
+    _exits?.close();
+    _exits = null;
+  }
+
   /// Handles a worker that died (or never started): pending windows get empty
   /// answers and the next `infer` spawns a fresh worker.
   void _workerLost() {
@@ -236,24 +256,29 @@ class IsolateMotionInferenceRunner implements MotionInferenceRunner {
     _handshake = null;
     if (handshake != null && !handshake.isCompleted) handshake.complete(null);
     _failPending();
-    _errors?.close();
-    _errors = null;
-    _exits?.close();
-    _exits = null;
+    _closeWorkerPorts();
   }
 
-  /// Drops the worker. [graceful] skips the bookkeeping of [_workerLost] when
-  /// the runner is being disposed instead.
+  /// Drops the worker. [graceful] asks the worker to close its own `ReceivePort`
+  /// before the isolate is killed, so the far side is not torn down mid-listen;
+  /// on dispose that is the only chance to release it.
   void _dropWorker({required bool graceful}) {
     final Isolate? isolate = _isolate;
+    final SendPort? worker = _toWorker;
     _isolate = null;
     _toWorker = null;
     _starting = null;
+    if (graceful && worker != null) {
+      // The worker treats any non-request message as its shutdown signal and
+      // closes its `ReceivePort` (see [motionInferenceIsolateMain]).
+      try {
+        worker.send(const Object());
+      } catch (_) {
+        // The worker may already be gone; killing below is the backstop.
+      }
+    }
     isolate?.kill(priority: Isolate.immediate);
-    _errors?.close();
-    _errors = null;
-    _exits?.close();
-    _exits = null;
+    _closeWorkerPorts();
   }
 
   void _failPending() {

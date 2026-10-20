@@ -108,6 +108,19 @@ class MotionSensorHub {
     await subscription?.cancel();
   }
 
+  /// Cancels the native subscription outright and closes both broadcast feeds.
+  /// The hub is unusable afterwards; used from `ref.onDispose`. Closing is what
+  /// detaches any listener still attached, so a later `start()` cannot silently
+  /// revive a hub that the container already dropped.
+  Future<void> dispose() async {
+    _users = 0;
+    final StreamSubscription<dynamic>? subscription = _subscription;
+    _subscription = null;
+    await subscription?.cancel();
+    await _accelerometers.close();
+    await _gyroscopes.close();
+  }
+
   /// Routes one raw platform event to the matching broadcast stream.
   /// Public so tests can drive the hub without a binary messenger.
   void handlePlatformEvent(Object? event) {

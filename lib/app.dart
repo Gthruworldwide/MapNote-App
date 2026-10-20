@@ -57,6 +57,13 @@ class _MapNoteAppState extends ConsumerState<MapNoteApp>
   /// Drains frame/memory diagnostics into the local health log periodically.
   Timer? _diagnosticTimer;
 
+  /// The process-wide frame-timings hook, kept so it can be **removed** on
+  /// dispose. `addTimingsCallback` registers for the lifetime of the binding,
+  /// not the widget: leaving it installed would keep this state object (and the
+  /// diagnostic monitor) reachable and would keep feeding a disposed widget's
+  /// callback on every frame.
+  TimingsCallback? _timingsCallback;
+
   /// The last Plus Code the clipboard import was offered for, so a code the
   /// user ignored is not offered again on every resume.
   String? _lastOfferedPlusCode;
@@ -82,6 +89,14 @@ class _MapNoteAppState extends ConsumerState<MapNoteApp>
     _sessionEndSubscription?.cancel();
     _shareSubscription?.cancel();
     _shortcutSubscription?.cancel();
+    // Unregister the process-wide frame hook. Without this the binding keeps a
+    // strong reference to this callback (and through it the diagnostic monitor)
+    // forever, and it keeps firing after the widget is gone.
+    final TimingsCallback? timings = _timingsCallback;
+    if (timings != null) {
+      SchedulerBinding.instance.removeTimingsCallback(timings);
+      _timingsCallback = null;
+    }
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -91,14 +106,17 @@ class _MapNoteAppState extends ConsumerState<MapNoteApp>
   /// engine's timings callback is process-wide rather than per-widget.
   void _startDiagnostics() {
     final SelfDiagnosticMonitor monitor = ref.read(selfDiagnosticMonitorProvider);
-    SchedulerBinding.instance.addTimingsCallback((List<FrameTiming> timings) {
+    void timingsCallback(List<FrameTiming> timings) {
       for (final FrameTiming timing in timings) {
         monitor.recordFrame(
           buildMillis: timing.buildDuration.inMicroseconds / 1000,
           rasterMillis: timing.rasterDuration.inMicroseconds / 1000,
         );
       }
-    });
+    }
+
+    _timingsCallback = timingsCallback;
+    SchedulerBinding.instance.addTimingsCallback(timingsCallback);
     _diagnosticTimer = Timer.periodic(const Duration(minutes: 5), (_) {
       if (!mounted) return;
       monitor.sampleMemory();

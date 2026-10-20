@@ -139,7 +139,11 @@ final Provider<LocationHub> locationHubProvider = Provider<LocationHub>(
 /// the dead-reckoning engine, reference-counting the one platform stream so
 /// the hardware only samples while at least one consumer runs.
 final Provider<MotionSensorHub> motionSensorHubProvider =
-    Provider<MotionSensorHub>((Ref ref) => MotionSensorHub());
+    Provider<MotionSensorHub>((Ref ref) {
+      final MotionSensorHub hub = MotionSensorHub();
+      ref.onDispose(hub.dispose);
+      return hub;
+    });
 
 /// Movement evidence shared by the two daily trackers: an accelerometer-backed
 /// sensor bridge on Android, inert elsewhere. The trackers refcount it, so the
