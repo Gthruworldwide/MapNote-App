@@ -64,13 +64,23 @@ jobs:
       - name: Distribute to Firebase App Distribution
         uses: w9jds/firebase-action@v15.34.0
         with:
-          # `appdistribution:distribute` takes the APK positional and the app id
-          # via `--app`; the flags are verified against firebase-tools.
+          # `appdistribution:distribute` takes the APK as a positional argument
+          # and the app id via `--app`. Flags verified against firebase-tools.
+          #
+          # The app id is passed through FIREBASE_APP_ID and the release notes
+          # through RELEASE_NOTES rather than interpolated directly, because a
+          # secret value is stored exactly as pasted — a trailing newline (easy
+          # to paste by accident) previously split this argument list across two
+          # shell lines, so `--groups` was executed as a command and the firebase
+          # CLI got a truncated invocation that reported "Failed to authenticate".
+          # The `$(...)` substitutions below strip surrounding whitespace.
           args: >-
             appdistribution:distribute
             build/app/outputs/flutter-apk/app-release.apk
-            --app ${{ secrets.FIREBASE_APP_ID }}
+            --app $(printf '%s' "$FIREBASE_APP_ID" | tr -d '[:space:]')
             --groups testers
-            --release-notes "${{ github.ref_name }}"
+            --release-notes "$RELEASE_NOTES"
         env:
           GCP_SA_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}
+          FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
+          RELEASE_NOTES: ${{ github.ref_type == 'tag' && github.ref_name || format('{0} @ {1}', github.workflow, github.sha) }}
