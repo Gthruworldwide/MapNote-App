@@ -7,33 +7,28 @@
 ## 1. Git state
 
 - **Repo:** `D:\RouteNote App` · **Branch:** `main`
-- **HEAD:** `ab1e626` (`ab1e62664d7000cd74532ecf9d62972323e49e18`)
-- **Last commit:** `docs(opencode): set 2b23e9b as active auth checkpoint`
+- **HEAD:** `4b59433` (`docs(opencode): mark AutoMotion Phase 3 complete (0c5fc38)`)
+- **Last commit:** `docs(opencode): mark AutoMotion Phase 3 complete (0c5fc38)`
 - **Working tree: CLEAN** — no modified, no untracked files. `.opencode/` is tracked.
-- **Code checkpoint:** `2b23e9b` (`test(auth): pin the trust-window evidence rule and the restore failure paths`) — **active auth checkpoint**, device-verified 2026-10-21. Latest commits `ab1e626` / `3a352d8` are **docs-only** (no Dart changes).
-- **Recent history:** `ab1e626` ← `3a352d8` (add device audit skill + state refresh) ← `2b23e9b` (auth trust-window tests) ← `3ab161d` (Hive encoding fix) ← `f12420b` (Hive auditor + audit harness) ← `1da05e2` (cold-launch auth fix)
+- **Code checkpoint:** `0c5fc38` (`feat(automotion): implement phase 3 per-mode breakdown & 7/30-day aggregates`) — **AutoMotion Phase 3 COMPLETE**. Previous checkpoint `2b23e9b` (cold-launch auth, device-verified 2026-10-21) remains intact.
+- **Recent history:** `4b59433` ← `0c5fc38` (AutoMotion Phase 3) ← `ab1e626` (docs: set auth checkpoint) ← `3a352d8` (device audit skill) ← `2b23e9b` (auth trust-window tests) ← `3ab161d` (Hive encoding fix)
 
 ## 2. Completed in this session
 
-- **New agent skill** `.opencode/skills/mapnote-device-audit/SKILL.md` (ID `mapnote-device-audit`, auto-discovered). Cold-launch auth regression (4× force-stop/start, `executeGetCredential` loop signature, `-v threadtime`) + Hive privacy inspection (`settings.hive`/`health_events`, zero `latitude`/`longitude`, `places.hive` non-vacuity control). Includes the empirically-corrected PowerShell/ADB/build/logcat details and pointers to existing tools.
-- **`.opencode/PROJECT_STATE.md` updated** — reflects `2b23e9b` as the **active checkpoint** (the intended `AppConfig.sessionTrustWindow` architecture, device-verified), marks cold-launch auth **COMPLETE**, sets next open work to **AutoMotion Phase 3**.
-- **Earlier work in this session** — `--only-age` / `-OnlyAge` for `tool/hive_seed_session.dart`/`tool/device_seed_session.ps1`; `test/hive_seed_session_test.dart` (5); `test/auth_session_test.dart` extended (+8 edge cases). **Verification gate:** 809 tests passing, clean analyzer.
-- **Device verification (approved):** `AYDL024206002031` — 0 chooser triggers on trusted branch, clean single-call fallback on stale branch, self-healing re-stamp. Confirmed.
+- **AutoMotion Phase 3 — COMPLETE.** Per-mode activity breakdown (walk/run/vehicle) on `DailyGpsSummary` with backward-compatible defaults; 7/30-day aggregates computed in RAM from `auto_motion_box` (`AutoMotionDataSource.aggregates`/`last7Days`/`last30Days`); `_ActivityBreakdownCard` + `_AggregatesCard` rendered on the dashboard; all new strings in both `app_en.arb` and `app_ar.arb`; 12 new aggregation tests in `test/auto_motion_aggregates_test.dart`. Verification gate: 821 tests passing, clean analyzer.
+- **Cold-launch auth optimization — COMPLETE** (carried from prior session, `2b23e9b`), device-verified 2026-10-21 on Honor 90 / Android 15.
+- **Device audit skill** `.opencode/skills/mapnote-device-audit/SKILL.md` added; full 360° integrity audit passed (Hive backward-compat, l10n parity, secrets scan, health-log privacy zero-coords).
 
 ## 3. Pending work — exact next step
 
-**Primary: AutoMotion Phase 3** (`project_roadmap.md` §4, `.opencode/PROJECT_STATE.md` §4) — **per-mode activity breakdown (walk / run / vehicle) + 7/30-day aggregates**.
+No open code workstream. Roadmap §4 (AutoMotion) fully shipped through Phase 3.
 
-Constraints: fully offline · bilingual en/ar via ARB keys (both `app_en.arb` and `app_ar.arb`) · **no new runtime dependencies** · two trackers stay independent (separate boxes/settings switches) · new fields on `DailyGpsSummary` with **backward-compatible defaults** · write only to `auto_motion_box` (do **not** touch `gps_daily.hive`).
+**Optional next milestones:**
+1. **Physical device validation** of AutoMotion Phase 3 on `AYDL024206002031` (Honor 90, Android 15) — install debug build, record a short drive/walk, confirm per-mode breakdown + 7/30-day aggregates render on the dashboard. Device is currently **detached**; perform ADB recovery first.
+2. **End-to-end run of the `mapnote-device-audit` skill** (cold-launch auth regression + Hive privacy inspection) on the device.
+3. **Push** the 8 commits ahead of `origin/main` when ready (`git push`).
 
-**Exact first action:**
-1. Read `project_roadmap.md` §4 and find `DailyGpsSummary`, `AutoMotionDataSource`, and the AutoMotion UI under `lib/src/features/automotion/`.
-2. Add per-mode fields + 7/30-day aggregation with backward-compatible Hive defaults (never break existing schemas; `AGENT_SKILLS.md` §1.2).
-3. Extend the dashboard (`lib/src/features/automotion/automotion_dashboard_screen.dart` and related widgets/providers) to surface breakdown + aggregates.
-4. Add every new string to **both** `lib/l10n/app_en.arb` and `app_ar.arb`; wire through generated `AppLocalizations`.
-5. Add/extend tests; run `flutter analyze lib test` and `flutter test` before finishing.
-
-**Secondary (optional):** the new skill (`mapnote-device-audit`) hasn’t been run end-to-end yet. Device is currently **detached** — if you want to exercise it, first do ADB recovery on `AYDL024206002031`.
+**Secondary (optional):** run the device audit skill end-to-end. Device currently **detached** — if exercising it, first do ADB recovery on `AYDL024206002031`.
 
 ## 4. Key findings / device context — remember these
 
@@ -53,4 +48,4 @@ Constraints: fully offline · bilingual en/ar via ARB keys (both `app_en.arb` an
 | Tooling to reuse | `tool/device_cold_launch_auth_audit.ps1`, `tool/hive_audit.dart`, `tool/device_seed_session.ps1` / `tool/hive_seed_session.dart` (`-OnlyAge`), `tool/README.md`. |
 | Pre-commit / gate | `scripts/hooks/pre-commit` runs `flutter analyze lib test` only when Dart staged. Gate: analyze clean; all tests pass; no secrets in `lib/`/`android/`/`ios/`. |
 
-**START HERE (next session):** re-read `project_roadmap.md` §4 + the AutoMotion feature code (`lib/src/features/automotion/`), confirm `DailyGpsSummary` schema + `AutoMotionDataSource`, plan backward-compatible fields, then implement Phase 3 (per-mode breakdown + 7/30-day aggregates) with full i18n and tests.
+**START HERE (next session):** no code workstream open. If continuing, pick one of the optional milestones above (device validation of AutoMotion Phase 3, or end-to-end device audit). Otherwise the repo is clean and ready to push.
