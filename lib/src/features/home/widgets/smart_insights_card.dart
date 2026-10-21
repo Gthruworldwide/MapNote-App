@@ -151,8 +151,9 @@ class _InsightTile extends ConsumerWidget {
                   Padding(
                     padding: const EdgeInsets.only(top: 4),
                     child: TextButton.icon(
-                      onPressed: () =>
-                          ref.read(syncControllerProvider.notifier).syncNow(),
+                      onPressed: () => ref
+                          .read(syncControllerProvider.notifier)
+                          .syncNow(userInitiated: true),
                       icon: const Icon(Icons.cloud_sync_outlined, size: 18),
                       label: Text(l10n.insightActionSyncNow),
                       style: TextButton.styleFrom(

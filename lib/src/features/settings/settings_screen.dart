@@ -418,7 +418,9 @@ class SettingsScreen extends ConsumerWidget {
           FilledButton.icon(
             onPressed: sync.isSyncing
                 ? null
-                : () => ref.read(syncControllerProvider.notifier).syncNow(),
+                : () => ref
+                      .read(syncControllerProvider.notifier)
+                      .syncNow(userInitiated: true),
             icon: sync.isSyncing
                 ? const SizedBox(
                     width: 18,
@@ -795,7 +797,9 @@ class SettingsScreen extends ConsumerWidget {
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
     try {
       await ref.read(authProvider.notifier).signIn();
-      await ref.read(syncControllerProvider.notifier).syncNow();
+      await ref
+          .read(syncControllerProvider.notifier)
+          .syncNow(userInitiated: true);
     } on AuthException catch (e) {
       messenger.showSnackBar(
         SnackBar(content: Text(l10n.signInFailed(e.message))),

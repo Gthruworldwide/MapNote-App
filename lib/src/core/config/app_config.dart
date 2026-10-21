@@ -155,4 +155,24 @@ class AppConfig {
 
   /// Maximum number of health events kept on device.
   static const int healthLogCapacity = 200;
+
+  /// How long a cached Google session is trusted without re-asking the platform.
+  ///
+  /// A successful Drive upload or restore is the only thing that writes
+  /// `last_synced`, and it cannot succeed without a live bearer token — so a
+  /// `last_synced` inside this window is *evidence* the session works, not a
+  /// guess. While the evidence is fresh, launch skips
+  /// `attemptLightweightAuthentication()` entirely.
+  ///
+  /// That matters because the plugin's "lightweight" authentication is allowed
+  /// to raise the Credential Manager chooser (Play Services logs
+  /// `ui invocation is needed`), which steals focus on every cold start on a
+  /// device with several Google accounts. Skipping it keeps launch silent for
+  /// the common case; a session that has gone stale still gets the full
+  /// restore, and any Drive call that *does* fail falls back to the existing
+  /// re-authenticate path.
+  ///
+  /// Deliberately shorter than [backgroundSyncFrequency] so a daily background
+  /// sync is never suppressed by this window.
+  static const Duration sessionTrustWindow = Duration(hours: 12);
 }

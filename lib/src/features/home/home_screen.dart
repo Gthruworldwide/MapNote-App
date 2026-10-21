@@ -473,6 +473,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   /// Backs up local data once a session is available, deferred out of build so
   /// no provider state is modified while the widget tree is building.
+  ///
+  /// Automatic, not user-initiated: this runs on every launch, so it must not
+  /// re-establish the Google session — the platform call behind that is
+  /// allowed to raise the Credential Manager chooser, which would steal the
+  /// focus right back off the Home screen the user just opened.
   void _scheduleSyncOnOpen() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -481,8 +486,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   /// Pull-to-refresh performs a sync, then the places list is reloaded.
-  Future<void> _refresh() =>
-      ref.read(syncControllerProvider.notifier).syncNow();
+  ///
+  /// User-initiated: the user asked for fresh data, so re-establishing the
+  /// session here is expected.
+  Future<void> _refresh() => ref
+      .read(syncControllerProvider.notifier)
+      .syncNow(userInitiated: true);
 
   /// Records that the Qibla compass became visible to the user. Fired by both
   /// entry points (the Dynamic Island expansion and the full sheet).

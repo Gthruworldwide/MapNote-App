@@ -935,11 +935,36 @@ class AuthNotifier extends AsyncNotifier<AuthUser?> {
     // there is no stored account to restore, so the platform offers to create
     // one. A signed-out launch must stay completely silent.
     if (cached != null && !_restoreAttempted) {
+      final SettingsRepository settings = ref.read(settingsRepositoryProvider);
+      if (_sessionIsTrusted(settings)) {
+        // The cached session was demonstrably working recently (a Drive upload
+        // or restore succeeded inside `sessionTrustWindow`), so there is
+        // nothing to recover. Skipping the platform call is what keeps launch
+        // silent on devices with several Google accounts, where the Credential
+        // Manager chooser would otherwise take focus on every cold start.
+        return cached;
+      }
       _restoreAttempted = true;
       // Kick off the silent validation without blocking the initial build.
       unawaited(_signInSilentlyInBackground());
     }
     return cached;
+  }
+
+  /// Whether the cached session is fresh enough to skip the platform restore.
+  ///
+  /// `last_synced` is written *only* after a Drive upload or restore actually
+  /// succeeded, both of which require a live bearer token. A recent value is
+  /// therefore real evidence that the stored credentials still work, rather
+  /// than an optimistic assumption. A missing or unparseable value is treated
+  /// as "not trusted" so the restore still runs.
+  bool _sessionIsTrusted(SettingsRepository settings) {
+    final DateTime? lastSynced = settings.lastSynced;
+    if (lastSynced == null) return false;
+    final Duration age = DateTime.now().toUtc().difference(lastSynced);
+    // A clock that jumped backwards yields a negative age; treat a future
+    // timestamp as trustworthy rather than forcing a needless prompt.
+    return age < AppConfig.sessionTrustWindow;
   }
 
   /// Re-arms the one-shot restore guard. For tests only.
@@ -1090,11 +1115,19 @@ class SyncController extends Notifier<SyncState> {
   }
 
   /// Performs the "device wins" sync, keeping the UI state in sync.
-  Future<void> syncNow() async {
+  ///
+  /// [userInitiated] marks a sync the user explicitly asked for -- the Sync
+  /// button, pull-to-refresh, a "Sync now" insight. Only those may
+  /// re-establish the Google session, because the platform call behind it
+  /// ([_ensureSessionForDrive]) is allowed to raise the Credential Manager
+  /// chooser. An *automatic* sync (app resume, "sync on open") must never
+  /// carry it, or the chooser comes back on every cold launch.
+  Future<void> syncNow({bool userInitiated = false}) async {
     final AppHealthLogger health = ref.read(appHealthLoggerProvider);
     health.log(HealthEventType.syncStarted);
     state = state.copyWith(status: SyncStatus.syncing, clearError: true);
     try {
+      if (userInitiated) await _ensureSessionForDrive();
       final SyncOutcome outcome = await ref
           .read(syncRepositoryProvider)
           .syncNow();
@@ -1128,11 +1161,52 @@ class SyncController extends Notifier<SyncState> {
     await ref.read(placesProvider.notifier).reload();
   }
 
+  /// Re-establishes the in-memory Google account before a Drive operation.
+  ///
+  /// Launch deliberately skips `attemptLightweightAuthentication()` when the
+  /// cached session is still fresh (see `AuthNotifier._sessionIsTrusted`),
+  /// because that call is allowed to raise the Credential Manager chooser and
+  /// would otherwise take focus on every cold start. Skipping it also means
+  /// `AuthService.isSignedIn` is false until something restores the account —
+  /// which would make `SyncRepository` report `skippedNotSignedIn`.
+  ///
+  /// So the restore happens here instead, on the first *explicit* Drive
+  /// operation — the Sync or Restore button. That is the right place for it:
+  /// the user has tapped something, so platform UI is expected and
+  /// unremarkable, whereas UI appearing unbidden on launch is exactly what we
+  /// set out to prevent. Cheap to call repeatedly — once the account is live
+  /// this returns immediately.
+  ///
+  /// Only ever call this from a user-initiated path. An automatic sync (app
+  /// resume, "sync on open") that called it would put the chooser straight
+  /// back on the cold-launch path this method exists to protect.
+  Future<void> _ensureSessionForDrive() async {
+    final AuthService auth = ref.read(authServiceProvider);
+    if (auth.isSignedIn) return;
+    final SettingsRepository settings = ref.read(settingsRepositoryProvider);
+    if (!settings.isLoggedIn) return; // Signed out: nothing to re-establish.
+    try {
+      await auth.signInSilently();
+    } catch (error) {
+      // Best-effort. The Drive call below will report the failure properly if
+      // the session really could not be recovered.
+      AppLogger.log(
+        category: 'AUTH',
+        message: 'On-demand session restore before Drive sync failed',
+        error: error,
+      );
+    }
+  }
+
   /// Silent sync for app lifecycle events (e.g. returning to the foreground).
   ///
   /// Skips when a sync is already running, and throttles to at most one sync
   /// per [silentSyncMinInterval] so quick app switches stay cheap and do not
   /// hammer the Drive API.
+  ///
+  /// Deliberately *not* user-initiated: this runs on every app resume, and
+  /// re-establishing the session here would raise the Credential Manager
+  /// chooser over the app the moment the user comes back to it.
   Future<void> syncSilently() async {
     if (state.isSyncing) return;
     final DateTime? lastSynced = state.lastSynced;
@@ -1146,6 +1220,9 @@ class SyncController extends Notifier<SyncState> {
   static const Duration silentSyncMinInterval = Duration(minutes: 1);
 
   /// Downloads the Drive backup and replaces local data.
+  ///
+  /// Always user-initiated: the Restore button is the only caller, so the
+  /// session is re-established first and platform UI is expected here.
   Future<void> restoreFromDrive() async {
     final AppHealthLogger health = ref.read(appHealthLoggerProvider);
     health.log(
@@ -1154,6 +1231,7 @@ class SyncController extends Notifier<SyncState> {
     );
     state = state.copyWith(status: SyncStatus.syncing, clearError: true);
     try {
+      await _ensureSessionForDrive();
       await ref.read(syncRepositoryProvider).restoreFromDrive();
       health.log(
         HealthEventType.syncSucceeded,

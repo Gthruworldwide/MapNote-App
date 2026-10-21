@@ -155,6 +155,67 @@ the first frame. Flow: `AuthNotifier.build` → `_signInSilentlyInBackground()` 
 > _restoreAttempted`, a `static` field precisely so it survives provider
 > rebuilds). Reset it through `AuthNotifier.resetRestoreGuard()` in tests only.
 
+> **Measured on device (Honor 90, Android 15): the chooser is raised on an
+> ordinary cold launch, not only when re-entering.** With a persisted session
+> and no churn at all, Play Services logged
+> `Provider status changed - ui invocation is needed`, then
+> `CredentialChooserActivity` and `AssistedSignInActivity` each took
+> `topResumedActivity` for ~2 s before MapNote regained the foreground. The
+> reported cause is `CREDENTIALS_RECEIVED` from `GoogleIdService`; the trigger is
+> **more than one Google account on the device**, which makes auto-selection
+> ambiguous and forces the platform to ask. The single-flight guard still
+> prevents a *loop* (measured: exactly one `executeGetCredential` per launch), but
+> it does not prevent the prompt.
+>
+> **Consequence for the wording above:** "silent replacement" is too strong. On a
+> multi-account device it is prompt-free only when the session needs no
+> re-resolution. Counting `CredentialChooserActivity` lines in `logcat` is
+> meaningless as a regression signal — one invocation emits >100 lines of
+> SurfaceFlinger/WindowManager chatter. Count
+> `CredentialManager: starting executeGetCredential` instead; more than one per
+> launch is the real loop signature.
+
+> **Suppression (`AppConfig.sessionTrustWindow`).** Because a Drive upload or
+> restore cannot succeed without a live bearer token, `last_synced` is
+> *evidence* the stored credentials work. While it is younger than
+> `sessionTrustWindow`, `AuthNotifier.build` skips
+> `attemptLightweightAuthentication()` outright, so no chooser can appear.
+> A stale or absent `last_synced` still performs the full restore. Suppressing
+> the launch-time call means `AuthService.isSignedIn` stays false until
+> something re-establishes the account, so `SyncController._ensureSessionForDrive`
+> performs the restore on the first *explicit* Drive action (Sync / Restore) —
+> where platform UI is user-initiated and expected. The window is deliberately
+> shorter than `backgroundSyncFrequency` so the headless backup is never
+> suppressed.
+>
+> **Only a user gesture may re-establish the session.** This is the part that
+> is easy to get wrong, because suppressing the *launch-time* restore is not
+> enough on its own. The restore has to move to the explicit Drive action, and
+> the automatic syncs must not carry it back: `SyncController.syncSilently()`
+> fires on every app resume, and the Home screen's "sync on open" fires on
+> every launch. Measured on the Honor 90: with the restore reachable from
+> those automatic paths, the chooser was still raised on **4 of 4** cold
+> launches (`CredentialChooserActivity` / `AssistedSignInActivity` took
+> `topResumedActivity` every time) even though `AuthNotifier.build` had
+> skipped its own call. `SyncController.syncNow` therefore takes a
+> `userInitiated` flag, and only the Sync button, pull-to-refresh and a
+> "Sync now" insight pass `true`.
+>
+> **There is no token cache.** `GoogleAuthService.authorizationHeaders()`
+> needs a live `GoogleSignInAccount`, which only `signInSilently()` /
+> `signIn()` produce. So a suppressed launch genuinely has no bearer token:
+> the automatic sync reports `skippedNotSignedIn` until a user-initiated sync
+> restores the account. That is the intended trade-off — the daily headless
+> backup builds its own graph and restores the session on its own, so the
+> backup is never lost.
+>
+> **Reproduction.** `tool/device_cold_launch_auth_audit.ps1` runs the
+> measurement (force-stop → launch → poll `topResumedActivity` → count
+> `executeGetCredential`), `tool/device_seed_session.ps1` puts the device into
+> the trusted or stale session state, and `tool/hive_audit.dart` audits a
+> pulled Hive box offline. All three are dev-machine tools; nothing in them
+> ships to the device.
+
 **Eval.**
 
 - `signInSilently` is used **only** as the app-level method name on
@@ -163,6 +224,31 @@ the first frame. Flow: `AuthNotifier.build` → `_signInSilentlyInBackground()` 
 - A **signed-out launch never calls `signInSilently()`** — there is nothing to
   restore, so the attempt (and its platform chooser) must not be made.
   Regression-covered in `auth_session_test.dart`.
+- A launch whose cached session synced inside `sessionTrustWindow` **must not
+  call `signInSilently()`**. The evidence must stay real: `last_synced` is
+  written only after a successful Drive round-trip, so it cannot be faked by a
+  mere app-start timestamp. Covered by the "freshly synced session skips the
+  platform restore entirely" case.
+- The suppression is **conditional, never a blanket skip**. A session whose
+  `last_synced` is missing or older than `sessionTrustWindow` must still
+  perform the full restore, exactly as before. Measured on the Honor 90: a
+  stale session raised the Credential Manager chooser on the very first cold
+  launch (`executeGetCredential` = 1, `ui invocation is needed` = 1, focus
+  taken by `AssistedSignInActivity`), while the seeded trusted session
+  produced zero calls on four consecutive cold launches. The suppression must
+  never become a way to permanently disable session restore.
+- Suppression **must not break Drive sync**: the explicit sync/restore paths
+  restore the account first (`_ensureSessionForDrive`). A suppressed launch that
+  then reports `skippedNotSignedIn` on a manual Sync is a failure.
+- **Only a user-initiated Drive action may reach `_ensureSessionForDrive`.**
+  The automatic syncs — `SyncController.syncSilently()` (app resume) and the
+  Home screen's "sync on open" — must not re-establish the session, or the
+  chooser returns on every cold launch even though `AuthNotifier.build`
+  skipped its own call. `syncNow` carries a `userInitiated` flag; the Sync
+  button, pull-to-refresh and a "Sync now" insight pass `true`, everything
+  automatic does not. Regression-covered in `auth_session_test.dart` ("an
+  automatic sync does not re-establish the session" / "an explicit sync
+  re-establishes the session before touching Drive").
 - The restore is **single-flight across `AuthNotifier` rebuilds**;
   `container.invalidate(authProvider)` must not produce a second attempt.
 - A `null`/throwing silent result **keeps** the cached session — a transient
