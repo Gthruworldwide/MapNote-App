@@ -80,6 +80,52 @@ jobs:
         env:
           FIREBASE_APP_ID_RAW: ${{ secrets.FIREBASE_APP_ID }}
 
+      # The action only checks that the secret parses as JSON (`jq empty`), so a
+      # google-services.json — also valid JSON — is accepted and then fails
+      # later with a bare "Failed to authenticate". Validate the credential's
+      # shape here instead, and report why. Prints field NAMES only; never a
+      # value, so the key stays secret.
+      - name: Validate service account key
+        shell: bash
+        run: |
+          key="$(printf '%s' "$SA_KEY_RAW")"
+          echo "length: ${#key} bytes"
+          echo "first 1 char: $(printf '%s' "$key" | cut -c1)"
+
+          if ! printf '%s' "$key" | jq -e . >/dev/null 2>&1; then
+            echo "::error::FIREBASE_SERVICE_ACCOUNT_KEY is not valid JSON."
+            exit 1
+          fi
+
+          echo "top-level fields: $(printf '%s' "$key" | jq -r 'keys | join(", ")')"
+
+          type="$(printf '%s' "$key" | jq -r '.type // "MISSING"')"
+          if [ "$type" != "service_account" ]; then
+            echo "::error::FIREBASE_SERVICE_ACCOUNT_KEY has type='$type', expected 'service_account'."
+            echo "::error::A google-services.json also parses as JSON and will land here."
+            echo "::error::Get a key from Cloud Console > IAM & Admin > Service Accounts > Keys > Add key > JSON."
+            exit 1
+          fi
+
+          printf '%s' "$key" | jq -e '.private_key and .client_email and .project_id' >/dev/null 2>&1 || {
+            echo "::error::FIREBASE_SERVICE_ACCOUNT_KEY is missing private_key, client_email or project_id."
+            exit 1
+          }
+
+          # The PEM must keep its literal \n escapes; if a paste turned them into
+          # real newlines the JSON would already have failed above, and if they
+          # were stripped the PEM cannot be parsed.
+          if ! printf '%s' "$key" | jq -r '.private_key' | grep -q '^-----BEGIN PRIVATE KEY-----'; then
+            echo "::error::private_key does not start with '-----BEGIN PRIVATE KEY-----'; the paste likely mangled its line breaks."
+            exit 1
+          fi
+
+          echo "client_email domain: $(printf '%s' "$key" | jq -r '.client_email | split("@")[1]')"
+          echo "project_id matches repo project: $(printf '%s' "$key" | jq -r '.project_id')"
+          echo "OK: service account key looks structurally valid."
+        env:
+          SA_KEY_RAW: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}
+
       - name: Distribute to Firebase App Distribution
         uses: w9jds/firebase-action@v15.34.0
         with:
