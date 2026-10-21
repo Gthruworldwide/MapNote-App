@@ -5,6 +5,12 @@ name: Firebase App Distribution
 # bumps); day-to-day patch builds go out through the local build + ADB flow
 # instead.
 #
+# Build and distribute are separate jobs so the expensive part is cached across
+# retries. Distribution problems (a bad secret, a missing IAM role) used to cost
+# a full ~10 minute rebuild each time; now the `build` job's APK is uploaded as
+# an artifact and `distribute` reuses it, so a re-run with `--only-job`
+# (or a re-dispatch once the artifact exists) is seconds, not minutes.
+#
 # This workflow only distributes — it does not analyze or test. Validation lives
 # in `android-release.yml`, which also fires on `v*` tags and runs
 # `flutter analyze lib test` + `flutter test` before uploading an artifact.
@@ -15,7 +21,12 @@ name: Firebase App Distribution
 #   FIREBASE_APP_ID             - Firebase Android app id, e.g. 1:1234:android:abcd
 #   FIREBASE_SERVICE_ACCOUNT_KEY - the service account JSON key, verbatim
 #
-# The service account needs the "Firebase App Distribution Admin" role.
+# The service account needs the "Firebase App Distribution Admin" role; on this
+# project it is granted `roles/firebase.admin`, which covers it. Note that
+# `firebaseappdistro.admin` alone does NOT: it carries `releases.list` and
+# `releases.update` but not `releases.create`, so the upload call is refused
+# with `403 The caller does not have permission` even though authentication
+# succeeds.
 
 on:
   workflow_dispatch:
@@ -29,8 +40,8 @@ on:
       - 'v[0-9]+.[0-9]+.[0-9]+\+[0-9]+'
 
 jobs:
-  distribute:
-    name: Build and distribute
+  build:
+    name: Build release APK
     # Pinned, never `ubuntu-latest`. The `ubuntu-latest` label is migrating to
     # Ubuntu 26.04 through November 2026, which changes the default JDK, Docker
     # (28 -> 29) and preinstalled runtime patch versions under a workflow that
@@ -60,6 +71,29 @@ jobs:
         run: >
           flutter build apk --release
           --dart-define=GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
+
+      # The APK is ~67 MB and only needs to outlive the distribute job that
+      # consumes it, so retention is one day rather than the 90-day default.
+      - name: Upload release APK
+        uses: actions/upload-artifact@v6
+        with:
+          name: release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 1
+
+  distribute:
+    name: Distribute to testers
+    needs: build
+    runs-on: ubuntu-24.04
+    steps:
+      # Nothing here needs the repository, Java or Flutter — the artifact is the
+      # only input besides the two secrets — so this job skips all of that and
+      # starts at the download.
+      - name: Download release APK
+        uses: actions/download-artifact@v6
+        with:
+          name: release-apk
+          path: build/app/outputs/flutter-apk
 
       # A secret is stored exactly as pasted, and a trailing newline (easy to
       # paste by accident) previously split the argument list below across two
