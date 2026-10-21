@@ -176,6 +176,23 @@
   "autoMotionHistory": "Trip history",
   "autoMotionHistoryEmpty": "No motion recorded yet",
   "autoMotionHistoryEmptyHint": "Days with recorded motion will appear here.",
+  "autoMotionActivityBreakdown": "Activity breakdown",
+  "autoMotionActivityBreakdownToday": "Today's activity",
+  "autoMotionActivityBreakdownEmpty": "No mode data recorded yet.",
+  "autoMotionModeWalk": "Walk",
+  "autoMotionModeRun": "Run",
+  "autoMotionModeVehicle": "Vehicle",
+  "autoMotionAggregates": "Period aggregates",
+  "autoMotionLast7Days": "Last 7 days",
+  "autoMotionLast30Days": "Last 30 days",
+  "autoMotionDaysRecorded": "{count} days recorded",
+  "@autoMotionDaysRecorded": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "autoMotionViewDetails": "View details",
   "autoMotionRoute": "Today's route",
   "autoMotionRouteEmpty": "No route recorded yet — turn on tracking and drive or walk to see it drawn here.",

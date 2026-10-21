@@ -13,6 +13,12 @@ class DailyGpsSummary {
     this.lastLongitude,
     this.lastFixAt,
     this.path,
+    this.walkKm = 0,
+    this.runKm = 0,
+    this.vehicleKm = 0,
+    this.walkDurationSeconds = 0,
+    this.runDurationSeconds = 0,
+    this.vehicleDurationSeconds = 0,
   });
 
   /// The calendar day this summary belongs to, at local midnight.
@@ -41,6 +47,31 @@ class DailyGpsSummary {
   /// would be a trap.
   final List<RoutePoint>? path;
 
+  /// Distance travelled on foot during the day, in kilometres.
+  final double walkKm;
+
+  /// Distance travelled running during the day, in kilometres.
+  final double runKm;
+
+  /// Distance travelled by vehicle during the day, in kilometres.
+  final double vehicleKm;
+
+  /// Time spent walking during the day, in seconds.
+  final int walkDurationSeconds;
+
+  /// Time spent running during the day, in seconds.
+  final int runDurationSeconds;
+
+  /// Time spent in a vehicle during the day, in seconds.
+  final int vehicleDurationSeconds;
+
+  /// Total distance across all modes, in kilometres.
+  double get totalModeKm => walkKm + runKm + vehicleKm;
+
+  /// Total time across all modes, in seconds.
+  int get totalModeDurationSeconds =>
+      walkDurationSeconds + runDurationSeconds + vehicleDurationSeconds;
+
   DailyGpsSummary copyWith({
     DateTime? date,
     double? totalKm,
@@ -49,6 +80,12 @@ class DailyGpsSummary {
     double? lastLongitude,
     DateTime? lastFixAt,
     List<RoutePoint>? path,
+    double? walkKm,
+    double? runKm,
+    double? vehicleKm,
+    int? walkDurationSeconds,
+    int? runDurationSeconds,
+    int? vehicleDurationSeconds,
   }) {
     return DailyGpsSummary(
       date: date ?? this.date,
@@ -58,6 +95,13 @@ class DailyGpsSummary {
       lastLongitude: lastLongitude ?? this.lastLongitude,
       lastFixAt: lastFixAt ?? this.lastFixAt,
       path: path ?? this.path,
+      walkKm: walkKm ?? this.walkKm,
+      runKm: runKm ?? this.runKm,
+      vehicleKm: vehicleKm ?? this.vehicleKm,
+      walkDurationSeconds: walkDurationSeconds ?? this.walkDurationSeconds,
+      runDurationSeconds: runDurationSeconds ?? this.runDurationSeconds,
+      vehicleDurationSeconds:
+          vehicleDurationSeconds ?? this.vehicleDurationSeconds,
     );
   }
 
@@ -98,6 +142,12 @@ class DailyGpsSummary {
                   point.at?.millisecondsSinceEpoch,
                 ],
             ],
+      'walk_km': walkKm,
+      'run_km': runKm,
+      'vehicle_km': vehicleKm,
+      'walk_duration_s': walkDurationSeconds,
+      'run_duration_s': runDurationSeconds,
+      'vehicle_duration_s': vehicleDurationSeconds,
     };
   }
 
@@ -112,6 +162,12 @@ class DailyGpsSummary {
       lastLongitude: (map['last_lon'] as num?)?.toDouble(),
       lastFixAt: _parseInstant(map['last_fix_at']),
       path: _parsePath(map['path']),
+      walkKm: (map['walk_km'] as num?)?.toDouble() ?? 0,
+      runKm: (map['run_km'] as num?)?.toDouble() ?? 0,
+      vehicleKm: (map['vehicle_km'] as num?)?.toDouble() ?? 0,
+      walkDurationSeconds: (map['walk_duration_s'] as num?)?.toInt() ?? 0,
+      runDurationSeconds: (map['run_duration_s'] as num?)?.toInt() ?? 0,
+      vehicleDurationSeconds: (map['vehicle_duration_s'] as num?)?.toInt() ?? 0,
     );
   }
 
@@ -168,7 +224,13 @@ class DailyGpsSummary {
       other.maxSpeedKmh == maxSpeedKmh &&
       other.lastLatitude == lastLatitude &&
       other.lastLongitude == lastLongitude &&
-      other.lastFixAt == lastFixAt;
+      other.lastFixAt == lastFixAt &&
+      other.walkKm == walkKm &&
+      other.runKm == runKm &&
+      other.vehicleKm == vehicleKm &&
+      other.walkDurationSeconds == walkDurationSeconds &&
+      other.runDurationSeconds == runDurationSeconds &&
+      other.vehicleDurationSeconds == vehicleDurationSeconds;
 
   @override
   int get hashCode => Object.hash(
@@ -178,6 +240,12 @@ class DailyGpsSummary {
         lastLatitude,
         lastLongitude,
         lastFixAt,
+        walkKm,
+        runKm,
+        vehicleKm,
+        walkDurationSeconds,
+        runDurationSeconds,
+        vehicleDurationSeconds,
       );
 
   @override

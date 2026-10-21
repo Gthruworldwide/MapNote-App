@@ -3,6 +3,36 @@ import 'package:hive_ce/hive.dart';
 import '../models/daily_gps_summary.dart';
 import 'daily_track_store.dart';
 
+/// Aggregated totals across a window of days.
+class AutoMotionAggregates {
+  const AutoMotionAggregates({
+    required this.totalKm,
+    required this.maxSpeedKmh,
+    required this.walkKm,
+    required this.runKm,
+    required this.vehicleKm,
+    required this.walkDurationSeconds,
+    required this.runDurationSeconds,
+    required this.vehicleDurationSeconds,
+    required this.days,
+  });
+
+  final double totalKm;
+  final double maxSpeedKmh;
+  final double walkKm;
+  final double runKm;
+  final double vehicleKm;
+  final int walkDurationSeconds;
+  final int runDurationSeconds;
+  final int vehicleDurationSeconds;
+  final int days;
+
+  double get totalModeKm => walkKm + runKm + vehicleKm;
+
+  int get totalModeDurationSeconds =>
+      walkDurationSeconds + runDurationSeconds + vehicleDurationSeconds;
+}
+
 /// Persists AutoMotion's daily metrics.
 ///
 /// Each calendar day is stored under its `YYYY-MM-DD` key in the dedicated
@@ -44,4 +74,69 @@ class AutoMotionDataSource implements DailyTrackStore {
         b.date.compareTo(a.date));
     return summaries;
   }
+
+  /// Aggregates the last [days] days ending at [endDate] (inclusive).
+  /// Computed strictly in RAM from the Hive store (auto_motion_box).
+  AutoMotionAggregates aggregates({int days = 7, DateTime? endDate}) {
+    if (days <= 0) {
+      return const AutoMotionAggregates(
+        totalKm: 0,
+        maxSpeedKmh: 0,
+        walkKm: 0,
+        runKm: 0,
+        vehicleKm: 0,
+        walkDurationSeconds: 0,
+        runDurationSeconds: 0,
+        vehicleDurationSeconds: 0,
+        days: 0,
+      );
+    }
+    final DateTime end = DailyGpsSummary.dayOf(endDate ?? DateTime.now());
+    double totalKm = 0;
+    double maxSpeedKmh = 0;
+    double walkKm = 0;
+    double runKm = 0;
+    double vehicleKm = 0;
+    int walkDurationSeconds = 0;
+    int runDurationSeconds = 0;
+    int vehicleDurationSeconds = 0;
+    int counted = 0;
+
+    for (int i = 0; i < days; i++) {
+      final DateTime day = end.subtract(Duration(days: i));
+      final DailyGpsSummary? summary = summaryFor(day);
+      if (summary == null) continue;
+      counted++;
+      totalKm += summary.totalKm;
+      if (summary.maxSpeedKmh > maxSpeedKmh) {
+        maxSpeedKmh = summary.maxSpeedKmh;
+      }
+      walkKm += summary.walkKm;
+      runKm += summary.runKm;
+      vehicleKm += summary.vehicleKm;
+      walkDurationSeconds += summary.walkDurationSeconds;
+      runDurationSeconds += summary.runDurationSeconds;
+      vehicleDurationSeconds += summary.vehicleDurationSeconds;
+    }
+
+    return AutoMotionAggregates(
+      totalKm: totalKm,
+      maxSpeedKmh: maxSpeedKmh,
+      walkKm: walkKm,
+      runKm: runKm,
+      vehicleKm: vehicleKm,
+      walkDurationSeconds: walkDurationSeconds,
+      runDurationSeconds: runDurationSeconds,
+      vehicleDurationSeconds: vehicleDurationSeconds,
+      days: counted,
+    );
+  }
+
+  /// 7-day aggregates.
+  AutoMotionAggregates last7Days({DateTime? endDate}) =>
+      aggregates(days: 7, endDate: endDate);
+
+  /// 30-day aggregates.
+  AutoMotionAggregates last30Days({DateTime? endDate}) =>
+      aggregates(days: 30, endDate: endDate);
 }

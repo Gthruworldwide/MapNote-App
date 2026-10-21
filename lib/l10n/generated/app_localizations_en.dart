@@ -415,6 +415,38 @@ class AppLocalizationsEn extends AppLocalizations {
       'Days with recorded motion will appear here.';
 
   @override
+  String get autoMotionActivityBreakdown => 'Activity breakdown';
+
+  @override
+  String get autoMotionActivityBreakdownToday => 'Today\'s activity';
+
+  @override
+  String get autoMotionActivityBreakdownEmpty => 'No mode data recorded yet.';
+
+  @override
+  String get autoMotionModeWalk => 'Walk';
+
+  @override
+  String get autoMotionModeRun => 'Run';
+
+  @override
+  String get autoMotionModeVehicle => 'Vehicle';
+
+  @override
+  String get autoMotionAggregates => 'Period aggregates';
+
+  @override
+  String get autoMotionLast7Days => 'Last 7 days';
+
+  @override
+  String get autoMotionLast30Days => 'Last 30 days';
+
+  @override
+  String autoMotionDaysRecorded(int count) {
+    return '$count days recorded';
+  }
+
+  @override
   String get autoMotionViewDetails => 'View details';
 
   @override

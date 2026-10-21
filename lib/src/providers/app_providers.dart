@@ -1853,6 +1853,12 @@ class AutoMotionState {
     required this.currentSpeedKmh,
     required this.unavailable,
     this.failure = TrackStartFailure.none,
+    this.walkKm = 0,
+    this.runKm = 0,
+    this.vehicleKm = 0,
+    this.walkDurationSeconds = 0,
+    this.runDurationSeconds = 0,
+    this.vehicleDurationSeconds = 0,
   });
 
   /// Whether the AutoMotion toggle is currently on.
@@ -1876,6 +1882,13 @@ class AutoMotionState {
   /// Why the last start attempt failed, or [TrackStartFailure.none].
   final TrackStartFailure failure;
 
+  final double walkKm;
+  final double runKm;
+  final double vehicleKm;
+  final int walkDurationSeconds;
+  final int runDurationSeconds;
+  final int vehicleDurationSeconds;
+
   AutoMotionState copyWith({
     bool? enabled,
     bool? active,
@@ -1884,6 +1897,12 @@ class AutoMotionState {
     double? currentSpeedKmh,
     bool? unavailable,
     TrackStartFailure? failure,
+    double? walkKm,
+    double? runKm,
+    double? vehicleKm,
+    int? walkDurationSeconds,
+    int? runDurationSeconds,
+    int? vehicleDurationSeconds,
   }) {
     return AutoMotionState(
       enabled: enabled ?? this.enabled,
@@ -1893,6 +1912,13 @@ class AutoMotionState {
       currentSpeedKmh: currentSpeedKmh ?? this.currentSpeedKmh,
       unavailable: unavailable ?? this.unavailable,
       failure: failure ?? this.failure,
+      walkKm: walkKm ?? this.walkKm,
+      runKm: runKm ?? this.runKm,
+      vehicleKm: vehicleKm ?? this.vehicleKm,
+      walkDurationSeconds: walkDurationSeconds ?? this.walkDurationSeconds,
+      runDurationSeconds: runDurationSeconds ?? this.runDurationSeconds,
+      vehicleDurationSeconds:
+          vehicleDurationSeconds ?? this.vehicleDurationSeconds,
     );
   }
 }
@@ -2200,6 +2226,9 @@ class AutoMotionController extends Notifier<AutoMotionState> {
     required bool enabled,
     bool active = false,
   }) {
+    final DailyGpsSummary? today = ref
+        .read(autoMotionDataSourceProvider)
+        .summaryFor(DailyGpsSummary.dayOf(DateTime.now()));
     return AutoMotionState(
       enabled: enabled,
       active: active,
@@ -2207,6 +2236,12 @@ class AutoMotionController extends Notifier<AutoMotionState> {
       maxSpeedKmh: tracker.maxSpeedKmh,
       currentSpeedKmh: tracker.currentSpeedKmh,
       unavailable: false,
+      walkKm: today?.walkKm ?? 0,
+      runKm: today?.runKm ?? 0,
+      vehicleKm: today?.vehicleKm ?? 0,
+      walkDurationSeconds: today?.walkDurationSeconds ?? 0,
+      runDurationSeconds: today?.runDurationSeconds ?? 0,
+      vehicleDurationSeconds: today?.vehicleDurationSeconds ?? 0,
     );
   }
 }
@@ -2424,3 +2459,26 @@ class AutoMotionHistoryController extends Notifier<List<DailyGpsSummary>> {
     return store.all();
   }
 }
+
+/// 7-day aggregates computed in RAM from the auto_motion_box store.
+final Provider<AutoMotionAggregates> autoMotionAggregates7dProvider =
+    Provider<AutoMotionAggregates>((Ref ref) {
+  ref.watch(autoMotionFixesProvider);
+  final AutoMotionService tracker = ref.watch(autoMotionServiceProvider);
+  final AutoMotionDataSource store = ref.watch(autoMotionDataSourceProvider);
+  // Touch live totals so the aggregates refresh when today's numbers change.
+  tracker.totalDistanceKm;
+  tracker.maxSpeedKmh;
+  return store.last7Days();
+});
+
+/// 30-day aggregates computed in RAM from the auto_motion_box store.
+final Provider<AutoMotionAggregates> autoMotionAggregates30dProvider =
+    Provider<AutoMotionAggregates>((Ref ref) {
+  ref.watch(autoMotionFixesProvider);
+  final AutoMotionService tracker = ref.watch(autoMotionServiceProvider);
+  final AutoMotionDataSource store = ref.watch(autoMotionDataSourceProvider);
+  tracker.totalDistanceKm;
+  tracker.maxSpeedKmh;
+  return store.last30Days();
+});

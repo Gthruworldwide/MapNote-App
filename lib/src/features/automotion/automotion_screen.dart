@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../l10n/generated/app_localizations.dart';
 import '../../core/utils/date_formats.dart';
+import '../../data/local/auto_motion_data_source.dart';
 import '../../data/models/daily_gps_summary.dart';
 import '../../providers/app_providers.dart';
 import '../../widgets/motion_metric.dart';
@@ -29,6 +30,8 @@ class AutoMotionScreen extends ConsumerWidget {
     final AppLocalizations l10n = AppLocalizations.of(context);
     final AutoMotionState state = ref.watch(autoMotionControllerProvider);
     final List<DailyGpsSummary> history = ref.watch(autoMotionHistoryProvider);
+    final AutoMotionAggregates agg7 = ref.watch(autoMotionAggregates7dProvider);
+    final AutoMotionAggregates agg30 = ref.watch(autoMotionAggregates30dProvider);
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.autoMotionDashboardTitle)),
@@ -43,6 +46,10 @@ class AutoMotionScreen extends ConsumerWidget {
           const SizedBox(height: 16),
           const PlaceLinkSuggestionsCard(),
           const DrivingEventsCard(),
+          const SizedBox(height: 16),
+          _ActivityBreakdownCard(state: state),
+          const SizedBox(height: 16),
+          _AggregatesCard(aggregates7: agg7, aggregates30: agg30),
           const SizedBox(height: 16),
           _HistoryCard(history: history),
         ],
@@ -190,6 +197,260 @@ class _DriverModeCard extends ConsumerWidget {
       );
     }
     return state.active ? l10n.autoMotionActive : l10n.autoMotionPaused;
+  }
+}
+
+class _ActivityBreakdownCard extends StatelessWidget {
+  const _ActivityBreakdownCard({required this.state});
+
+  final AutoMotionState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context);
+    final ThemeData theme = Theme.of(context);
+    final double walkKm = state.walkKm;
+    final double runKm = state.runKm;
+    final double vehicleKm = state.vehicleKm;
+    final double total = walkKm + runKm + vehicleKm;
+    final bool hasData = total > 0;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Row(
+              children: <Widget>[
+                Icon(
+                  Icons.pie_chart_outline,
+                  size: 20,
+                  color: theme.colorScheme.primary,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  l10n.autoMotionActivityBreakdownToday,
+                  style: theme.textTheme.titleSmall,
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            if (!hasData)
+              Text(
+                l10n.autoMotionActivityBreakdownEmpty,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              )
+            else
+              Column(
+                children: <Widget>[
+                  _ModeRow(
+                    label: l10n.autoMotionModeWalk,
+                    km: walkKm,
+                    seconds: state.walkDurationSeconds,
+                    totalKm: total,
+                    color: theme.colorScheme.tertiary,
+                  ),
+                  _ModeRow(
+                    label: l10n.autoMotionModeRun,
+                    km: runKm,
+                    seconds: state.runDurationSeconds,
+                    totalKm: total,
+                    color: theme.colorScheme.secondary,
+                  ),
+                  _ModeRow(
+                    label: l10n.autoMotionModeVehicle,
+                    km: vehicleKm,
+                    seconds: state.vehicleDurationSeconds,
+                    totalKm: total,
+                    color: theme.colorScheme.primary,
+                  ),
+                ],
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ModeRow extends StatelessWidget {
+  const _ModeRow({
+    required this.label,
+    required this.km,
+    required this.seconds,
+    required this.totalKm,
+    required this.color,
+  });
+
+  final String label;
+  final double km;
+  final int seconds;
+  final double totalKm;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context);
+    final ThemeData theme = Theme.of(context);
+    final double pct = totalKm <= 0 ? 0 : (km / totalKm * 100);
+    final int minutes = seconds ~/ 60;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              Container(
+                width: 10,
+                height: 10,
+                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+              ),
+              const SizedBox(width: 8),
+              Expanded(child: Text(label, style: theme.textTheme.bodyMedium)),
+              Text(
+                '${km.toStringAsFixed(2)} ${l10n.kmUnit}',
+                style: theme.textTheme.bodyMedium
+                    ?.copyWith(fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '$minutes min',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '${pct.toStringAsFixed(0)}%',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AggregatesCard extends StatelessWidget {
+  const _AggregatesCard({
+    required this.aggregates7,
+    required this.aggregates30,
+  });
+
+  final AutoMotionAggregates aggregates7;
+  final AutoMotionAggregates aggregates30;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context);
+    final ThemeData theme = Theme.of(context);
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Row(
+              children: <Widget>[
+                Icon(
+                  Icons.calendar_view_week,
+                  size: 20,
+                  color: theme.colorScheme.primary,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  l10n.autoMotionAggregates,
+                  style: theme.textTheme.titleSmall,
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            _AggregateRow(
+              title: l10n.autoMotionLast7Days,
+              aggregates: aggregates7,
+            ),
+            const Divider(height: 16),
+            _AggregateRow(
+              title: l10n.autoMotionLast30Days,
+              aggregates: aggregates30,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AggregateRow extends StatelessWidget {
+  const _AggregateRow({required this.title, required this.aggregates});
+
+  final String title;
+  final AutoMotionAggregates aggregates;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context);
+    final ThemeData theme = Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Row(
+          children: <Widget>[
+            Expanded(
+              child: Text(title, style: theme.textTheme.bodyLarge),
+            ),
+            Text(
+              l10n.autoMotionDaysRecorded(aggregates.days),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Row(
+          children: <Widget>[
+            Expanded(
+              child: Text(
+                '${aggregates.totalKm.toStringAsFixed(2)} ${l10n.kmUnit}',
+                style: theme.textTheme.bodyLarge
+                    ?.copyWith(fontWeight: FontWeight.w600),
+              ),
+            ),
+            Text(
+              '${aggregates.walkKm.toStringAsFixed(2)} ${l10n.kmUnit} ${l10n.autoMotionModeWalk.toLowerCase()}',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              '${aggregates.runKm.toStringAsFixed(2)} ${l10n.kmUnit} ${l10n.autoMotionModeRun.toLowerCase()}',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              '${aggregates.vehicleKm.toStringAsFixed(2)} ${l10n.kmUnit} ${l10n.autoMotionModeVehicle.toLowerCase()}',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
   }
 }
 

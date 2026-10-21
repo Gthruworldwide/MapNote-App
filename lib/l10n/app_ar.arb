@@ -141,6 +141,23 @@
   "autoMotionHistory": "سجل الرحلات",
   "autoMotionHistoryEmpty": "لم تُسجَّل أي حركة بعد",
   "autoMotionHistoryEmptyHint": "ستظهر هنا الأيام التي سُجّلت فيها حركة.",
+  "autoMotionActivityBreakdown": "تفصيل النشاط",
+  "autoMotionActivityBreakdownToday": "نشاط اليوم",
+  "autoMotionActivityBreakdownEmpty": "لم يُسجّل بيانات حسب الوضع بعد.",
+  "autoMotionModeWalk": "مشّي",
+  "autoMotionModeRun": "ركض",
+  "autoMotionModeVehicle": "مركبة",
+  "autoMotionAggregates": "إجماليات الفترة",
+  "autoMotionLast7Days": "آخر ٧ أيام",
+  "autoMotionLast30Days": "آخر ٣٠ يومًا",
+  "autoMotionDaysRecorded": "{count} أيام مسجّلة",
+  "@autoMotionDaysRecorded": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "autoMotionViewDetails": "عرض التفاصيل",
   "autoMotionRoute": "مسار اليوم",
   "autoMotionRouteEmpty": "لم يُسجَّل أي مسار بعد — فعّل التتبع ثم قُد أو امشِ ليظهر هنا.",

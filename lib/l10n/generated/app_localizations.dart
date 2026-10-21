@@ -860,6 +860,66 @@ abstract class AppLocalizations {
   /// **'Days with recorded motion will appear here.'**
   String get autoMotionHistoryEmptyHint;
 
+  /// No description provided for @autoMotionActivityBreakdown.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity breakdown'**
+  String get autoMotionActivityBreakdown;
+
+  /// No description provided for @autoMotionActivityBreakdownToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s activity'**
+  String get autoMotionActivityBreakdownToday;
+
+  /// No description provided for @autoMotionActivityBreakdownEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No mode data recorded yet.'**
+  String get autoMotionActivityBreakdownEmpty;
+
+  /// No description provided for @autoMotionModeWalk.
+  ///
+  /// In en, this message translates to:
+  /// **'Walk'**
+  String get autoMotionModeWalk;
+
+  /// No description provided for @autoMotionModeRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Run'**
+  String get autoMotionModeRun;
+
+  /// No description provided for @autoMotionModeVehicle.
+  ///
+  /// In en, this message translates to:
+  /// **'Vehicle'**
+  String get autoMotionModeVehicle;
+
+  /// No description provided for @autoMotionAggregates.
+  ///
+  /// In en, this message translates to:
+  /// **'Period aggregates'**
+  String get autoMotionAggregates;
+
+  /// No description provided for @autoMotionLast7Days.
+  ///
+  /// In en, this message translates to:
+  /// **'Last 7 days'**
+  String get autoMotionLast7Days;
+
+  /// No description provided for @autoMotionLast30Days.
+  ///
+  /// In en, this message translates to:
+  /// **'Last 30 days'**
+  String get autoMotionLast30Days;
+
+  /// No description provided for @autoMotionDaysRecorded.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} days recorded'**
+  String autoMotionDaysRecorded(int count);
+
   /// No description provided for @autoMotionViewDetails.
   ///
   /// In en, this message translates to:

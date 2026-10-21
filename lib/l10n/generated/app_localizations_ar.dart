@@ -414,6 +414,39 @@ class AppLocalizationsAr extends AppLocalizations {
       'ستظهر هنا الأيام التي سُجّلت فيها حركة.';
 
   @override
+  String get autoMotionActivityBreakdown => 'تفصيل النشاط';
+
+  @override
+  String get autoMotionActivityBreakdownToday => 'نشاط اليوم';
+
+  @override
+  String get autoMotionActivityBreakdownEmpty =>
+      'لم يُسجّل بيانات حسب الوضع بعد.';
+
+  @override
+  String get autoMotionModeWalk => 'مشّي';
+
+  @override
+  String get autoMotionModeRun => 'ركض';
+
+  @override
+  String get autoMotionModeVehicle => 'مركبة';
+
+  @override
+  String get autoMotionAggregates => 'إجماليات الفترة';
+
+  @override
+  String get autoMotionLast7Days => 'آخر ٧ أيام';
+
+  @override
+  String get autoMotionLast30Days => 'آخر ٣٠ يومًا';
+
+  @override
+  String autoMotionDaysRecorded(int count) {
+    return '$count أيام مسجّلة';
+  }
+
+  @override
   String get autoMotionViewDetails => 'عرض التفاصيل';
 
   @override
