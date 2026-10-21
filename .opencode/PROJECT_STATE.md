@@ -22,10 +22,10 @@
 - **Latest Distribution:** Release 1.0.5 (22), group `testers`.
 
 ## 4. Current Workstream & Active Checkpoint
-- **Active Checkpoint (code):** `0c5fc38` — AutoMotion Phase 3 **COMPLETE**. Per-mode activity breakdown (walk/run/vehicle) on `DailyGpsSummary` with backward-compatible defaults, 7/30-day aggregates in RAM from `auto_motion_box` (`AutoMotionDataSource`), dashboard UI integration, full en/ar localization, and 12 new aggregation tests. Verification gate: 821 tests passing, clean analyzer.
-- **Latest Commit:** `0c5fc38` — `feat(automotion): implement phase 3 per-mode breakdown & 7/30-day aggregates` (11 files, 930 insertions).
-- **Completed Task:** AutoMotion Phase 3 — **COMPLETE**. Model + aggregates + UI + localization + tests; Hive schemas unchanged (additive keys with defaults); `gps_daily.hive` untouched; zero coordinates in health log; secrets scan clean.
-- **Previously completed:** Cold-launch auth optimization — **COMPLETE** (`2b23e9b`), device-verified 2026-10-21 on Honor 90 / Android 15 (`AYDL024206002031`).
-- **Next Open Work:** TBD — no open workstream. (Optional: device audit skill end-to-end run; device currently detached.)
-- **Device Audit Skill:** `.opencode/skills/mapnote-device-audit/SKILL.md` — cold-launch auth regression checks + Hive privacy inspection on `AYDL024206002031`.
-- **Documentation:** `AGENT_SKILLS.md` §2.1, §5.
+- **Active Checkpoint (code):** `9582f8e` — UI/UX overhaul, responsive font scaling, CompactActionBar, GPS drift filter & settings refresh. Verification gate: 821 tests passing, clean analyzer.
+- **Latest Commit:** `9582f8e` — `feat(ui): responsive font scaling, compact action bar, GPS drift filter, settings refresh` (17 files, 622 insertions).
+- **Completed Task:** Font scaling (4-preset, `settingsBox`), CompactActionBar long-press menu, GPS drift/indoor noise filter (`maxAccuracyMeters` configurable, real-motion gate), settings refresh (font scale/haptic/density toggles), 3-pillar foundations (`AutoMotionExportService`, `StationaryIdleDetector`, `OfflineTileCacheStrategy`).
+- **Previously completed:** AutoMotion Phase 3 — **COMPLETE** (`0c5fc38`); Cold-launch auth optimization — **COMPLETE** (`2b23e9b`), device-verified 2026-10-21.
+- **Next Open Work:** TBD — no open workstream. (Optional: device validation of AutoMotion Phase 3 + font scaling on `AYDL024206002031`; device currently detached.)
+- **Device Audit Skill:** `.opencode/skills/mapnote-device-audit/SKILL.md`.
+- **Documentation:** `AGENT_SKILLS.md` §2.1, §4, §5, §6.

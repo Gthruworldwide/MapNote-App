@@ -7,17 +7,18 @@
 ## 1. Git state
 
 - **Repo:** `D:\RouteNote App` · **Branch:** `main`
-- **HEAD:** `4b59433` (`docs(opencode): mark AutoMotion Phase 3 complete (0c5fc38)`)
-- **Last commit:** `docs(opencode): mark AutoMotion Phase 3 complete (0c5fc38)`
+- **HEAD:** `9582f8e` (`feat(ui): responsive font scaling, compact action bar, GPS drift filter, settings refresh`)
+- **Last commit:** `feat(ui): responsive font scaling, compact action bar, GPS drift filter, settings refresh`
 - **Working tree: CLEAN** — no modified, no untracked files. `.opencode/` is tracked.
-- **Code checkpoint:** `0c5fc38` (`feat(automotion): implement phase 3 per-mode breakdown & 7/30-day aggregates`) — **AutoMotion Phase 3 COMPLETE**. Previous checkpoint `2b23e9b` (cold-launch auth, device-verified 2026-10-21) remains intact.
-- **Recent history:** `4b59433` ← `0c5fc38` (AutoMotion Phase 3) ← `ab1e626` (docs: set auth checkpoint) ← `3a352d8` (device audit skill) ← `2b23e9b` (auth trust-window tests) ← `3ab161d` (Hive encoding fix)
+- **Code checkpoint:** `9582f8e` — UI/UX overhaul (font scaling 4-preset, CompactActionBar, GPS drift/indoor noise filter, settings refresh, 3-pillar foundations). Previous checkpoints `0c5fc38` (AutoMotion Phase 3) and `2b23e9b` (cold-launch auth) remain intact.
+- **Recent history:** `9582f8e` ← `a4ab783` (session briefing refresh) ← `4b59433` (project state refresh) ← `0c5fc38` (AutoMotion Phase 3) ← `ab1e626` (auth checkpoint) ← `3a352d8` (device audit skill)
 
 ## 2. Completed in this session
 
-- **AutoMotion Phase 3 — COMPLETE.** Per-mode activity breakdown (walk/run/vehicle) on `DailyGpsSummary` with backward-compatible defaults; 7/30-day aggregates computed in RAM from `auto_motion_box` (`AutoMotionDataSource.aggregates`/`last7Days`/`last30Days`); `_ActivityBreakdownCard` + `_AggregatesCard` rendered on the dashboard; all new strings in both `app_en.arb` and `app_ar.arb`; 12 new aggregation tests in `test/auto_motion_aggregates_test.dart`. Verification gate: 821 tests passing, clean analyzer.
-- **Cold-launch auth optimization — COMPLETE** (carried from prior session, `2b23e9b`), device-verified 2026-10-21 on Honor 90 / Android 15.
-- **Device audit skill** `.opencode/skills/mapnote-device-audit/SKILL.md` added; full 360° integrity audit passed (Hive backward-compat, l10n parity, secrets scan, health-log privacy zero-coords).
+- **UI/UX overhaul — COMPLETE (`9582f8e`).** Responsive 4-preset font scaling (`FontScalePreset` in settingsBox + provider + TextScaler in MaterialApp); CompactActionBar long-press menu with specified icon order; GPS drift/indoor noise filter (configurable `maxAccuracyMeters`, real-motion gate for maxSpeed); settings refresh (font scale/haptic/density toggles); 3-pillar foundations (`AutoMotionExportService`, `StationaryIdleDetector`, `OfflineTileCacheStrategy`). Verification gate: 821 tests, clean analyzer.
+- **AutoMotion Phase 3 — COMPLETE** (carried, `0c5fc38`).
+- **Cold-launch auth optimization — COMPLETE** (carried, `2b23e9b`), device-verified 2026-10-21.
+- **Device audit skill + 360° integrity audit** passed.
 
 ## 3. Pending work — exact next step
 
