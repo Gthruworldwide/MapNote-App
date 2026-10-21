@@ -5,9 +5,12 @@ import 'package:latlong2/latlong.dart';
 
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../providers/app_providers.dart';
+import '../../../services/driving_event_locator.dart';
+import '../../../services/motion_profiler.dart';
 import '../../../services/polyline_smoother.dart';
 import '../../../services/route_milestones.dart';
 import '../../../widgets/map_attribution_chip.dart';
+import 'driving_event_presentation.dart';
 
 /// The day's route drawn over real OpenStreetMap raster tiles.
 ///
@@ -191,7 +194,119 @@ class _RouteMapViewState extends ConsumerState<RouteMapView> {
         ),
       );
     }
+    markers.addAll(_eventMarkers(scheme));
     return markers;
+  }
+
+  /// The current trip's maneuvers, pinned where they happened.
+  ///
+  /// The coordinate comes from the matched **route vertex**, not from the
+  /// event: `DrivingEvent` carries no location (AGENT_SKILLS.md §5), so the
+  /// pairing is derived on demand and never persisted. Each marker is tappable
+  /// and reports its maneuver through a sheet, so the pin is self-describing
+  /// and nothing is hidden behind a colour alone.
+  List<Marker> _eventMarkers(ColorScheme scheme) {
+    final List<LocatedDrivingEvent> located = ref.watch(
+      locatedDrivingEventsProvider,
+    );
+    if (located.isEmpty) return const <Marker>[];
+
+    final AppLocalizations l10n = AppLocalizations.of(context);
+    return <Marker>[
+      for (final LocatedDrivingEvent item in located)
+        Marker(
+          point: LatLng(item.point.latitude, item.point.longitude),
+          width: 30,
+          height: 30,
+          alignment: Alignment.center,
+          child: Tooltip(
+            message: item.event.type.label(l10n),
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => _showEventSheet(item),
+              child: _eventBadge(scheme, item.event.type),
+            ),
+          ),
+        ),
+    ];
+  }
+
+  /// A circular maneuver badge: the kind's icon on its warning/accent colour,
+  /// ringed by the map surface so it stays legible over any tile.
+  Widget _eventBadge(ColorScheme scheme, DrivingEventType type) {
+    final Color color = type.color(scheme);
+    return Container(
+      width: 26,
+      height: 26,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: color,
+        border: Border.all(color: scheme.surface, width: 2.5),
+      ),
+      alignment: Alignment.center,
+      child: Icon(type.icon, size: 14, color: scheme.onPrimaryContainer),
+    );
+  }
+
+  /// Explains one pinned maneuver. Deliberately shows kind, magnitude and time
+  /// only — the same fields `DrivingEvent` itself carries.
+  void _showEventSheet(LocatedDrivingEvent item) {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (BuildContext sheetContext) {
+        final AppLocalizations l10n = AppLocalizations.of(sheetContext);
+        final ThemeData theme = Theme.of(sheetContext);
+        final ColorScheme scheme = theme.colorScheme;
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsetsDirectional.fromSTEB(24, 0, 24, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                Row(
+                  children: <Widget>[
+                    Icon(item.event.type.icon, color: item.event.type.color(scheme)),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        item.event.type.label(l10n),
+                        style: theme.textTheme.titleMedium,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: Text(
+                        '${item.event.peakMps2.abs().toStringAsFixed(1)} '
+                        '${l10n.mps2Unit}',
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      MaterialLocalizations.of(
+                        sheetContext,
+                      ).formatTimeOfDay(
+                        TimeOfDay.fromDateTime(item.event.startedAt),
+                      ),
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Marker _pin(LatLng point, Widget child) => Marker(

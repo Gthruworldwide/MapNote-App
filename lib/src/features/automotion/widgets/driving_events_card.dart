@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../providers/app_providers.dart';
 import '../../../services/motion_profiler.dart';
+import 'driving_event_presentation.dart';
 
 /// The current trip's maneuvers — hard braking and harsh acceleration from the
 /// speed timeline, plus the sharp turns, speed bumps and potholes the calibrated
@@ -88,29 +89,11 @@ class _DrivingEventTile extends StatelessWidget {
     final AppLocalizations l10n = AppLocalizations.of(context);
     final ThemeData theme = Theme.of(context);
     final ColorScheme scheme = theme.colorScheme;
-    // Warning-toned maneuvers (the ones that mean something went wrong) take the
-    // error colour; turns are a fact of driving, so they stay in the accent
-    // colour alongside harsh acceleration.
-    final bool warning = switch (event.type) {
-      DrivingEventType.harshBraking || DrivingEventType.pothole => true,
-      DrivingEventType.harshAcceleration ||
-      DrivingEventType.sharpTurn ||
-      DrivingEventType.speedBump => false,
-    };
-    final IconData icon = switch (event.type) {
-      DrivingEventType.harshAcceleration => Icons.trending_up,
-      DrivingEventType.harshBraking => Icons.trending_down,
-      DrivingEventType.sharpTurn => Icons.u_turn_right,
-      DrivingEventType.speedBump => Icons.speed,
-      DrivingEventType.pothole => Icons.arrow_downward,
-    };
-    final String label = switch (event.type) {
-      DrivingEventType.harshAcceleration => l10n.harshAcceleration,
-      DrivingEventType.harshBraking => l10n.harshBraking,
-      DrivingEventType.sharpTurn => l10n.sharpTurn,
-      DrivingEventType.speedBump => l10n.speedBump,
-      DrivingEventType.pothole => l10n.pothole,
-    };
+    // Icon, warning tone and label all come from the shared presentation table,
+    // so this card, the map markers and the summary sheet can never disagree.
+    final IconData icon = event.type.icon;
+    final bool warning = event.type.isWarning;
+    final String label = event.type.label(l10n);
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),

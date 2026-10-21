@@ -356,6 +356,26 @@ nothing about it leaves the device.
   another kind's label.
 - **Privacy.** Events carry kind + magnitude + timestamp only; no place names,
   notes or coordinates reach logs, analytics or the classifier.
+- **A maneuver may be drawn on the map without gaining a location.** The map
+  overlay needs a position per event, but `MotionEvent`/`DrivingEvent` must stay
+  coordinate-free, and `DrivingEventsNotifier` mirrors every event into the
+  health log. The pairing therefore lives in a **separate, transient** derivation
+  (`DrivingEventLocator` → `locatedDrivingEventsProvider`): the event keeps no
+  coordinate, the position is borrowed from the **route vertex nearest its
+  timestamp**, and the result is held in memory only — never persisted, never
+  logged, never sent anywhere. A maneuver further than
+  `DrivingEventLocator.maxPlacementGap` (30 s) from any vertex is **dropped, not
+  misplaced**; a vertex without a timestamp cannot host a marker. Never add a
+  coordinate field to `DrivingEvent`/`MotionEvent` to simplify the overlay.
+- **Presentation is declared once.** Icon, warning tone and localized label for a
+  `DrivingEventType` live only in `driving_event_presentation.dart`; the card,
+  the map markers and the summary sheet all read from it, so no kind can fall
+  through to another kind's label in one surface while being correct in another.
+  `test/motion_score_test.dart` and `test/motion_overlay_test.dart` pin this.
+- **The map overlay is derived state, not new storage.** `locatedDrivingEventsProvider`
+  and `motionScoreProvider` watch `drivingEventsProvider` and
+  `autoMotionFixesProvider`; neither adds a Hive key, and both empty the moment
+  `DrivingEventsNotifier.clear()` runs at the start of a new trip.
 - **Isolate plumbing is failure-tolerant.** Spawn failure, worker death, error or
   timeout degrades to "no events" and respawns on the next window; window
   buffering, hop cadence, per-kind cooldown and start/stop/dispose are covered by

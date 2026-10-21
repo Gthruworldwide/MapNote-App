@@ -472,6 +472,43 @@ class AppLocalizationsAr extends AppLocalizations {
   String get mps2Unit => 'm/s²';
 
   @override
+  String get autoMotionEventMarkers => 'علامات الأحداث على المسار';
+
+  @override
+  String get motionSummaryTitle => 'تقييم قيادة الرحلة';
+
+  @override
+  String motionSummaryScore(int score) {
+    return '$score / 100';
+  }
+
+  @override
+  String motionSummaryEvents(int count) {
+    return '$count حدث';
+  }
+
+  @override
+  String get motionSummaryClean => 'رحلة هادئة — لا مناورات قاسية.';
+
+  @override
+  String get motionSummaryExpand => 'إظهار ملخص الحركة';
+
+  @override
+  String get motionSummaryCollapse => 'إخفاء ملخص الحركة';
+
+  @override
+  String get scoreExcellent => 'ممتاز';
+
+  @override
+  String get scoreGood => 'جيد';
+
+  @override
+  String get scoreFair => 'مقبول';
+
+  @override
+  String get scorePoor => 'ضعيف';
+
+  @override
   String get locationChipServiceOff => 'الموقع متوقف — اضغط للتفعيل';
 
   @override

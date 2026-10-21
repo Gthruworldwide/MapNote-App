@@ -474,6 +474,43 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mps2Unit => 'm/s²';
 
   @override
+  String get autoMotionEventMarkers => 'Event markers on route';
+
+  @override
+  String get motionSummaryTitle => 'Trip driving score';
+
+  @override
+  String motionSummaryScore(int score) {
+    return '$score / 100';
+  }
+
+  @override
+  String motionSummaryEvents(int count) {
+    return '$count events';
+  }
+
+  @override
+  String get motionSummaryClean => 'Clean trip — no harsh maneuvers.';
+
+  @override
+  String get motionSummaryExpand => 'Show motion summary';
+
+  @override
+  String get motionSummaryCollapse => 'Hide motion summary';
+
+  @override
+  String get scoreExcellent => 'Excellent';
+
+  @override
+  String get scoreGood => 'Good';
+
+  @override
+  String get scoreFair => 'Fair';
+
+  @override
+  String get scorePoor => 'Poor';
+
+  @override
   String get locationChipServiceOff => 'Location off — tap to enable';
 
   @override

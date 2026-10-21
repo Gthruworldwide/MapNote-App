@@ -676,6 +676,13 @@ Already committed — the notes below explain what is in place.
     That notice is a false positive only the upstream packages can remove; it is
     non-fatal and the build exits `0`.
   See <https://docs.flutter.dev/release/breaking-changes/migrate-to-built-in-kotlin>.
+- **Gradle JDK is not pinned in the repository.** `org.gradle.java.home` is an
+  absolute, machine-specific path, so committing one breaks every other
+  environment with `Value '<path>' given for org.gradle.java.home Gradle property
+  is invalid` (a CI runner, a teammate, a fresh clone). Supply the toolchain
+  (JDK 17+) per machine instead — `flutter config --jdk-dir <path>`,
+  `org.gradle.java.home=<path>` in the user-level `~/.gradle/gradle.properties`,
+  or `JAVA_HOME`. Never add it back to `android/gradle.properties`.
 - **Debug test-crash button** (`MainActivity.kt`): the Crashlytics guide's
   "Test Crash" button is added only when the activity is debuggable, so it never
   appears in a release or profile build.

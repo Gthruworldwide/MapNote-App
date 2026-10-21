@@ -10,6 +10,7 @@ import '../../widgets/track_failure_text.dart';
 import '../home/widgets/auto_motion_badge.dart';
 import '../saved_places/presentation/widgets/place_link_suggestions_card.dart';
 import 'widgets/driving_events_card.dart';
+import 'widgets/motion_summary_sheet.dart';
 import 'widgets/trip_route_card.dart';
 
 /// The full AutoMotion dashboard, opened by tapping the Home status card.
@@ -35,6 +36,8 @@ class AutoMotionScreen extends ConsumerWidget {
         padding: const EdgeInsets.all(16),
         children: <Widget>[
           _DriverModeCard(state: state),
+          const SizedBox(height: 16),
+          const MotionSummarySheet(),
           const SizedBox(height: 16),
           const TripRouteCard(),
           const SizedBox(height: 16),

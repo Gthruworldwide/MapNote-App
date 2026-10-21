@@ -968,6 +968,72 @@ abstract class AppLocalizations {
   /// **'m/s²'**
   String get mps2Unit;
 
+  /// No description provided for @autoMotionEventMarkers.
+  ///
+  /// In en, this message translates to:
+  /// **'Event markers on route'**
+  String get autoMotionEventMarkers;
+
+  /// No description provided for @motionSummaryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip driving score'**
+  String get motionSummaryTitle;
+
+  /// No description provided for @motionSummaryScore.
+  ///
+  /// In en, this message translates to:
+  /// **'{score} / 100'**
+  String motionSummaryScore(int score);
+
+  /// No description provided for @motionSummaryEvents.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} events'**
+  String motionSummaryEvents(int count);
+
+  /// No description provided for @motionSummaryClean.
+  ///
+  /// In en, this message translates to:
+  /// **'Clean trip — no harsh maneuvers.'**
+  String get motionSummaryClean;
+
+  /// No description provided for @motionSummaryExpand.
+  ///
+  /// In en, this message translates to:
+  /// **'Show motion summary'**
+  String get motionSummaryExpand;
+
+  /// No description provided for @motionSummaryCollapse.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide motion summary'**
+  String get motionSummaryCollapse;
+
+  /// No description provided for @scoreExcellent.
+  ///
+  /// In en, this message translates to:
+  /// **'Excellent'**
+  String get scoreExcellent;
+
+  /// No description provided for @scoreGood.
+  ///
+  /// In en, this message translates to:
+  /// **'Good'**
+  String get scoreGood;
+
+  /// No description provided for @scoreFair.
+  ///
+  /// In en, this message translates to:
+  /// **'Fair'**
+  String get scoreFair;
+
+  /// No description provided for @scorePoor.
+  ///
+  /// In en, this message translates to:
+  /// **'Poor'**
+  String get scorePoor;
+
   /// No description provided for @locationChipServiceOff.
   ///
   /// In en, this message translates to:

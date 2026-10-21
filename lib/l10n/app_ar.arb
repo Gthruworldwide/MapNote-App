@@ -164,6 +164,27 @@
   "speedBump": "مطب صناعي",
   "pothole": "حفرة",
   "mps2Unit": "m/s²",
+  "autoMotionEventMarkers": "علامات الأحداث على المسار",
+  "motionSummaryTitle": "تقييم قيادة الرحلة",
+  "motionSummaryScore": "{score} / 100",
+  "@motionSummaryScore": {
+    "placeholders": {
+      "score": { "type": "int" }
+    }
+  },
+  "motionSummaryEvents": "{count} حدث",
+  "@motionSummaryEvents": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "motionSummaryClean": "رحلة هادئة — لا مناورات قاسية.",
+  "motionSummaryExpand": "إظهار ملخص الحركة",
+  "motionSummaryCollapse": "إخفاء ملخص الحركة",
+  "scoreExcellent": "ممتاز",
+  "scoreGood": "جيد",
+  "scoreFair": "مقبول",
+  "scorePoor": "ضعيف",
   "locationChipServiceOff": "الموقع متوقف — اضغط للتفعيل",
   "locationChipPermissionDenied": "إذن الموقع مطلوب — اضغط للسماح",
   "locationChipDeniedForever": "الموقع محظور — اضغط لفتح الإعدادات",

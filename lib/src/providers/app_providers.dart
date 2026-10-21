@@ -46,6 +46,7 @@ import '../services/auto_motion_service.dart';
 import '../services/background_sync_scheduler.dart';
 import '../services/biometric_service.dart';
 import '../services/dead_reckoning_service.dart';
+import '../services/driving_event_locator.dart';
 import '../services/dynamic_icon_service.dart';
 import '../services/foreground_tracking_service.dart';
 import '../services/fused_location_service.dart';
@@ -60,6 +61,7 @@ import '../services/location_hub.dart';
 import '../services/location_service.dart';
 import '../services/milestone_name_resolver.dart';
 import '../services/motion_profiler.dart';
+import '../services/motion_score.dart';
 import '../services/motion_sensor_hub.dart';
 import '../services/motion_signal.dart';
 import '../services/sampling_target.dart';
@@ -2283,6 +2285,44 @@ class DrivingEventsNotifier extends Notifier<List<DrivingEvent>> {
     state = const <DrivingEvent>[];
   }
 }
+
+/// The current trip's maneuvers **pinned to the route**, for the map overlay.
+///
+/// Derived on demand from two independent sources: the location-free
+/// [drivingEventsProvider] log and the recorded route from
+/// `AutoMotionService.smoothedPath`. Nothing is persisted — the pairing exists
+/// only for as long as the dashboard needs to draw it, so the maneuver log
+/// itself stays coordinate-free (AGENT_SKILLS.md §5).
+///
+/// Watching [autoMotionFixesProvider] keeps the placement fresh as the route
+/// grows; `DrivingEventsNotifier.clear()` empties the source list when a new
+/// trip starts, which empties this in the same rebuild.
+final Provider<List<LocatedDrivingEvent>> locatedDrivingEventsProvider =
+    Provider<List<LocatedDrivingEvent>>((Ref ref) {
+      ref.watch(autoMotionFixesProvider);
+      final List<DrivingEvent> events = ref.watch(drivingEventsProvider);
+      if (events.isEmpty) return const <LocatedDrivingEvent>[];
+      return DrivingEventLocator.locate(
+        events: events,
+        route: ref.read(autoMotionServiceProvider).smoothedPath,
+      );
+    });
+
+/// The current trip's driving score, computed from its maneuver log and the
+/// distance recorded so far.
+///
+/// Presentation-only and entirely local: a score, a band and per-kind counts,
+/// with no coordinates and no identity (AGENT_SKILLS.md §5).
+final Provider<MotionScore> motionScoreProvider = Provider<MotionScore>((
+  Ref ref,
+) {
+  ref.watch(autoMotionFixesProvider);
+  final List<DrivingEvent> events = ref.watch(drivingEventsProvider);
+  return MotionScore.from(
+    events,
+    distanceKm: ref.read(autoMotionServiceProvider).totalDistanceKm,
+  );
+});
 
 // ---------------------------------------------------------------------------
 // AutoMotion history

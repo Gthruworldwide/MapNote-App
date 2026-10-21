@@ -199,6 +199,27 @@
   "speedBump": "Speed bump",
   "pothole": "Pothole",
   "mps2Unit": "m/s²",
+  "autoMotionEventMarkers": "Event markers on route",
+  "motionSummaryTitle": "Trip driving score",
+  "motionSummaryScore": "{score} / 100",
+  "@motionSummaryScore": {
+    "placeholders": {
+      "score": { "type": "int" }
+    }
+  },
+  "motionSummaryEvents": "{count} events",
+  "@motionSummaryEvents": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "motionSummaryClean": "Clean trip — no harsh maneuvers.",
+  "motionSummaryExpand": "Show motion summary",
+  "motionSummaryCollapse": "Hide motion summary",
+  "scoreExcellent": "Excellent",
+  "scoreGood": "Good",
+  "scoreFair": "Fair",
+  "scorePoor": "Poor",
   "locationChipServiceOff": "Location off — tap to enable",
   "locationChipPermissionDenied": "Location permission needed — tap to allow",
   "locationChipDeniedForever": "Location blocked — tap to open settings",
