@@ -30,11 +30,17 @@ class PlaceCard extends StatelessWidget {
     final String? notes = place.notes.trim().isEmpty ? null : place.notes;
     final bool masked = place.isLocked;
 
-    return Card(
-      child: InkWell(
-        onTap: onTap,
-        onLongPress: onLongPress,
-        borderRadius: BorderRadius.circular(20),
+    // A dedicated GestureDetector owns the long-press gesture (with its own
+    // slop/hysteresis) so micro-drifts and ListView scroll gestures cannot
+    // accidentally trigger onTap or fire the context menu twice.
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onLongPress: onLongPress,
+      onLongPressStart: (_) {},
+      child: Card(
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(20),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(14, 10, 4, 10),
           child: Row(
@@ -147,7 +153,8 @@ class PlaceCard extends StatelessWidget {
           ),
         ),
       ),
-    );
+    ),   // Card close
+    );   // GestureDetector close
   }
 }
 

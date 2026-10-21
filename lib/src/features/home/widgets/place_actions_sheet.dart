@@ -270,9 +270,13 @@ class _ActionIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final TextScaler scaler = MediaQuery.textScalerOf(context);
+    final double iconSize = scaler.scale(22).clamp(20.0, 28.0);
     return Tooltip(
       message: tooltip,
       child: IconButton(
+        iconSize: iconSize,
+        constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
         icon: Icon(icon, color: color),
         onPressed: () {
           Haptics.light();
