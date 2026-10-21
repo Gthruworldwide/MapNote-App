@@ -4,6 +4,12 @@
 // reports the structure of the `health_events` log, the union of every payload
 // key it contains, and any coordinate-like content anywhere in the box.
 //
+// Two independent checks run over the same file:
+//   * a structured walk of every decoded health event (the authoritative
+//     check -- it sees values the way the app does), and
+//   * a raw byte scan for coordinate-shaped tokens, which also catches a
+//     coordinate hiding in a part of the box the structured walk never visits.
+//
 // Run with:
 //   dart run tool/hive_audit.dart <dir-containing-settings.hive>
 
@@ -48,7 +54,13 @@ bool _isLatLngPair(List<Object?> numbers) {
   return a.abs() <= 90 && b.abs() <= 180 && a != 0 && b != 0;
 }
 
-void _walk(Object? node, String path, List<String> hits) {
+/// Walks a decoded health event tree and records every coordinate leak.
+///
+/// [node] is any decoded Hive value (map, list or scalar), [path] is the
+/// human-readable location of [node] inside the box and [hits] collects the
+/// findings. Public so `test/hive_audit_test.dart` can pin the detector
+/// behaviour: a check that never fires would also "pass" on a leaking box.
+void walkEventTree(Object? node, String path, List<String> hits) {
   if (node is Map) {
     final List<Object?> bareNumbers = <Object?>[];
     for (final MapEntry<Object?, Object?> entry
@@ -63,14 +75,14 @@ void _walk(Object? node, String path, List<String> hits) {
         hits.add('COORDINATE-SHAPED KEY at $path/$keyName = $value');
       }
       if (value is num) bareNumbers.add(value);
-      _walk(value, '$path/$keyName', hits);
+      walkEventTree(value, '$path/$keyName', hits);
     }
     if (_isLatLngPair(bareNumbers)) {
       hits.add('LAT/LNG PAIR under $path = $bareNumbers');
     }
   } else if (node is List) {
     for (int i = 0; i < node.length; i++) {
-      _walk(node[i], '$path[$i]', hits);
+      walkEventTree(node[i], '$path[$i]', hits);
     }
   }
 }
@@ -123,7 +135,7 @@ Future<void> main(List<String> args) async {
     }
     final Object? message = entry['message'];
     if (message != null) messages.add(message.toString());
-    _walk(entry, 'health_events', hits);
+    walkEventTree(entry, 'health_events', hits);
   }
 
   stdout.writeln('\n--- event types ---');
@@ -169,4 +181,89 @@ Future<void> main(List<String> args) async {
   }
 
   await box.close();
+
+  // The independent raw-byte pass. It does not care how Hive framed the
+  // values: it looks for coordinate-shaped tokens and lat/lng number pairs
+  // anywhere in the file, so a coordinate stored outside `health_events`
+  // (a key the structured walk never visits) is still caught.
+  await _rawScan(dir);
+}
+
+/// Scans raw box bytes for coordinate-shaped content and returns the hits.
+///
+/// Hive CE stores strings as UTF-8 bytes (single-byte for ASCII text), so
+/// the file can be read as plain text. (An earlier note claimed UTF-16LE --
+/// that was wrong: a real UTF-16LE box would be ~50% NUL bytes, this one is
+/// ~25%.) The reason the usual `strings | grep` trick finds nothing is
+/// different: the binary must first be pulled without corruption, and
+/// `strings` must exist on the host. See `tool/README.md`.
+///
+/// Exposed for `test/hive_audit_test.dart`, so the detector cannot silently
+/// stop catching a coordinate.
+List<String> scanRawBytes(List<int> bytes) {
+  final String text = String.fromCharCodes(bytes);
+  final String lower = text.toLowerCase();
+  final List<String> hits = <String>[];
+
+  // Distinctive multi-character keys: a plain substring match is enough.
+  for (final String needle in <String>[
+    'latitude',
+    'longitude',
+    'coords',
+    'coordinates',
+    'geopoint',
+    'place_id',
+    'placeid',
+    'position',
+  ]) {
+    if (lower.contains(needle)) hits.add('raw key "$needle"');
+  }
+
+  // Short keys need word boundaries: a plain substring match fires on
+  // `uiLatency` (the health event *type*), which is not a coordinate.
+  for (final String needle in <String>['lat', 'lng', 'lon']) {
+    final RegExp word = RegExp('(?<![A-Za-z0-9_])$needle(?![A-Za-z0-9_])');
+    for (final RegExpMatch m in word.allMatches(lower)) {
+      hits.add('raw key "$needle" at ${m.start}');
+    }
+  }
+
+  // A bare `{a: 30.04, b: 31.23}` pair is the other way a coordinate hides.
+  // The separator is the key material Hive writes between two values, so it
+  // has to be wide enough for a real key name (` placeId `).
+  final RegExp pair = RegExp(
+    r'(-?\d{1,3}\.\d{3,})[^0-9\n\r\-]{0,8}(-?\d{1,3}\.\d{3,})',
+  );
+  for (final RegExpMatch m in pair.allMatches(text)) {
+    final double a = double.parse(m.group(1)!);
+    final double b = double.parse(m.group(2)!);
+    if (a.abs() <= 90 && b.abs() <= 180 && a != 0 && b != 0) {
+      hits.add('raw lat/lng pair ${m.group(1)}, ${m.group(2)}');
+    }
+  }
+
+  return hits;
+}
+
+/// Scans the raw bytes of the pulled `settings.hive` and prints the result.
+Future<void> _rawScan(Directory dir) async {
+  final File file = File('${dir.path}${Platform.pathSeparator}settings.hive');
+  if (!file.existsSync()) {
+    stdout.writeln('\n--- raw byte scan --- skipped (settings.hive not found)');
+    return;
+  }
+  final List<int> bytes = await file.readAsBytes();
+
+  stdout.writeln('\n--- raw byte scan (independent of the structured walk) ---');
+  stdout.writeln('  file bytes : ${bytes.length}');
+
+  final List<String> rawHits = scanRawBytes(bytes);
+  if (rawHits.isEmpty) {
+    stdout.writeln('  PASS: no forbidden key and no lat/lng pair in the raw bytes.');
+  } else {
+    for (final String h in rawHits.take(50)) {
+      stdout.writeln('  $h');
+    }
+    stdout.writeln('  total raw hits: ${rawHits.length}');
+  }
 }

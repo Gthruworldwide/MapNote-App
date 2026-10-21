@@ -130,8 +130,19 @@ whether a cold launch takes the "session still fresh" branch.
 Nothing leaves the machine: the tool opens the box read-only and prints to
 stdout. It never contacts Google, Gemini or Drive.
 
-> Hive CE stores strings as UTF-16LE, so the usual `strings | grep` trick finds
-> nothing in a Hive CE box. Parse it with `hive_ce` instead.
+> **Pull the box without corrupting it.** PowerShell's `>` re-encodes a byte
+> stream, which turns a 231 KB Hive box into a 463 KB file that Hive then
+> reports as "Recovering corrupted box". Pull it through `cmd /c` instead:
+>
+> ```bash
+> cmd /c "adb -s <serial> exec-out run-as com.routenote.routenote cat app_flutter/settings.hive > out/settings.hive"
+> ```
+>
+> Once the bytes are intact, a plain-text scan works: Hive CE stores strings as
+> UTF-8 bytes (single-byte for ASCII text), so `last_synced`, `is_logged_in`
+> and friends are readable with `strings`/`grep` (if the tool is installed on
+> the host). `tool/hive_audit.dart` does not depend on `strings` — it parses
+> the box with `hive_ce` and additionally scans the raw bytes itself.
 
 ### Reproducing a "trusted session" device state
 
