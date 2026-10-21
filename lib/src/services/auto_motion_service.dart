@@ -37,6 +37,7 @@ class AutoMotionService implements SamplingTarget {
     Duration flushEvery = persistInterval,
   }) : _engine = DailyTrackEngine(
           store: dailyStore,
+          maxAccuracyMeters: 20,
           motion: motion,
           gapRecovery: gapRecovery,
           deadReckoning: deadReckoning,

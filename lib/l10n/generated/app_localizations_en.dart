@@ -203,6 +203,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appearance => 'Appearance';
 
   @override
+  String get fontScale => 'Font size';
+
+  @override
+  String get fontScaleSmall => 'Small';
+
+  @override
+  String get fontScaleStandard => 'Standard';
+
+  @override
+  String get fontScaleLarge => 'Large';
+
+  @override
+  String get fontScaleExtraLarge => 'Extra large';
+
+  @override
+  String get hapticFeedback => 'Haptic feedback';
+
+  @override
+  String get uiDensityCompact => 'Compact UI density';
+
+  @override
   String get themeSystem => 'System';
 
   @override

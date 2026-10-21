@@ -758,6 +758,12 @@ final NotifierProvider<LocaleController, Locale?> localeControllerProvider =
 final NotifierProvider<ThemeModeController, ThemeMode> themeModeProvider =
     NotifierProvider<ThemeModeController, ThemeMode>(ThemeModeController.new);
 
+/// Font scale preset, persisted.
+final NotifierProvider<FontScaleController, FontScalePreset> fontScaleProvider =
+    NotifierProvider<FontScaleController, FontScalePreset>(
+      FontScaleController.new,
+    );
+
 /// Smart Insights produced by the monitoring & recommendation agent.
 final AsyncNotifierProvider<AgentNotifier, List<AgentInsight>> agentProvider =
     AsyncNotifierProvider<AgentNotifier, List<AgentInsight>>(AgentNotifier.new);
@@ -1449,6 +1455,17 @@ class ThemeModeController extends Notifier<ThemeMode> {
   Future<void> setThemeMode(ThemeMode mode) async {
     await ref.read(settingsRepositoryProvider).setThemeModeIndex(mode.index);
     state = mode;
+  }
+}
+
+class FontScaleController extends Notifier<FontScalePreset> {
+  @override
+  FontScalePreset build() =>
+      ref.watch(settingsRepositoryProvider).fontScalePreset;
+
+  Future<void> setFontScale(FontScalePreset preset) async {
+    await ref.read(settingsRepositoryProvider).setFontScalePreset(preset);
+    state = preset;
   }
 }
 

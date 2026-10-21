@@ -237,11 +237,12 @@ void main() {
       final double before = service.totalDistanceKm;
       expect(before, greaterThan(0));
 
-      // ~0.1 m move right after: jitter, no distance.
+      // ~0.1 m move right after: jitter, no distance and no real motion, so
+      // the reported 50 m/s is treated as indoor GPS drift and does NOT
+      // become the day's max speed.
       service.recordPosition(_fix(0.005001, 0, speed: 50));
       expect(service.totalDistanceKm, before);
-      // But the speed still registers.
-      expect(service.maxSpeedKmh, closeTo(180.0, 0.001));
+      expect(service.maxSpeedKmh, closeTo(18.0, 0.001));
     });
   });
 

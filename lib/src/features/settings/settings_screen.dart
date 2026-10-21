@@ -13,6 +13,7 @@ import '../../core/utils/date_formats.dart';
 import '../../core/utils/haptics.dart';
 import '../../data/models/place.dart';
 import '../../data/remote/auth_service.dart';
+import '../../data/local/settings_repository.dart';
 import '../../data/repositories/sync_repository.dart';
 import '../../providers/app_providers.dart';
 import '../../services/daily_track_engine.dart';
@@ -34,6 +35,7 @@ class SettingsScreen extends ConsumerWidget {
     final SyncState sync = ref.watch(syncControllerProvider);
     final Locale? locale = ref.watch(localeControllerProvider);
     final ThemeMode themeMode = ref.watch(themeModeProvider);
+    final FontScalePreset fontScale = ref.watch(fontScaleProvider);
     final AsyncValue<LocationStatus> location = ref.watch(
       locationStatusProvider,
     );
@@ -107,6 +109,7 @@ class SettingsScreen extends ConsumerWidget {
                 locale,
                 themeMode,
                 navApp,
+                fontScale,
               ),
               _buildAgentCard(context, ref, l10n),
             ]),
@@ -574,6 +577,7 @@ class SettingsScreen extends ConsumerWidget {
     Locale? locale,
     ThemeMode themeMode,
     PreferredNavApp navApp,
+    FontScalePreset fontScale,
   ) {
     final ThemeData theme = Theme.of(context);
     return Padding(
@@ -676,6 +680,57 @@ class SettingsScreen extends ConsumerWidget {
                     ref.read(themeModeProvider.notifier).setThemeMode(value),
               ),
             ],
+          ),
+          const Divider(height: 24),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.text_fields),
+            title: Text(l10n.fontScale),
+            trailing: DropdownButton<FontScalePreset>(
+              value: fontScale,
+              underline: const SizedBox.shrink(),
+              items: <DropdownMenuItem<FontScalePreset>>[
+                DropdownMenuItem<FontScalePreset>(
+                  value: FontScalePreset.small,
+                  child: Text(l10n.fontScaleSmall),
+                ),
+                DropdownMenuItem<FontScalePreset>(
+                  value: FontScalePreset.standard,
+                  child: Text(l10n.fontScaleStandard),
+                ),
+                DropdownMenuItem<FontScalePreset>(
+                  value: FontScalePreset.large,
+                  child: Text(l10n.fontScaleLarge),
+                ),
+                DropdownMenuItem<FontScalePreset>(
+                  value: FontScalePreset.extraLarge,
+                  child: Text(l10n.fontScaleExtraLarge),
+                ),
+              ],
+              onChanged: (FontScalePreset? value) {
+                if (value != null) {
+                  ref.read(fontScaleProvider.notifier).setFontScale(value);
+                }
+              },
+            ),
+          ),
+          const Divider(height: 24),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            secondary: const Icon(Icons.vibration),
+            title: Text(l10n.hapticFeedback),
+            value: ref.watch(settingsRepositoryProvider).isHapticFeedbackEnabled,
+            onChanged: (bool value) =>
+                ref.read(settingsRepositoryProvider).setHapticFeedbackEnabled(value),
+          ),
+          const Divider(height: 24),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            secondary: const Icon(Icons.density_medium),
+            title: Text(l10n.uiDensityCompact),
+            value: ref.watch(settingsRepositoryProvider).isUiDensityCompact,
+            onChanged: (bool value) =>
+                ref.read(settingsRepositoryProvider).setUiDensityCompact(value),
           ),
         ],
       ),

@@ -59,6 +59,7 @@ class DailyTrackEngine {
     PolylineSmoother? smoother,
     this._behavior,
     this.flushEvery = persistInterval,
+    this.maxAccuracyMeters = maxAccuracyMetersDefault,
   })  : _motion = motion ?? const NoMotionSignal(),
         _gapRecovery = gapRecovery ?? const GapRecoveryService(),
         _deadReckoning = deadReckoning ?? const NoopDistanceEstimator(),
@@ -95,8 +96,14 @@ class DailyTrackEngine {
   /// Fixes that moved less than this many metres are GPS jitter, not travel.
   static const int minStepMeters = 3;
 
+  /// Default ceiling for accepted fix accuracy (metres).
+  static const double maxAccuracyMetersDefault = 35;
+
   /// Fixes worse than this horizontal accuracy (metres) are dropped.
-  static const double maxAccuracyMeters = 35;
+  ///
+  /// Configurable per tracker: AutoMotion tightens this to ~20 m to reject
+  /// indoor GPS drift that would otherwise inflate max-speed readings.
+  final double maxAccuracyMeters;
 
   /// Fixes further apart than this in time belong to separate trips: the gap
   /// is a parked phone or a killed app, not travel, so the jump between the
@@ -455,7 +462,24 @@ class DailyTrackEngine {
     }
 
     if (speedPlausible) {
-      _dayMaxKmh = math.max(_dayMaxKmh, _currentKmh);
+      // Indoor GPS drift reports a high Doppler speed while the device is
+      // stationary: the fix-to-fix step is (near) zero, so it never counts
+      // as travel. Such a reading must not poison the day's max speed.
+      final double stepForMax = (lastAt != null)
+          ? haversineKm(lastLat, lastLon, position.latitude, position.longitude)
+          : 0.0;
+      final bool realMotion = stepForMax * 1000 >= minStepMeters;
+      if (realMotion) {
+        // Only credit a max-speed reading backed by real movement, so indoor
+        // GPS drift (high reported speed, no distance) cannot spike it.
+        // A sustained-speed (3 s) gate is intentionally NOT applied here: the
+        // daily tracker already rejects non-travel fixes above, and applying
+        // a wall-clock gate would drop legitimate short bursts; the adaptive
+        // layer (StationaryIdleDetector) handles zero-motion suppression.
+        if (_currentKmh > _dayMaxKmh) {
+          _dayMaxKmh = _currentKmh;
+        }
+      }
     }
     unawaited(_persistSafely());
     _notify();

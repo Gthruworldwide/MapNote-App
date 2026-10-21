@@ -3,6 +3,9 @@ import 'package:hive_ce/hive.dart';
 import '../../core/config/preferred_nav_app.dart';
 import '../../core/security/session_guard.dart';
 
+/// The four font-size presets selectable in Settings.
+enum FontScalePreset { small, standard, large, extraLarge }
+
 /// Small key/value store for app preferences backed by a Hive box.
 class SettingsRepository {
   SettingsRepository(this._box);
@@ -22,6 +25,9 @@ class SettingsRepository {
   static const String _autoMotionEnabledKey = 'enable_auto_motion';
   static const String _sessionTimeoutMinutesKey = 'session_timeout_minutes';
   static const String _lockOnDeviceLockKey = 'lock_on_device_lock';
+  static const String _fontScaleKey = 'font_scale';
+  static const String _hapticFeedbackKey = 'haptic_feedback';
+  static const String _uiDensityCompactKey = 'ui_density_compact';
 
   /// BCP-47 language code of the selected locale, or null for system default.
   String? get localeCode => _box.get(_localeKey) as String?;
@@ -193,5 +199,36 @@ class SettingsRepository {
 
   Future<void> clearDismissedInsights() async {
     await _box.delete(_dismissedInsightsKey);
+  }
+
+  /// The selected font-size preset. Defaults to [FontScalePreset.standard].
+  FontScalePreset get fontScalePreset {
+    final Object? raw = _box.get(_fontScaleKey);
+    if (raw is String) {
+      for (final FontScalePreset p in FontScalePreset.values) {
+        if (p.name == raw) return p;
+      }
+    }
+    return FontScalePreset.standard;
+  }
+
+  Future<void> setFontScalePreset(FontScalePreset preset) async {
+    await _box.put(_fontScaleKey, preset.name);
+  }
+
+  /// Whether haptic feedback is enabled (default on).
+  bool get isHapticFeedbackEnabled =>
+      (_box.get(_hapticFeedbackKey) as bool?) ?? true;
+
+  Future<void> setHapticFeedbackEnabled(bool enabled) async {
+    await _box.put(_hapticFeedbackKey, enabled);
+  }
+
+  /// Whether the UI uses the compact density (default off = comfortable).
+  bool get isUiDensityCompact =>
+      (_box.get(_uiDensityCompactKey) as bool?) ?? false;
+
+  Future<void> setUiDensityCompact(bool compact) async {
+    await _box.put(_uiDensityCompactKey, compact);
   }
 }

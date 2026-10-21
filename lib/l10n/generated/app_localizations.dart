@@ -476,6 +476,48 @@ abstract class AppLocalizations {
   /// **'Appearance'**
   String get appearance;
 
+  /// No description provided for @fontScale.
+  ///
+  /// In en, this message translates to:
+  /// **'Font size'**
+  String get fontScale;
+
+  /// No description provided for @fontScaleSmall.
+  ///
+  /// In en, this message translates to:
+  /// **'Small'**
+  String get fontScaleSmall;
+
+  /// No description provided for @fontScaleStandard.
+  ///
+  /// In en, this message translates to:
+  /// **'Standard'**
+  String get fontScaleStandard;
+
+  /// No description provided for @fontScaleLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'Large'**
+  String get fontScaleLarge;
+
+  /// No description provided for @fontScaleExtraLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'Extra large'**
+  String get fontScaleExtraLarge;
+
+  /// No description provided for @hapticFeedback.
+  ///
+  /// In en, this message translates to:
+  /// **'Haptic feedback'**
+  String get hapticFeedback;
+
+  /// No description provided for @uiDensityCompact.
+  ///
+  /// In en, this message translates to:
+  /// **'Compact UI density'**
+  String get uiDensityCompact;
+
   /// No description provided for @themeSystem.
   ///
   /// In en, this message translates to:

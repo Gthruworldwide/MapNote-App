@@ -183,11 +183,11 @@ void main() {
     // Long-press opens the context menu.
     await tester.longPress(find.byType(PlaceCard));
     await tester.pumpAndSettle();
-    expect(find.text('Unlock location'), findsOneWidget);
+    expect(find.byTooltip('Unlock location'), findsOneWidget);
 
     // Unlock triggers local_auth (fake verdict: verified), then persists
     // through the repository and refreshes the provider state.
-    await tester.tap(find.text('Unlock location'));
+    await tester.tap(find.byTooltip('Unlock location'));
     await tester.pumpAndSettle();
 
     final Place? stored = await dataSource.getById('place-1');
@@ -207,7 +207,7 @@ void main() {
 
     await tester.longPress(find.byType(PlaceCard));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Unlock location'));
+    await tester.tap(find.byTooltip('Unlock location'));
     await tester.pumpAndSettle();
 
     final Place? stored = await dataSource.getById('place-1');
@@ -230,7 +230,7 @@ void main() {
 
     await tester.longPress(find.byType(PlaceCard));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Unlock location'));
+    await tester.tap(find.byTooltip('Unlock location'));
     await tester.pumpAndSettle();
 
     // No screen lock and no biometrics: the gate falls back instead of
@@ -263,7 +263,7 @@ void main() {
 
     await tester.longPress(find.byType(PlaceCard));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Navigate'));
+    await tester.tap(find.byTooltip('Navigate').last);
     await tester.pumpAndSettle();
 
     // Verification failed -> the guard denies the action: no navigation, no
@@ -284,7 +284,7 @@ void main() {
 
     await tester.longPress(find.byType(PlaceCard));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Navigate'));
+    await tester.tap(find.byTooltip('Navigate').last);
     await tester.pumpAndSettle();
 
     // Verification passed -> the intended action runs: the navigation app is
@@ -309,7 +309,7 @@ void main() {
 
     await tester.longPress(find.byType(PlaceCard));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Navigate'));
+    await tester.tap(find.byTooltip('Navigate').last);
     await tester.pumpAndSettle();
 
     // No lock screen and no biometrics: the action proceeds with a warning.

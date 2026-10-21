@@ -25,6 +25,7 @@ import 'src/services/home_shortcut_service.dart';
 import 'src/services/location_parser.dart';
 import 'src/services/lock_gate.dart';
 import 'src/services/share_intent_service.dart';
+import 'src/data/local/settings_repository.dart';
 
 /// Root widget of MapNote.
 ///
@@ -500,6 +501,20 @@ class _MapNoteAppState extends ConsumerState<MapNoteApp>
   Widget build(BuildContext context) {
     final Locale? locale = ref.watch(localeControllerProvider);
     final ThemeMode themeMode = ref.watch(themeModeProvider);
+    final FontScalePreset fontScale = ref.watch(fontScaleProvider);
+
+    double fontScaleFactor(FontScalePreset preset) {
+      switch (preset) {
+        case FontScalePreset.small:
+          return 0.85;
+        case FontScalePreset.standard:
+          return 1.0;
+        case FontScalePreset.large:
+          return 1.15;
+        case FontScalePreset.extraLarge:
+          return 1.3;
+      }
+    }
 
     return MaterialApp(
       navigatorKey: appNavigatorKey,
@@ -517,8 +532,15 @@ class _MapNoteAppState extends ConsumerState<MapNoteApp>
       navigatorObservers: ref.watch(analyticsNavigatorObserversProvider),
       // Branded cold-start splash: an overlay above the navigator, so the home
       // route (and early share-intent / shortcut navigation) is live underneath.
-      builder: (BuildContext context, Widget? child) =>
-          BrandSplash(child: child ?? const SizedBox.shrink()),
+      builder: (BuildContext context, Widget? child) {
+        final MediaQueryData mq = MediaQuery.of(context);
+        return MediaQuery(
+          data: mq.copyWith(
+            textScaler: TextScaler.linear(fontScaleFactor(fontScale)),
+          ),
+          child: BrandSplash(child: child ?? const SizedBox.shrink()),
+        );
+      },
       home: const HomeScreen(),
     );
   }

@@ -204,6 +204,27 @@ class AppLocalizationsAr extends AppLocalizations {
   String get appearance => 'المظهر';
 
   @override
+  String get fontScale => 'حجم الخط';
+
+  @override
+  String get fontScaleSmall => 'صغير';
+
+  @override
+  String get fontScaleStandard => 'قياسي';
+
+  @override
+  String get fontScaleLarge => 'كبير';
+
+  @override
+  String get fontScaleExtraLarge => 'كبير جدًا';
+
+  @override
+  String get hapticFeedback => 'الاهتزاز';
+
+  @override
+  String get uiDensityCompact => 'واجهة مضغوطة';
+
+  @override
   String get themeSystem => 'النظام';
 
   @override
