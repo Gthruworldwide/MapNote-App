@@ -215,6 +215,13 @@ the first frame. Flow: `AuthNotifier.build` → `_signInSilentlyInBackground()` 
 > the trusted or stale session state, and `tool/hive_audit.dart` audits a
 > pulled Hive box offline. All three are dev-machine tools; nothing in them
 > ships to the device.
+>
+> To measure the **stale** branch on a device that holds a *real* Google
+> session, seed with `--only-age`: it ages `last_synced` and leaves
+> `auth_user` / `is_logged_in` untouched. The default seed mode replaces the
+> identity with a placeholder, which would leave the device showing a fake
+> account. The trust evidence heals by itself — the next successful Drive
+> round-trip re-stamps `last_synced`.
 
 **Eval.**
 
@@ -228,7 +235,10 @@ the first frame. Flow: `AuthNotifier.build` → `_signInSilentlyInBackground()` 
   call `signInSilently()`**. The evidence must stay real: `last_synced` is
   written only after a successful Drive round-trip, so it cannot be faked by a
   mere app-start timestamp. Covered by the "freshly synced session skips the
-  platform restore entirely" case.
+  platform restore entirely" case, and the evidence rule itself is pinned by
+  the "last_synced is written only after a successful Drive round-trip" case
+  (a *failed* upload must not stamp it, or the suppression would outlive the
+  session it was granted for).
 - The suppression is **conditional, never a blanket skip**. A session whose
   `last_synced` is missing or older than `sessionTrustWindow` must still
   perform the full restore, exactly as before. Measured on the Honor 90: a
@@ -237,6 +247,39 @@ the first frame. Flow: `AuthNotifier.build` → `_signInSilentlyInBackground()` 
   taken by `AssistedSignInActivity`), while the seeded trusted session
   produced zero calls on four consecutive cold launches. The suppression must
   never become a way to permanently disable session restore.
+
+  > **Re-verified 2026-10-21** on AYDL024206002031 (Honor 90, Android 15):
+  >
+  > *Trusted branch* — the device's `settingsBox` reported `is_logged_in = true`
+  > with a `last_synced` 10 minutes old (inside the window → TRUSTED).
+  > `tool/device_cold_launch_auth_audit.ps1 -Launches 4` reported
+  > `executeGetCredential` = **0**, `ui invocation is needed` = **0** and
+  > `CredentialChooserActivity` / `AssistedSignInActivity` = **0** on every
+  > launch. The only activity that took the foreground was the permission
+  > controller's `GrantPermissionsActivity` on the first launch — the
+  > location-permission prompt, not the Credential Manager chooser. The
+  > automatic "sync on open" on those launches did **not** re-establish the
+  > session, which is what the `userInitiated` flag exists to prevent.
+  >
+  > *Stale branch* — `last_synced` was aged past the window with
+  > `--only-age` (the real `auth_user` untouched). The very next cold launch
+  > restored: `executeGetCredential` = **1**, `ui invocation is needed` = **1**,
+  > and `CredentialChooserActivity` / `AssistedSignInActivity` took
+  > `topResumedActivity`. One plugin call, one chooser — **no loop**. The raw
+  > logcat shows the escalation: `starting executeGetCredential` →
+  > `Provider status changed - ui invocation is needed` →
+  > `AssistedSignInActivity`, all inside MapNote's own task.
+  >
+  > *Self-healing* — the launches after that reported **0** calls again: the
+  > successful Drive round-trip re-stamped `last_synced`, so the session was
+  > TRUSTED once more. The suppression is conditional and self-repairing, not a
+  > blanket skip.
+  >
+  > **Counting caveat.** `logcat -c` does not always flush a pending entry, so
+  > a launch can inherit a stale line and report 2 where the plugin made a
+  > single attempt. Trust the per-launch count only when it is corroborated by
+  > the `ui invocation is needed` line (one chooser = one attempt); the raw
+  > logcat is the tie-breaker.
 - Suppression **must not break Drive sync**: the explicit sync/restore paths
   restore the account first (`_ensureSessionForDrive`). A suppressed launch that
   then reports `skippedNotSignedIn` on a manual Sync is a failure.
@@ -252,7 +295,9 @@ the first frame. Flow: `AuthNotifier.build` → `_signInSilentlyInBackground()` 
 - The restore is **single-flight across `AuthNotifier` rebuilds**;
   `container.invalidate(authProvider)` must not produce a second attempt.
 - A `null`/throwing silent result **keeps** the cached session — a transient
-  refusal is never a silent sign-out.
+  refusal is never a silent sign-out. Both branches are regression-covered in
+  `auth_session_test.dart` ("a null silent result keeps the cached session" and
+  "a throwing silent restore keeps the cached session").
 - Silent restore failure → no crash, no error UI.
 - Both restore entry points obey the precondition: `AuthNotifier.build` **and**
   the headless `backgroundSyncDispatcher` (a backup job with nothing to back up

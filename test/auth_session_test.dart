@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce/hive.dart';
+import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
+import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 import 'package:routenote/src/data/local/hive_database.dart';
 import 'package:routenote/src/data/local/settings_repository.dart';
@@ -11,11 +13,30 @@ import 'package:routenote/src/data/remote/drive_service.dart';
 import 'package:routenote/src/providers/app_providers.dart';
 import 'package:routenote/src/services/app_health_logger.dart';
 
+/// Points `path_provider` at a temp directory so `AppLogger` can write its
+/// diagnostics file during the tests instead of failing on a missing
+/// platform implementation (the write is best-effort and would otherwise
+/// print a scary stack trace for every expected failure below).
+class FakePathProvider extends PathProviderPlatform
+    with MockPlatformInterfaceMixin {
+  FakePathProvider(this.path);
+
+  final String path;
+
+  @override
+  Future<String?> getApplicationDocumentsPath() async => path;
+}
+
 /// Auth service stand-in that reports a fixed result for the silent attempt.
 class _FakeAuthService implements AuthService {
-  _FakeAuthService({this.silentUser});
+  _FakeAuthService({this.silentUser, this.silentError});
 
   final AuthUser? silentUser;
+
+  /// When set, the silent attempt throws instead of returning — the
+  /// "platform/transport hiccup" branch of the restore contract.
+  final Object? silentError;
+
   int silentCalls = 0;
   AuthUser? _user;
 
@@ -31,6 +52,8 @@ class _FakeAuthService implements AuthService {
   @override
   Future<AuthUser?> signInSilently() async {
     silentCalls++;
+    final Object? error = silentError;
+    if (error != null) throw error;
     _user = silentUser;
     return silentUser;
   }
@@ -75,6 +98,11 @@ Future<void> waitFor(
 
 /// Drive stand-in that records uploads without touching the network.
 class _FakeDriveService implements DriveService {
+  _FakeDriveService({this.failUpload = false});
+
+  /// When true, [uploadBackup] throws — a Drive round-trip that never landed.
+  final bool failUpload;
+
   int uploads = 0;
   bool hasBackup = false;
 
@@ -90,11 +118,14 @@ class _FakeDriveService implements DriveService {
   @override
   Future<void> uploadBackup(String jsonContent) async {
     uploads++;
+    if (failUpload) throw StateError('drive upload failed');
     hasBackup = true;
   }
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   late Directory tempDir;
   late Box<dynamic> placesBox;
   late Box<dynamic> settingsBox;
@@ -105,6 +136,7 @@ void main() {
     // tests do not observe each other's one-shot attempt.
     AuthNotifier.resetRestoreGuard();
     tempDir = await Directory.systemTemp.createTemp('routenote_auth_');
+    PathProviderPlatform.instance = FakePathProvider(tempDir.path);
     Hive.init(tempDir.path);
     placesBox = await Hive.openBox<dynamic>('auth_places');
     settingsBox = await Hive.openBox<dynamic>('auth_settings');
@@ -281,6 +313,46 @@ void main() {
   });
 
   test(
+    'a throwing silent restore keeps the cached session '
+    '(no crash, no silent sign-out)',
+    () async {
+      // The other half of "a transient refusal is never a silent sign-out": a
+      // throwing restore (offline, a platform hiccup, a plugin error) must
+      // leave the locally cached session exactly where it was.
+      AuthNotifier.resetRestoreGuard();
+      await settingsBox.put('is_logged_in', true);
+      await settingsBox.put('auth_user', <String, dynamic>{
+        'id': 'user-11',
+        'email': 'throw11@example.com',
+        'displayName': null,
+        'photoUrl': null,
+      });
+
+      final _FakeAuthService auth = _FakeAuthService(
+        silentError: StateError('platform unavailable'),
+      );
+      final ProviderContainer container = ProviderContainer(
+        overrides: [
+          hiveDatabaseProvider.overrideWithValue(database),
+          authServiceProvider.overrideWithValue(auth),
+          // In-memory only: a real box write inside a test never completes.
+          appHealthLoggerProvider.overrideWithValue(AppHealthLogger(null)),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      expect(container.read(authProvider).value?.email, 'throw11@example.com');
+      await pumpEventQueue();
+
+      // No crash, no error UI, and the session survives the failure.
+      expect(auth.silentCalls, 1);
+      expect(container.read(authProvider).value?.email, 'throw11@example.com');
+      expect(container.read(authProvider).hasError, isFalse);
+      expect(SettingsRepository(settingsBox).isLoggedIn, isTrue);
+    },
+  );
+
+  test(
     'a freshly synced session skips the platform restore entirely '
     '(no Credential Manager chooser on a multi-account device)',
     () async {
@@ -445,4 +517,69 @@ void main() {
       );
     },
   );
+
+  test(
+    'last_synced is written only after a successful Drive round-trip',
+    () async {
+      // The trust window treats `last_synced` as *proof* that the stored
+      // credentials still work, so it must never be written by a Drive call
+      // that failed. If a failed upload could stamp it, the suppression would
+      // outlive the session it was granted for and the restore would never
+      // run again — the exact failure the standard forbids ("the suppression
+      // must never become a way to permanently disable session restore").
+      await settingsBox.put('is_logged_in', true);
+      await settingsBox.put('auth_user', <String, dynamic>{
+        'id': 'user-12',
+        'email': 'evidence12@example.com',
+        'displayName': null,
+        'photoUrl': null,
+      });
+
+      final _FakeAuthService auth = _FakeAuthService(
+        silentUser: const AuthUser(id: 'user-12', email: 'evidence12@example.com'),
+      );
+      final _FakeDriveService drive = _FakeDriveService(failUpload: true);
+      final ProviderContainer container = syncContainerWith(auth, drive);
+
+      await container
+          .read(syncControllerProvider.notifier)
+          .syncNow(userInitiated: true);
+
+      expect(drive.uploads, 1, reason: 'the upload was attempted');
+      expect(
+        SettingsRepository(settingsBox).lastSynced,
+        isNull,
+        reason: 'a failed upload is not evidence that the session works',
+      );
+    },
+  );
+
+  test('a successful Drive round-trip stamps last_synced', () async {
+    // The other half of the invariant: the evidence the trust window relies on
+    // is really produced by a successful upload.
+    await settingsBox.put('is_logged_in', true);
+    await settingsBox.put('auth_user', <String, dynamic>{
+      'id': 'user-13',
+      'email': 'evidence13@example.com',
+      'displayName': null,
+      'photoUrl': null,
+    });
+
+    final _FakeAuthService auth = _FakeAuthService(
+      silentUser: const AuthUser(id: 'user-13', email: 'evidence13@example.com'),
+    );
+    final _FakeDriveService drive = _FakeDriveService();
+    final ProviderContainer container = syncContainerWith(auth, drive);
+
+    await container
+        .read(syncControllerProvider.notifier)
+        .syncNow(userInitiated: true);
+
+    expect(drive.uploads, 1);
+    expect(
+      SettingsRepository(settingsBox).lastSynced,
+      isNotNull,
+      reason: 'a successful upload is the evidence the trust window needs',
+    );
+  });
 }

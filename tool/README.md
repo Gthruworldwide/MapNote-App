@@ -161,6 +161,19 @@ trusted session must produce **zero** `executeGetCredential` calls; a stale one
 must still restore. Always `am force-stop` the app before pushing a modified
 box back, so Hive does not overwrite it from its in-memory state.
 
+> **Auditing a device that holds a real Google session.** The default mode
+> replaces `auth_user` with the placeholder `audit-device@example.com`, which
+> leaves the device showing a fake account. Add `--only-age` to keep the box's
+> existing `is_logged_in` / `auth_user` and age **only** `last_synced`:
+>
+> ```bash
+> dart run tool/hive_seed_session.dart out --stale --only-age
+> ```
+>
+> That is the non-destructive way to measure the stale branch on a device that
+> is really signed in. The trust evidence heals on its own: the next
+> successful Drive round-trip re-stamps `last_synced`.
+
 ## Related
 
 - App-side diagnostics: `AppObserverService` / `AppHealthLogger`

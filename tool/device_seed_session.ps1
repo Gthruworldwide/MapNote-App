@@ -10,15 +10,23 @@
 # (the launch skips the platform restore), while a `--stale` seed must still
 # perform the full restore.
 #
+# `-OnlyAge` keeps the device's own `auth_user` / `is_logged_in` and ages only
+# `last_synced`. Use it on a device that holds a real Google session: without
+# it the seed replaces the signed-in identity with a placeholder and the
+# device is left showing a fake account. The trust evidence heals on its own
+# -- the next successful Drive round-trip re-stamps `last_synced`.
+#
 # Usage:
 #   powershell -File tool/device_seed_session.ps1
 #   powershell -File tool/device_seed_session.ps1 -Stale
+#   powershell -File tool/device_seed_session.ps1 -Stale -OnlyAge
 
 param(
   [string]$Serial = "",
   [string]$AdbPath = "",
   [string]$Package = "com.routenote.routenote",
   [switch]$Stale,
+  [switch]$OnlyAge,
   [string]$WorkDir = ".scratch/seed"
 )
 
@@ -47,6 +55,7 @@ cmd /c "`"$AdbPath`" -s $Serial exec-out run-as $Package cat app_flutter/setting
 # 3. Seed.
 $seedArgs = @("run", "tool/hive_seed_session.dart", $WorkDir)
 if ($Stale) { $seedArgs += "--stale" }
+if ($OnlyAge) { $seedArgs += "--only-age" }
 & dart @seedArgs
 if ($LASTEXITCODE -ne 0) { throw "hive_seed_session.dart failed" }
 
@@ -55,5 +64,8 @@ if ($LASTEXITCODE -ne 0) { throw "hive_seed_session.dart failed" }
 cmd /c "`"$AdbPath`" -s $Serial push `"$box`" /data/local/tmp/settings.hive"
 & $AdbPath -s $Serial shell "run-as $Package cp /data/local/tmp/settings.hive app_flutter/settings.hive"
 & $AdbPath -s $Serial shell "rm -f /data/local/tmp/settings.hive"
+# Drop the box's stale lock file so the app opens our copy rather than
+# complaining about a box another process had open.
+& $AdbPath -s $Serial shell "run-as $Package rm -f app_flutter/settings.lock"
 
 Write-Output "seeded session pushed to $Serial"
