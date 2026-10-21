@@ -968,6 +968,36 @@ abstract class AppLocalizations {
   /// **'Custom range'**
   String get autoMotionCustomRange;
 
+  /// No description provided for @customDateRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom date range'**
+  String get customDateRange;
+
+  /// No description provided for @exportMotionData.
+  ///
+  /// In en, this message translates to:
+  /// **'Export motion data'**
+  String get exportMotionData;
+
+  /// No description provided for @exportFormatCsv.
+  ///
+  /// In en, this message translates to:
+  /// **'CSV'**
+  String get exportFormatCsv;
+
+  /// No description provided for @exportFormatJson.
+  ///
+  /// In en, this message translates to:
+  /// **'JSON'**
+  String get exportFormatJson;
+
+  /// No description provided for @zeroCoordinatesNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Export contains no location coordinates.'**
+  String get zeroCoordinatesNotice;
+
   /// No description provided for @autoMotionSelectRange.
   ///
   /// In en, this message translates to:

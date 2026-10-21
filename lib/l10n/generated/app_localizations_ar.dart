@@ -471,6 +471,21 @@ class AppLocalizationsAr extends AppLocalizations {
   String get autoMotionCustomRange => 'نطاق مخصص';
 
   @override
+  String get customDateRange => 'نطاق تاريخ مخصص';
+
+  @override
+  String get exportMotionData => 'تصدير بيانات الحركة';
+
+  @override
+  String get exportFormatCsv => 'CSV';
+
+  @override
+  String get exportFormatJson => 'JSON';
+
+  @override
+  String get zeroCoordinatesNotice => 'التصدير لا يحتوي على إحداثيات موقع.';
+
+  @override
   String get autoMotionSelectRange => 'اختر نطاق التواريخ';
 
   @override

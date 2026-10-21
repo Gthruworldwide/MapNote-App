@@ -471,6 +471,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get autoMotionCustomRange => 'Custom range';
 
   @override
+  String get customDateRange => 'Custom date range';
+
+  @override
+  String get exportMotionData => 'Export motion data';
+
+  @override
+  String get exportFormatCsv => 'CSV';
+
+  @override
+  String get exportFormatJson => 'JSON';
+
+  @override
+  String get zeroCoordinatesNotice =>
+      'Export contains no location coordinates.';
+
+  @override
   String get autoMotionSelectRange => 'Select date range';
 
   @override

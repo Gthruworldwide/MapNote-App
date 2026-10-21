@@ -69,6 +69,13 @@ class _AutoMotionExportBottomSheetState
           children: <Widget>[
             Text(l10n.autoMotionExport,
                 style: theme.textTheme.titleMedium),
+            const SizedBox(height: 4),
+            Text(
+              l10n.zeroCoordinatesNotice,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
             const SizedBox(height: 12),
             OutlinedButton.icon(
               onPressed: _pickRange,

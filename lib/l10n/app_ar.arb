@@ -166,6 +166,11 @@
     }
   },
   "autoMotionCustomRange": "نطاق مخصص",
+  "customDateRange": "نطاق تاريخ مخصص",
+  "exportMotionData": "تصدير بيانات الحركة",
+  "exportFormatCsv": "CSV",
+  "exportFormatJson": "JSON",
+  "zeroCoordinatesNotice": "التصدير لا يحتوي على إحداثيات موقع.",
   "autoMotionSelectRange": "اختر نطاق التواريخ",
   "autoMotionExport": "تصدير البيانات",
   "autoMotionExportCsv": "تصدير CSV",

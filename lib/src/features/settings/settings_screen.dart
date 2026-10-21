@@ -22,6 +22,7 @@ import '../../services/lock_gate.dart';
 import '../../widgets/track_failure_text.dart';
 import '../saved_places/presentation/saved_places_vault_screen.dart';
 import 'hidden_vault_screen.dart';
+import '../automotion/widgets/auto_motion_export_sheet.dart';
 
 /// Settings, consolidated into four Apple-style grouped cards:
 /// account & cloud backup, location & tracking, preferences, and about.
@@ -731,6 +732,18 @@ class SettingsScreen extends ConsumerWidget {
             value: ref.watch(settingsRepositoryProvider).isUiDensityCompact,
             onChanged: (bool value) =>
                 ref.read(settingsRepositoryProvider).setUiDensityCompact(value),
+          ),
+          const Divider(height: 24),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.file_download_outlined),
+            title: Text(l10n.exportMotionData),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => showModalBottomSheet<void>(
+              context: context,
+              isScrollControlled: true,
+              builder: (_) => const AutoMotionExportBottomSheet(),
+            ),
           ),
         ],
       ),
