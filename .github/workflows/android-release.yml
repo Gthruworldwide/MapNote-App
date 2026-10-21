@@ -19,13 +19,18 @@ on:
 jobs:
   build:
     name: Build release APK
-    runs-on: ubuntu-latest
+    # Pinned, never `ubuntu-latest`. The `ubuntu-latest` label is migrating to
+    # Ubuntu 26.04 through November 2026, which changes the default JDK, Docker
+    # (28 -> 29) and preinstalled runtime patch versions under a workflow that
+    # did not change — a silent, moving target. See
+    # https://github.com/actions/runner-images/issues/14748
+    runs-on: ubuntu-24.04
     steps:
       - name: Check out
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Java 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '17'
@@ -53,7 +58,7 @@ jobs:
           --dart-define=GEMINI_MODEL=${{ vars.GEMINI_MODEL || 'gemini-2.0-flash' }}
 
       - name: Upload APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: routenote-release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
