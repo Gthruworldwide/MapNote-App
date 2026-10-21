@@ -7,18 +7,18 @@
 ## 1. Git state
 
 - **Repo:** `D:\RouteNote App` · **Branch:** `main`
-- **HEAD:** `9582f8e` (`feat(ui): responsive font scaling, compact action bar, GPS drift filter, settings refresh`)
-- **Last commit:** `feat(ui): responsive font scaling, compact action bar, GPS drift filter, settings refresh`
+- **HEAD:** `e9698a5` (`feat(automotion): integrate stationary idle detector for battery saving`)
+- **Last commit:** `feat(automotion): integrate stationary idle detector for battery saving`
 - **Working tree: CLEAN** — no modified, no untracked files. `.opencode/` is tracked.
-- **Code checkpoint:** `9582f8e` — UI/UX overhaul (font scaling 4-preset, CompactActionBar, GPS drift/indoor noise filter, settings refresh, 3-pillar foundations). Previous checkpoints `0c5fc38` (AutoMotion Phase 3) and `2b23e9b` (cold-launch auth) remain intact.
-- **Recent history:** `9582f8e` ← `a4ab783` (session briefing refresh) ← `4b59433` (project state refresh) ← `0c5fc38` (AutoMotion Phase 3) ← `ab1e626` (auth checkpoint) ← `3a352d8` (device audit skill)
+- **Code checkpoint:** `e9698a5` — AutoMotion Phase 4 **COMPLETE** (custom date range + offline export + L10n parity + zero-coords assertion) + offline tile caching & 3D pins LOD + stationary idle detector (smart battery saver). Previous checkpoints remain intact.
+- **Recent history:** `e9698a5` ← `e363171` (offline tile cache & export) ← `335dda3` (export sheet in settings) ← `f1288ef` (custom date range & export UI) ← `442c187` (state refresh) ← `9582f8e` (UI overhaul)
 
 ## 2. Completed in this session
 
-- **UI/UX overhaul — COMPLETE (`9582f8e`).** Responsive 4-preset font scaling (`FontScalePreset` in settingsBox + provider + TextScaler in MaterialApp); CompactActionBar long-press menu with specified icon order; GPS drift/indoor noise filter (configurable `maxAccuracyMeters`, real-motion gate for maxSpeed); settings refresh (font scale/haptic/density toggles); 3-pillar foundations (`AutoMotionExportService`, `StationaryIdleDetector`, `OfflineTileCacheStrategy`). Verification gate: 821 tests, clean analyzer.
+- **AutoMotion Phase 4 — COMPLETE (`e9698a5`).** Custom date range selector (`showDateRangePicker`) on aggregates card; `AutoMotionExportBottomSheet` (CSV/JSON, zero-coords assertion) accessible from AutoMotion & Settings; L10n parity (9 keys); offline tile caching & 3D pins LOD (`OfflineTileCacheStrategy`, `BuiltInMapCachingProvider` 100MB, `RepaintBoundary`, LOD zoom>=12); stationary idle detector integration (smart battery saver toggle, 6 tests). Verification gate: 836 tests, clean analyzer.
+- **UI/UX overhaul — COMPLETE** (carried, `9582f8e`).
 - **AutoMotion Phase 3 — COMPLETE** (carried, `0c5fc38`).
 - **Cold-launch auth optimization — COMPLETE** (carried, `2b23e9b`), device-verified 2026-10-21.
-- **Device audit skill + 360° integrity audit** passed.
 
 ## 3. Pending work — exact next step
 
@@ -49,4 +49,4 @@ No open code workstream. Roadmap §4 (AutoMotion) fully shipped through Phase 3.
 | Tooling to reuse | `tool/device_cold_launch_auth_audit.ps1`, `tool/hive_audit.dart`, `tool/device_seed_session.ps1` / `tool/hive_seed_session.dart` (`-OnlyAge`), `tool/README.md`. |
 | Pre-commit / gate | `scripts/hooks/pre-commit` runs `flutter analyze lib test` only when Dart staged. Gate: analyze clean; all tests pass; no secrets in `lib/`/`android/`/`ios/`. |
 
-**START HERE (next session):** no code workstream open. If continuing, pick one of the optional milestones above (device validation of AutoMotion Phase 3, or end-to-end device audit). Otherwise the repo is clean and ready to push.
+**START HERE (next session):** no code workstream open. AutoMotion Phase 4 complete. Optional: device validation on `AYDL024206002031`, or push the 4 commits ahead of origin. Repo clean.

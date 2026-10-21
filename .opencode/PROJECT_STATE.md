@@ -22,10 +22,10 @@
 - **Latest Distribution:** Release 1.0.5 (22), group `testers`.
 
 ## 4. Current Workstream & Active Checkpoint
-- **Active Checkpoint (code):** `9582f8e` — UI/UX overhaul, responsive font scaling, CompactActionBar, GPS drift filter & settings refresh. Verification gate: 821 tests passing, clean analyzer.
-- **Latest Commit:** `9582f8e` — `feat(ui): responsive font scaling, compact action bar, GPS drift filter, settings refresh` (17 files, 622 insertions).
-- **Completed Task:** Font scaling (4-preset, `settingsBox`), CompactActionBar long-press menu, GPS drift/indoor noise filter (`maxAccuracyMeters` configurable, real-motion gate), settings refresh (font scale/haptic/density toggles), 3-pillar foundations (`AutoMotionExportService`, `StationaryIdleDetector`, `OfflineTileCacheStrategy`).
-- **Previously completed:** AutoMotion Phase 3 — **COMPLETE** (`0c5fc38`); Cold-launch auth optimization — **COMPLETE** (`2b23e9b`), device-verified 2026-10-21.
-- **Next Open Work:** TBD — no open workstream. (Optional: device validation of AutoMotion Phase 3 + font scaling on `AYDL024206002031`; device currently detached.)
+- **Active Checkpoint (code):** `e9698a5` — AutoMotion Phase 4 **COMPLETE**. Custom date range selector (`showDateRangePicker`) on `AutoMotionScreen` aggregates card; `AutoMotionExportBottomSheet` (CSV/JSON offline export) accessible from AutoMotion & Settings; automated privacy assertion (zero lat/lng in payloads); L10n parity (9 new keys in both locales). Plus offline tile caching & 3D pins LOD (`OfflineTileCacheStrategy`, `BuiltInMapCachingProvider` 100 MB, `RepaintBoundary`, LOD zoom>=12) and stationary idle detector integration (smart battery saver toggle). Verification gate: 836 tests passing, clean analyzer.
+- **Latest Commit:** `e9698a5` — `feat(automotion): integrate stationary idle detector for battery saving`.
+- **Completed Task:** AutoMotion Phase 4 — **COMPLETE**. Custom date range + offline export; zero-coordinates guarantee; L10n parity; offline tile caching & 3D pins LOD; stationary idle detector (smart battery saver).
+- **Previously completed:** AutoMotion Phase 3 — **COMPLETE** (`0c5fc38`); UI/UX overhaul — **COMPLETE** (`9582f8e`); Cold-launch auth optimization — **COMPLETE** (`2b23e9b`), device-verified 2026-10-21.
+- **Next Open Work:** TBD — no open workstream. (Optional: device validation on `AYDL024206002031`; device currently detached.)
 - **Device Audit Skill:** `.opencode/skills/mapnote-device-audit/SKILL.md`.
 - **Documentation:** `AGENT_SKILLS.md` §2.1, §4, §5, §6.
