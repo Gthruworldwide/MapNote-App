@@ -1022,6 +1022,24 @@ abstract class AppLocalizations {
   /// **'Offline maps downloaded'**
   String get offlineMapDownloaded;
 
+  /// No description provided for @smartBatterySaver.
+  ///
+  /// In en, this message translates to:
+  /// **'Smart battery saver'**
+  String get smartBatterySaver;
+
+  /// No description provided for @smartBatterySaverDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Reduce GPS polling when stationary.'**
+  String get smartBatterySaverDesc;
+
+  /// No description provided for @stationaryModeActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Stationary mode active'**
+  String get stationaryModeActive;
+
   /// No description provided for @autoMotionSelectRange.
   ///
   /// In en, this message translates to:

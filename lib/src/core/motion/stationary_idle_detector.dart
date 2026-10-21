@@ -1,72 +1,109 @@
 import 'dart:async';
 
-/// Detects sustained stationary / idle periods from accelerometer samples so
-/// the adaptive engine can drop to the lowest power tier (and pause the
-/// location stream) during zero-motion windows, reducing battery drain.
+/// Motion state published by [StationaryIdleDetector].
+enum MotionState { active, stationary }
+
+/// Detects sustained stationary / idle periods so the adaptive engine can
+/// drop to a low-power tier (and pause/throttle the location stream) during
+/// zero-motion windows, reducing battery drain.
 ///
-/// **Foundation (Phase 3 follow-up).** This detector is intentionally decoupled
-/// from the sensor hub: callers feed it samples and observe [isIdle]. It does
-/// not open any platform channel or Hive box, and it never stores coordinates
-/// or identity (`AGENT_SKILLS.md` §6).
+/// Spec:
+/// - Transition to [MotionState.stationary] when movement stays below
+///   [motionThreshold] (0.2 m/s²) for [stationaryWindow] (5 min).
+/// - Instant wakeup to [MotionState.active] when sustained acceleration >=
+///   [wakeupThreshold] (0.5 m/s²) for [wakeupWindow] (3 s).
+///
+/// The detector is decoupled from any sensor or Hive box: callers feed it
+/// samples via [observeAcceleration] / [observeSpeed] and observe [state] /
+/// [stateChanges]. It never stores coordinates or identity.
 class StationaryIdleDetector {
   StationaryIdleDetector({
-    this.sampleWindow = const Duration(seconds: 10),
-    this.motionThresholdG = 0.05,
-  });
+    this.motionThreshold = 0.2,
+    this.stationaryWindow = const Duration(minutes: 5),
+    this.wakeupThreshold = 0.5,
+    this.wakeupWindow = const Duration(seconds: 3),
+    DateTime Function()? clock,
+  }) : _clock = clock ?? DateTime.now;
 
-  /// How long samples must stay within [motionThresholdG] before idle is
-  /// declared.
-  final Duration sampleWindow;
+  final double motionThreshold;
+  final Duration stationaryWindow;
+  final double wakeupThreshold;
+  final Duration wakeupWindow;
 
-  /// Acceleration magnitude (in g) above which the device is considered
-  /// moving.
-  final double motionThresholdG;
+  final DateTime Function() _clock;
 
-  final StreamController<bool> _controller =
-      StreamController<bool>.broadcast();
+  final StreamController<MotionState> _controller =
+      StreamController<MotionState>.broadcast(sync: true);
 
-  /// Emits `true` when the device has been stationary for [sampleWindow],
-  /// `false` the moment motion is observed.
-  Stream<bool> get idleChanges => _controller.stream;
+  /// Emits whenever the state changes.
+  Stream<MotionState> get stateChanges => _controller.stream;
 
-  bool _idle = false;
-  bool get isIdle => _idle;
+  MotionState _state = MotionState.active;
+  MotionState get state => _state;
 
-  final List<double> _recentMagnitudes = <double>[];
-  DateTime? _windowStart;
+  DateTime? _stationarySince;
+  DateTime? _motionSince;
 
-  /// Feed one accelerometer magnitude (in g). Updates [isIdle] and emits on
-  /// [idleChanges] only when the verdict changes.
-  void observe(double magnitudeG) {
-    final DateTime now = DateTime.now();
-    _windowStart ??= now;
-    _recentMagnitudes.add(magnitudeG);
-    // Trim samples older than the window.
-    while (_recentMagnitudes.length > 64) {
-      _recentMagnitudes.removeAt(0);
-    }
-    final bool moving = magnitudeG > motionThresholdG;
-    if (moving) {
-      if (_idle) {
-        _idle = false;
-        _controller.add(false);
+  /// Feed an accelerometer magnitude in m/s².
+  void observeAcceleration(double magnitude) {
+    final DateTime now = _clock();
+    if (magnitude >= wakeupThreshold) {
+      _motionSince ??= now;
+      if (_state == MotionState.stationary &&
+          now.difference(_motionSince!) >= wakeupWindow) {
+        _transition(MotionState.active);
       }
-      _recentMagnitudes.clear();
-      _windowStart = now;
-      return;
+    } else {
+      _motionSince = null;
     }
-    if (!_idle && _windowStart != null &&
-        now.difference(_windowStart!) >= sampleWindow) {
-      _idle = true;
-      _controller.add(true);
+
+    if (magnitude < motionThreshold) {
+      _stationarySince ??= now;
+      if (_state == MotionState.active &&
+          now.difference(_stationarySince!) >= stationaryWindow) {
+        _transition(MotionState.stationary);
+      }
+    } else {
+      _stationarySince = null;
+      if (_state == MotionState.stationary && magnitude >= wakeupThreshold) {
+        // handled above
+      }
     }
   }
 
-  /// Reset all state (e.g. on trip start).
+  /// Feed a GPS speed in m/s (used when no accelerometer is available).
+  void observeSpeed(double speedMps) {
+    // Treat speed as motion evidence: any non-trivial speed keeps us active.
+    if (speedMps >= 0.5) {
+      _stationarySince = null;
+      _motionSince ??= _clock();
+      if (_state == MotionState.stationary) {
+        _transition(MotionState.active);
+      }
+    } else {
+      _motionSince = null;
+      _stationarySince ??= _clock();
+    }
+  }
+
+  void _transition(MotionState next) {
+    if (next == _state) return;
+    _state = next;
+    if (!_controller.isClosed) _controller.add(next);
+    if (next == MotionState.active) {
+      _stationarySince = null;
+    } else {
+      _motionSince = null;
+    }
+  }
+
+  /// Force a state (testing).
+  void setState(MotionState s) => _transition(s);
+
   void reset() {
-    _idle = false;
-    _recentMagnitudes.clear();
-    _windowStart = null;
+    _state = MotionState.active;
+    _stationarySince = null;
+    _motionSince = null;
   }
 
   Future<void> dispose() async {

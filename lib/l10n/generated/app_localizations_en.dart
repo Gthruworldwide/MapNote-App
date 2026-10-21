@@ -501,6 +501,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get offlineMapDownloaded => 'Offline maps downloaded';
 
   @override
+  String get smartBatterySaver => 'Smart battery saver';
+
+  @override
+  String get smartBatterySaverDesc => 'Reduce GPS polling when stationary.';
+
+  @override
+  String get stationaryModeActive => 'Stationary mode active';
+
+  @override
   String get autoMotionSelectRange => 'Select date range';
 
   @override

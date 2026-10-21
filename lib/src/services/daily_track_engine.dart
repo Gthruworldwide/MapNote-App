@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:geolocator/geolocator.dart';
 
 import '../core/utils/geo_distance.dart';
+import '../core/motion/stationary_idle_detector.dart';
 import '../data/local/daily_track_store.dart';
 import '../data/models/daily_gps_summary.dart';
 import 'dead_reckoning_service.dart';
@@ -60,6 +61,7 @@ class DailyTrackEngine {
     this._behavior,
     this.flushEvery = persistInterval,
     this.maxAccuracyMeters = maxAccuracyMetersDefault,
+    this.stationaryDetector,
   })  : _motion = motion ?? const NoMotionSignal(),
         _gapRecovery = gapRecovery ?? const GapRecoveryService(),
         _deadReckoning = deadReckoning ?? const NoopDistanceEstimator(),
@@ -88,6 +90,9 @@ class DailyTrackEngine {
   /// Driving-behavior profiler fed with each fix's GPS speed; `null` when the
   /// caller wired no analyzer (unit tests, the phase-1 GPS tracker).
   final MotionBehaviorAnalyzer? _behavior;
+
+  /// Optional stationary/idle detector fed with each fix's speed.
+  final StationaryIdleDetector? stationaryDetector;
 
   /// How often the periodic flush runs. Defaults to [persistInterval]; tests
   /// pass a short value so the cadence can be observed without waiting 10 s.
@@ -413,6 +418,7 @@ class DailyTrackEngine {
     if (position.hasSpeed) {
       _motion.observeSpeed(position.speed);
       _behavior?.observeSpeed(position.speed, at: position.timestamp);
+      stationaryDetector?.observeSpeed(position.speed);
     }
 
     final DateTime? lastAt = _lastAt;

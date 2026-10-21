@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:geolocator/geolocator.dart';
 
+import '../core/motion/stationary_idle_detector.dart';
 import '../data/local/auto_motion_data_source.dart';
 import 'daily_track_engine.dart';
 import 'dead_reckoning_service.dart';
@@ -32,6 +33,7 @@ class AutoMotionService implements SamplingTarget {
     DistanceEstimator? deadReckoning,
     PolylineSmoother? smoother,
     MotionBehaviorAnalyzer? behavior,
+    StationaryIdleDetector? stationaryDetector,
     this._fused,
     this._hub,
     Duration flushEvery = persistInterval,
@@ -39,6 +41,7 @@ class AutoMotionService implements SamplingTarget {
           store: dailyStore,
           maxAccuracyMeters: 20,
           motion: motion,
+          stationaryDetector: stationaryDetector ?? StationaryIdleDetector(),
           gapRecovery: gapRecovery,
           deadReckoning: deadReckoning,
           smoother: smoother,
@@ -48,6 +51,10 @@ class AutoMotionService implements SamplingTarget {
 
   /// Persistence for daily metrics.
   final AutoMotionDataSource dailyStore;
+
+  /// Stationary/idle detector used to throttle GPS during zero-motion periods.
+  StationaryIdleDetector get stationaryDetector =>
+      _engine.stationaryDetector!;
 
   final DailyTrackEngine _engine;
 

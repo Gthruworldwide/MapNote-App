@@ -341,6 +341,17 @@ class SettingsScreen extends ConsumerWidget {
             const SizedBox(height: 12),
             const Divider(height: 1),
             const SizedBox(height: 12),
+            if (autoMotionEnabled)
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                secondary: const Icon(Icons.battery_saver),
+                title: Text(l10n.smartBatterySaver),
+                subtitle: Text(l10n.smartBatterySaverDesc),
+                value: ref.watch(settingsRepositoryProvider).isSmartBatterySaverEnabled,
+                onChanged: (bool value) => ref
+                    .read(settingsRepositoryProvider)
+                    .setSmartBatterySaverEnabled(value),
+              ),
             _TrackingSummaryTile(
               totalKm: math.max(tracking.totalKm, motion.totalKm),
               maxSpeedKmh: math.max(tracking.maxSpeedKmh, motion.maxSpeedKmh),

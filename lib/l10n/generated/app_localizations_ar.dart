@@ -500,6 +500,15 @@ class AppLocalizationsAr extends AppLocalizations {
   String get offlineMapDownloaded => 'تم تحميل الخرائط دون اتصال';
 
   @override
+  String get smartBatterySaver => 'موفر البطارية الذكي';
+
+  @override
+  String get smartBatterySaverDesc => 'تقليل تحديثات GPS عند الثبات.';
+
+  @override
+  String get stationaryModeActive => 'وضع الثبات نشط';
+
+  @override
   String get autoMotionSelectRange => 'اختر نطاق التواريخ';
 
   @override

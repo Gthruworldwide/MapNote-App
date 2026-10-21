@@ -28,6 +28,7 @@ class SettingsRepository {
   static const String _fontScaleKey = 'font_scale';
   static const String _hapticFeedbackKey = 'haptic_feedback';
   static const String _uiDensityCompactKey = 'ui_density_compact';
+  static const String _smartBatterySaverKey = 'smart_battery_saver';
 
   /// BCP-47 language code of the selected locale, or null for system default.
   String? get localeCode => _box.get(_localeKey) as String?;
@@ -230,5 +231,13 @@ class SettingsRepository {
 
   Future<void> setUiDensityCompact(bool compact) async {
     await _box.put(_uiDensityCompactKey, compact);
+  }
+
+  /// Smart battery saver for AutoMotion (default on).
+  bool get isSmartBatterySaverEnabled =>
+      (_box.get(_smartBatterySaverKey) as bool?) ?? true;
+
+  Future<void> setSmartBatterySaverEnabled(bool enabled) async {
+    await _box.put(_smartBatterySaverKey, enabled);
   }
 }
