@@ -22,9 +22,10 @@
 - **Latest Distribution:** Release 1.0.5 (22), group `testers`.
 
 ## 4. Current Workstream & Active Checkpoint
-- **Active Checkpoint (code):** `2b23e9b` — Cold-launch auth optimization **COMPLETE** and device-verified 2026-10-21 on Honor 90 / Android 15 (`AYDL024206002031`). `AppConfig.sessionTrustWindow` mechanism is the intended architecture (0 chooser triggers on trusted branch, single-call fallback on stale branch with self-healing re-stamp). +8 edge-case tests added; verification gate: 809 tests passing, clean analyzer.
-- **Latest Commit (docs):** `3a352d8` — docs-only (`.opencode/` skill + state refresh), no Dart changes.
-- **Completed Task:** Cold-launch auth optimization — **COMPLETE**. The launch-time restore is suppressed while `last_synced` is younger than `AppConfig.sessionTrustWindow`; the restore is single-flight across `AuthNotifier` rebuilds, and only a user-initiated Drive action may re-establish the session.
-- **Next Open Work:** AutoMotion Phase 3 — per-mode activity breakdown + 7/30-day aggregates.
+- **Active Checkpoint (code):** `0c5fc38` — AutoMotion Phase 3 **COMPLETE**. Per-mode activity breakdown (walk/run/vehicle) on `DailyGpsSummary` with backward-compatible defaults, 7/30-day aggregates in RAM from `auto_motion_box` (`AutoMotionDataSource`), dashboard UI integration, full en/ar localization, and 12 new aggregation tests. Verification gate: 821 tests passing, clean analyzer.
+- **Latest Commit:** `0c5fc38` — `feat(automotion): implement phase 3 per-mode breakdown & 7/30-day aggregates` (11 files, 930 insertions).
+- **Completed Task:** AutoMotion Phase 3 — **COMPLETE**. Model + aggregates + UI + localization + tests; Hive schemas unchanged (additive keys with defaults); `gps_daily.hive` untouched; zero coordinates in health log; secrets scan clean.
+- **Previously completed:** Cold-launch auth optimization — **COMPLETE** (`2b23e9b`), device-verified 2026-10-21 on Honor 90 / Android 15 (`AYDL024206002031`).
+- **Next Open Work:** TBD — no open workstream. (Optional: device audit skill end-to-end run; device currently detached.)
 - **Device Audit Skill:** `.opencode/skills/mapnote-device-audit/SKILL.md` — cold-launch auth regression checks + Hive privacy inspection on `AYDL024206002031`.
-- **Documentation:** `AGENT_SKILLS.md` §2.1.
+- **Documentation:** `AGENT_SKILLS.md` §2.1, §5.
