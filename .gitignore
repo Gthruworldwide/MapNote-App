@@ -52,3 +52,6 @@ app.*.map.json
 # Dev-machine supervisor agent (tool/) — never commit keys or reports
 /tool/.env
 /tool/reports/
+
+# Local audit scratch space (pulled Hive boxes, device logs, build logs)
+/.scratch/

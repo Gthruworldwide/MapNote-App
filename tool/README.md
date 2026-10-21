@@ -106,6 +106,50 @@ traces into the input file.
 | `TELEGRAM_BOT_TOKEN` | — | BotFather token for the control bot |
 | `TELEGRAM_CHAT_ID` | — | The only `user.id` the bot will obey |
 
+## Offline privacy audit (`hive_audit.dart`)
+
+`hive_audit.dart` is a **read-only, offline** auditor for a Hive box pulled off
+a device. It answers the question "does anything in local storage contain a
+user's coordinates?" without the app, a network, or an account.
+
+```bash
+# Pull the box off a debuggable build (binary-safe: do NOT use PowerShell `>`,
+# which corrupts the file and makes Hive report "Recovering corrupted box").
+cmd /c "adb -s <serial> exec-out run-as com.routenote.routenote cat app_flutter/settings.hive > out/settings.hive"
+
+dart run tool/hive_audit.dart out
+```
+
+It prints the top-level keys, the event-type histogram of `health_events`, the
+**union of every payload key** the log has ever contained, and a privacy scan
+for forbidden keys (`latitude`, `lng`, `place_id`, …), coordinate-shaped keys
+and bare lat/lng number pairs. It also reports the session state
+(`is_logged_in`, `last_synced`, age against the trust window) that decides
+whether a cold launch takes the "session still fresh" branch.
+
+Nothing leaves the machine: the tool opens the box read-only and prints to
+stdout. It never contacts Google, Gemini or Drive.
+
+> Hive CE stores strings as UTF-16LE, so the usual `strings | grep` trick finds
+> nothing in a Hive CE box. Parse it with `hive_ce` instead.
+
+### Reproducing a "trusted session" device state
+
+`hive_seed_session.dart` writes the exact keys and value shapes
+`SettingsRepository` persists (`is_logged_in`, `auth_user`, `last_synced`) into
+a pulled box, so a device can be put into the "session synced recently"
+branch without a live Google account:
+
+```bash
+dart run tool/hive_seed_session.dart out            # trusted (last_synced inside the window)
+dart run tool/hive_seed_session.dart out --stale    # stale -> the full restore must run
+```
+
+Push the result back with a binary-safe copy and cold-launch the app. A
+trusted session must produce **zero** `executeGetCredential` calls; a stale one
+must still restore. Always `am force-stop` the app before pushing a modified
+box back, so Hive does not overwrite it from its in-memory state.
+
 ## Related
 
 - App-side diagnostics: `AppObserverService` / `AppHealthLogger`
