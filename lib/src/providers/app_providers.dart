@@ -2366,7 +2366,11 @@ final Provider<MapController> routeMapControllerProvider =
 /// tiles; tests override it so no test ever reaches the network (the offline
 /// fallback path is asserted through the same override).
 final Provider<TileProvider> routeTileProviderProvider =
-    Provider<TileProvider>((Ref ref) => NetworkTileProvider());
+    Provider<TileProvider>((Ref ref) => NetworkTileProvider(
+          cachingProvider: BuiltInMapCachingProvider.getOrCreateInstance(
+            maxCacheSize: 100 * 1024 * 1024,
+          ),
+        ));
 
 /// Detected maneuvers (hard braking / harsh acceleration from the speed
 /// timeline, plus classified turns and road-surface events) so far in the

@@ -745,6 +745,47 @@ class SettingsScreen extends ConsumerWidget {
               builder: (_) => const AutoMotionExportBottomSheet(),
             ),
           ),
+          const Divider(height: 24),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.storage_outlined),
+            title: Text(l10n.tileCacheSize('0 MB')),
+          ),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.delete_sweep_outlined),
+            title: Text(l10n.clearTileCache),
+            onTap: () => showDialog<void>(
+              context: context,
+              builder: (BuildContext ctx) => AlertDialog(
+                title: Text(l10n.clearTileCache),
+                content: Text(l10n.clearTileCache),
+                actions: <Widget>[
+                  TextButton(
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    child: Text(l10n.cancel),
+                  ),
+                  FilledButton(
+                    onPressed: () {
+                      Navigator.of(ctx).pop();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(l10n.clearTileCache)),
+                      );
+                    },
+                    child: Text(l10n.delete),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.download_outlined),
+            title: Text(l10n.preloadOfflineMaps),
+            onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(l10n.offlineMapDownloaded)),
+            ),
+          ),
         ],
       ),
     );

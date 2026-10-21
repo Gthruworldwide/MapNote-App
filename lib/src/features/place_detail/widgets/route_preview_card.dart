@@ -11,6 +11,7 @@ import '../../../core/utils/haptics.dart';
 import '../../../data/models/place.dart';
 import '../../../providers/app_providers.dart';
 import '../../../services/location_service.dart';
+import '../../../services/offline_tile_cache_strategy.dart';
 import '../../../widgets/map_attribution_chip.dart';
 
 /// A compact route preview for a saved place, drawn over real OpenStreetMap
@@ -587,13 +588,23 @@ class _RoutePreviewMapState extends ConsumerState<_RoutePreviewMap> {
     return markers;
   }
 
-  Marker _pin(LatLng point, Widget child) => Marker(
-    point: point,
-    width: 32,
-    height: 32,
-    alignment: Alignment.center,
-    child: Center(child: child),
-  );
+  Marker _pin(LatLng point, Widget child, {double zoom = 15}) {
+    final OfflineTileCacheStrategy strategy = OfflineTileCacheStrategy();
+    final Widget rendered = strategy.shouldRenderFullPin(zoom)
+        ? RepaintBoundary(child: Center(child: child))
+        : RepaintBoundary(
+            child: Center(
+              child: strategy.buildDotMarker(color: Colors.red, size: 10),
+            ),
+          );
+    return Marker(
+      point: point,
+      width: 32,
+      height: 32,
+      alignment: Alignment.center,
+      child: rendered,
+    );
+  }
 
   /// The blue dot ringed by the map surface — the same marker language the
   /// route map uses for its anchors.

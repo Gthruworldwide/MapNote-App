@@ -171,6 +171,15 @@
   "exportFormatCsv": "CSV",
   "exportFormatJson": "JSON",
   "zeroCoordinatesNotice": "التصدير لا يحتوي على إحداثيات موقع.",
+  "tileCacheSize": "ذاكرة الخرائط: {size}",
+  "@tileCacheSize": {
+    "placeholders": {
+      "size": { "type": "String" }
+    }
+  },
+  "clearTileCache": "مسح ذاكرة الخرائط",
+  "preloadOfflineMaps": "تحميل خرائط الأماكن مسبقًا",
+  "offlineMapDownloaded": "تم تحميل الخرائط دون اتصال",
   "autoMotionSelectRange": "اختر نطاق التواريخ",
   "autoMotionExport": "تصدير البيانات",
   "autoMotionExportCsv": "تصدير CSV",

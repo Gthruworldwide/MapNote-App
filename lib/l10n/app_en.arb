@@ -199,6 +199,15 @@
   "exportFormatCsv": "CSV",
   "exportFormatJson": "JSON",
   "zeroCoordinatesNotice": "Export contains no location coordinates.",
+  "tileCacheSize": "Tile cache: {size}",
+  "@tileCacheSize": {
+    "placeholders": {
+      "size": { "type": "String" }
+    }
+  },
+  "clearTileCache": "Clear tile cache",
+  "preloadOfflineMaps": "Pre-load saved places maps",
+  "offlineMapDownloaded": "Offline maps downloaded",
   "autoMotionSelectRange": "Select date range",
   "autoMotionExport": "Export data",
   "autoMotionExportCsv": "Export as CSV",

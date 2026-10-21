@@ -486,6 +486,20 @@ class AppLocalizationsAr extends AppLocalizations {
   String get zeroCoordinatesNotice => 'التصدير لا يحتوي على إحداثيات موقع.';
 
   @override
+  String tileCacheSize(String size) {
+    return 'ذاكرة الخرائط: $size';
+  }
+
+  @override
+  String get clearTileCache => 'مسح ذاكرة الخرائط';
+
+  @override
+  String get preloadOfflineMaps => 'تحميل خرائط الأماكن مسبقًا';
+
+  @override
+  String get offlineMapDownloaded => 'تم تحميل الخرائط دون اتصال';
+
+  @override
   String get autoMotionSelectRange => 'اختر نطاق التواريخ';
 
   @override

@@ -487,6 +487,20 @@ class AppLocalizationsEn extends AppLocalizations {
       'Export contains no location coordinates.';
 
   @override
+  String tileCacheSize(String size) {
+    return 'Tile cache: $size';
+  }
+
+  @override
+  String get clearTileCache => 'Clear tile cache';
+
+  @override
+  String get preloadOfflineMaps => 'Pre-load saved places maps';
+
+  @override
+  String get offlineMapDownloaded => 'Offline maps downloaded';
+
+  @override
   String get autoMotionSelectRange => 'Select date range';
 
   @override

@@ -998,6 +998,30 @@ abstract class AppLocalizations {
   /// **'Export contains no location coordinates.'**
   String get zeroCoordinatesNotice;
 
+  /// No description provided for @tileCacheSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Tile cache: {size}'**
+  String tileCacheSize(String size);
+
+  /// No description provided for @clearTileCache.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear tile cache'**
+  String get clearTileCache;
+
+  /// No description provided for @preloadOfflineMaps.
+  ///
+  /// In en, this message translates to:
+  /// **'Pre-load saved places maps'**
+  String get preloadOfflineMaps;
+
+  /// No description provided for @offlineMapDownloaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline maps downloaded'**
+  String get offlineMapDownloaded;
+
   /// No description provided for @autoMotionSelectRange.
   ///
   /// In en, this message translates to:
