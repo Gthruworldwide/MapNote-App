@@ -468,6 +468,35 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get autoMotionCustomRange => 'Custom range';
+
+  @override
+  String get autoMotionSelectRange => 'Select date range';
+
+  @override
+  String get autoMotionExport => 'Export data';
+
+  @override
+  String get autoMotionExportCsv => 'Export as CSV';
+
+  @override
+  String get autoMotionExportJson => 'Export as JSON';
+
+  @override
+  String get autoMotionExportCopy => 'Copy to clipboard';
+
+  @override
+  String get autoMotionExportCopied => 'Report copied to clipboard';
+
+  @override
+  String get autoMotionExportEmpty => 'No recorded days in this range.';
+
+  @override
+  String autoMotionRangeLabel(String from, String to) {
+    return '$from – $to';
+  }
+
+  @override
   String get autoMotionViewDetails => 'View details';
 
   @override

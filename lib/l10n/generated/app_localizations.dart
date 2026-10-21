@@ -962,6 +962,60 @@ abstract class AppLocalizations {
   /// **'{count} days recorded'**
   String autoMotionDaysRecorded(int count);
 
+  /// No description provided for @autoMotionCustomRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom range'**
+  String get autoMotionCustomRange;
+
+  /// No description provided for @autoMotionSelectRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Select date range'**
+  String get autoMotionSelectRange;
+
+  /// No description provided for @autoMotionExport.
+  ///
+  /// In en, this message translates to:
+  /// **'Export data'**
+  String get autoMotionExport;
+
+  /// No description provided for @autoMotionExportCsv.
+  ///
+  /// In en, this message translates to:
+  /// **'Export as CSV'**
+  String get autoMotionExportCsv;
+
+  /// No description provided for @autoMotionExportJson.
+  ///
+  /// In en, this message translates to:
+  /// **'Export as JSON'**
+  String get autoMotionExportJson;
+
+  /// No description provided for @autoMotionExportCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy to clipboard'**
+  String get autoMotionExportCopy;
+
+  /// No description provided for @autoMotionExportCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Report copied to clipboard'**
+  String get autoMotionExportCopied;
+
+  /// No description provided for @autoMotionExportEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No recorded days in this range.'**
+  String get autoMotionExportEmpty;
+
+  /// No description provided for @autoMotionRangeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'{from} – {to}'**
+  String autoMotionRangeLabel(String from, String to);
+
   /// No description provided for @autoMotionViewDetails.
   ///
   /// In en, this message translates to:

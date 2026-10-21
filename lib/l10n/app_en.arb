@@ -193,6 +193,21 @@
   "autoMotionLast7Days": "Last 7 days",
   "autoMotionLast30Days": "Last 30 days",
   "autoMotionDaysRecorded": "{count} days recorded",
+  "autoMotionCustomRange": "Custom range",
+  "autoMotionSelectRange": "Select date range",
+  "autoMotionExport": "Export data",
+  "autoMotionExportCsv": "Export as CSV",
+  "autoMotionExportJson": "Export as JSON",
+  "autoMotionExportCopy": "Copy to clipboard",
+  "autoMotionExportCopied": "Report copied to clipboard",
+  "autoMotionExportEmpty": "No recorded days in this range.",
+  "autoMotionRangeLabel": "{from} – {to}",
+  "@autoMotionRangeLabel": {
+    "placeholders": {
+      "from": { "type": "String" },
+      "to": { "type": "String" }
+    }
+  },
   "@autoMotionDaysRecorded": {
     "placeholders": {
       "count": {

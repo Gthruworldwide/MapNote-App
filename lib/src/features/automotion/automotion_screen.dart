@@ -10,6 +10,7 @@ import '../../widgets/motion_metric.dart';
 import '../../widgets/track_failure_text.dart';
 import '../home/widgets/auto_motion_badge.dart';
 import '../saved_places/presentation/widgets/place_link_suggestions_card.dart';
+import 'widgets/auto_motion_export_sheet.dart';
 import 'widgets/driving_events_card.dart';
 import 'widgets/motion_summary_sheet.dart';
 import 'widgets/trip_route_card.dart';
@@ -34,7 +35,20 @@ class AutoMotionScreen extends ConsumerWidget {
     final AutoMotionAggregates agg30 = ref.watch(autoMotionAggregates30dProvider);
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.autoMotionDashboardTitle)),
+      appBar: AppBar(
+        title: Text(l10n.autoMotionDashboardTitle),
+        actions: <Widget>[
+          IconButton(
+            tooltip: l10n.autoMotionExport,
+            icon: const Icon(Icons.file_download_outlined),
+            onPressed: () => showModalBottomSheet<void>(
+              context: context,
+              isScrollControlled: true,
+              builder: (_) => const AutoMotionExportBottomSheet(),
+            ),
+          ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: <Widget>[
@@ -339,7 +353,7 @@ class _ModeRow extends StatelessWidget {
   }
 }
 
-class _AggregatesCard extends StatelessWidget {
+class _AggregatesCard extends ConsumerStatefulWidget {
   const _AggregatesCard({
     required this.aggregates7,
     required this.aggregates30,
@@ -347,6 +361,32 @@ class _AggregatesCard extends StatelessWidget {
 
   final AutoMotionAggregates aggregates7;
   final AutoMotionAggregates aggregates30;
+
+  @override
+  ConsumerState<_AggregatesCard> createState() => _AggregatesCardState();
+}
+
+class _AggregatesCardState extends ConsumerState<_AggregatesCard> {
+  DateTimeRange? _customRange;
+  AutoMotionAggregates? _customAgg;
+
+  Future<void> _pickRange() async {
+    final DateTimeRange? picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+      initialDateRange: _customRange,
+    );
+    if (picked == null) return;
+    final AutoMotionDataSource store = ref.read(autoMotionDataSourceProvider);
+    setState(() {
+      _customRange = picked;
+      _customAgg = store.aggregates(
+        days: picked.end.difference(picked.start).inDays + 1,
+        endDate: picked.end,
+      );
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -376,18 +416,41 @@ class _AggregatesCard extends StatelessWidget {
             const SizedBox(height: 12),
             _AggregateRow(
               title: l10n.autoMotionLast7Days,
-              aggregates: aggregates7,
+              aggregates: widget.aggregates7,
             ),
             const Divider(height: 16),
             _AggregateRow(
               title: l10n.autoMotionLast30Days,
-              aggregates: aggregates30,
+              aggregates: widget.aggregates30,
             ),
+            const Divider(height: 16),
+            OutlinedButton.icon(
+              onPressed: _pickRange,
+              icon: const Icon(Icons.date_range),
+              label: Text(
+                _customRange == null
+                    ? l10n.autoMotionCustomRange
+                    : l10n.autoMotionRangeLabel(
+                        _fmt(_customRange!.start),
+                        _fmt(_customRange!.end),
+                      ),
+              ),
+            ),
+            if (_customAgg != null) ...<Widget>[
+              const SizedBox(height: 8),
+              _AggregateRow(
+                title: l10n.autoMotionCustomRange,
+                aggregates: _customAgg!,
+              ),
+            ],
           ],
         ),
       ),
     );
   }
+
+  String _fmt(DateTime d) =>
+      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 }
 
 class _AggregateRow extends StatelessWidget {

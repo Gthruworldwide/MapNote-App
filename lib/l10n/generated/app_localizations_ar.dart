@@ -468,6 +468,35 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String get autoMotionCustomRange => 'نطاق مخصص';
+
+  @override
+  String get autoMotionSelectRange => 'اختر نطاق التواريخ';
+
+  @override
+  String get autoMotionExport => 'تصدير البيانات';
+
+  @override
+  String get autoMotionExportCsv => 'تصدير CSV';
+
+  @override
+  String get autoMotionExportJson => 'تصدير JSON';
+
+  @override
+  String get autoMotionExportCopy => 'نسخ إلى الحافظة';
+
+  @override
+  String get autoMotionExportCopied => 'تم نسخ التقرير';
+
+  @override
+  String get autoMotionExportEmpty => 'لا توجد أيام مسجّلة في هذا النطاق.';
+
+  @override
+  String autoMotionRangeLabel(String from, String to) {
+    return '$from – $to';
+  }
+
+  @override
   String get autoMotionViewDetails => 'عرض التفاصيل';
 
   @override

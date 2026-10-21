@@ -165,6 +165,21 @@
       }
     }
   },
+  "autoMotionCustomRange": "نطاق مخصص",
+  "autoMotionSelectRange": "اختر نطاق التواريخ",
+  "autoMotionExport": "تصدير البيانات",
+  "autoMotionExportCsv": "تصدير CSV",
+  "autoMotionExportJson": "تصدير JSON",
+  "autoMotionExportCopy": "نسخ إلى الحافظة",
+  "autoMotionExportCopied": "تم نسخ التقرير",
+  "autoMotionExportEmpty": "لا توجد أيام مسجّلة في هذا النطاق.",
+  "autoMotionRangeLabel": "{from} – {to}",
+  "@autoMotionRangeLabel": {
+    "placeholders": {
+      "from": { "type": "String" },
+      "to": { "type": "String" }
+    }
+  },
   "autoMotionViewDetails": "عرض التفاصيل",
   "autoMotionRoute": "مسار اليوم",
   "autoMotionRouteEmpty": "لم يُسجَّل أي مسار بعد — فعّل التتبع ثم قُد أو امشِ ليظهر هنا.",
