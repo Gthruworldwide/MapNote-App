@@ -1,5 +1,5 @@
+import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../l10n/generated/app_localizations.dart';
@@ -85,7 +85,65 @@ class SettingsScreen extends ConsumerWidget {
 
   void _push(BuildContext context, Widget screen) {
     Navigator.of(context).push(
-      CupertinoPageRoute<void>(builder: (_) => screen),
+      SharedAxisPageRoute<void>(builder: (_) => screen),
+    );
+  }
+}
+
+/// A page route that drives its enter/exit with a horizontal shared-axis
+/// transition (Material motion), 300 ms in both directions with an
+/// ease-in-out-cubic curve for fluid motion on high refresh-rate displays.
+class SharedAxisPageRoute<T> extends PageRoute<T> {
+  SharedAxisPageRoute({required this.builder});
+
+  final WidgetBuilder builder;
+
+  @override
+  Color? get barrierColor => null;
+
+  @override
+  String? get barrierLabel => null;
+
+  @override
+  bool get maintainState => true;
+
+  @override
+  Duration get transitionDuration => const Duration(milliseconds: 300);
+
+  @override
+  Duration get reverseTransitionDuration => const Duration(milliseconds: 300);
+
+  @override
+  Widget buildPage(
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+  ) {
+    return builder(context);
+  }
+
+  @override
+  Widget buildTransitions(
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    final Animation<double> curved = CurvedAnimation(
+      parent: animation,
+      curve: Curves.easeInOutCubic,
+      reverseCurve: Curves.easeInOutCubic,
+    );
+    final Animation<double> curvedSecondary = CurvedAnimation(
+      parent: secondaryAnimation,
+      curve: Curves.easeInOutCubic,
+      reverseCurve: Curves.easeInOutCubic,
+    );
+    return SharedAxisTransition(
+      animation: curved,
+      secondaryAnimation: curvedSecondary,
+      transitionType: SharedAxisTransitionType.horizontal,
+      child: child,
     );
   }
 }
