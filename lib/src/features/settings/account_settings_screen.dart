@@ -250,14 +250,18 @@ class AccountSettingsScreen extends ConsumerWidget {
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
     try {
       await ref.read(authProvider.notifier).signIn();
+      if (!context.mounted) return;
       await ref
           .read(syncControllerProvider.notifier)
           .syncNow(userInitiated: true);
     } on AuthException catch (e) {
+      if (!context.mounted) return;
       messenger.showSnackBar(
         SnackBar(content: Text(l10n.signInFailed(e.message))),
       );
-    } catch (_) {
+    } catch (e, stackTrace) {
+      if (!context.mounted) return;
+      debugPrint('MapNote sign-in flow error: $e\n$stackTrace');
       messenger.showSnackBar(SnackBar(content: Text(l10n.errorGeneric)));
     }
   }
