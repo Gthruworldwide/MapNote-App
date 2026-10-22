@@ -205,7 +205,77 @@ compiles; such a bundle is rejected by Play, which is the intended signal.
 
 > **Back the keystore up outside the repository.** It is deliberately not
 > synced through git, so losing it means Google Play can no longer accept
-> updates for the package under the same signing identity.
+> updates for the package under the same signing identity. Use
+> `tool/backup_upload_keystore.ps1` (below) — it writes an encrypted archive
+> outside the working tree — and check it first with
+> `tool/verify_upload_keystore.ps1`.
+
+### Auditing the upload key (`verify_upload_keystore.ps1`)
+
+Proves the upload key is intact **before** a backup is taken — a backup of a
+broken key is no backup at all. Dev-machine only; nothing here ships to the
+device.
+
+```bash
+powershell -ExecutionPolicy Bypass -File tool/verify_upload_keystore.ps1
+```
+
+| Check | What it proves |
+| --- | --- |
+| `key.properties` parses | all four entries are present |
+| store password opens the keystore | the keystore is not corrupted |
+| alias in `key.properties` == keystore alias | the config points at the right key |
+| the entry is a `PrivateKeyEntry` | it can sign, it is not just a certificate |
+| key password unlocks the entry | `keyPassword` matches the key |
+| a throwaway archive is signed and verified | the key really signs |
+| the release AAB's certificate matches | this is the key Play Console knows |
+
+Passwords are never printed and never appear on a command line: they are
+handed to `keytool` / `jarsigner` through the environment (`-storepass:env`,
+`-keypass:env`).
+
+The script prints the **SHA-256** and **SHA-1** certificate fingerprints. The
+SHA-1 is the one Google Play Console displays for the upload key — compare it
+there after a restore.
+
+### Backing the upload key up (`backup_upload_keystore.ps1`)
+
+Packs `upload-keystore.jks` and `key.properties` into a single **AES-256
+encrypted** 7-Zip archive with encrypted headers, writes it to a folder
+**outside the git working tree**, verifies the archive, and deletes the
+staged plaintext copies in a `finally` block.
+
+```bash
+# interactive: a random passphrase is generated and printed once
+powershell -ExecutionPolicy Bypass -File tool/backup_upload_keystore.ps1 -DestinationDirectory D:\SecureBackup
+
+# non-interactive
+powershell -ExecutionPolicy Bypass -File tool/backup_upload_keystore.ps1 -DestinationDirectory E:\keys -Password "..."
+```
+
+Why an encrypted archive instead of a plain copy:
+
+- The archive can live on a USB stick or even a cloud folder — the key
+  material is AES-256 inside it and the file names are hidden too (`-mhe=on`).
+- **Keep the passphrase somewhere else** (password manager, a printed sheet in
+  a safe, a second USB stick). An archive next to its passphrase is not a
+  backup.
+- The script refuses a destination inside the repository, so the key can never
+  reach a commit, and it warns when the destination looks cloud-synced.
+- `RESTORE-INSTRUCTIONS.txt` is packed inside the archive with the
+  fingerprints, the alias, the validity window and the restore steps.
+- The cipher is *asserted*, not assumed: the script reads the archive back and
+  fails unless it reports `7zAES:19` (AES-256 with SHA-256 key derivation).
+
+Restore on another machine:
+
+```bash
+7z x routenote-upload-key-<timestamp>.7z -p<passphrase>
+# upload-keystore.jks -> android/app/upload-keystore.jks
+# key.properties     -> android/key.properties
+powershell -ExecutionPolicy Bypass -File tool/verify_upload_keystore.ps1
+```
+
 
 ## iOS Info.plist validation (`validate_info_plist.py`)
 
