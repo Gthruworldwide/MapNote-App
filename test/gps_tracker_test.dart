@@ -561,7 +561,16 @@ void main() {
       final AndroidSettings background =
           scripted.openedWith.last as AndroidSettings;
       expect(background.accuracy, LocationAccuracy.medium);
-      expect(background.intervalDuration, GpsTrackerService.defaultInterval);
+      // The background tier: the receiver is asked every 15 s / after 15 m
+      // instead of the 5 s / 10 m foreground baseline.
+      expect(
+        background.intervalDuration,
+        LocationService.backgroundTrackingInterval,
+      );
+      expect(
+        background.distanceFilter,
+        LocationService.backgroundTrackingDistanceFilterMeters,
+      );
 
       await service.setPowerMode(backgrounded: true);
       expect(scripted.openCount, 2, reason: 'same mode: idempotent, no re-open');
@@ -569,6 +578,14 @@ void main() {
       await service.setPowerMode(backgrounded: false);
       expect(scripted.openCount, 3, reason: 'returning to foreground re-opens');
       expect(scripted.openedWith.last.accuracy, LocationAccuracy.high);
+      expect(
+        (scripted.openedWith.last as AndroidSettings).intervalDuration,
+        GpsTrackerService.defaultInterval,
+      );
+      expect(
+        (scripted.openedWith.last as AndroidSettings).distanceFilter,
+        LocationService.trackingDistanceFilterMeters,
+      );
 
       await service.stop();
     });

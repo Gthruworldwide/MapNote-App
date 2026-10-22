@@ -313,6 +313,103 @@ void main() {
     });
   });
 
+  group('idle verdict (the accelerometer sees a parked device)', () {
+    test('an idle verdict parks the stream while the trip is still live', () {
+      final AdaptiveEngineOrchestrator orchestrator = AdaptiveEngineOrchestrator();
+
+      orchestrator.observe(const EngineEvidence(trackingActive: true));
+      expect(orchestrator.state, EngineState.lowPowerTracking);
+
+      orchestrator.observeIdle(true);
+
+      expect(orchestrator.state, EngineState.idleStandby);
+      expect(orchestrator.profile.locationPaused, isTrue);
+      // The session survives: the trip is still being recorded, only the
+      // position request is closed.
+      expect(orchestrator.evidence.trackingActive, isTrue);
+      expect(orchestrator.idle, isTrue);
+    });
+
+    test('a confirmed drive wins over the idle verdict', () {
+      final AdaptiveEngineOrchestrator orchestrator = AdaptiveEngineOrchestrator();
+
+      orchestrator.observe(
+        const EngineEvidence(
+          trackingActive: true,
+          activityState: ActivityState.vehicleDriving,
+        ),
+      );
+      orchestrator.observeIdle(true);
+
+      // A car that pulls away must never be silenced by a stale idle verdict.
+      expect(orchestrator.state, EngineState.activeDriveAnalytics);
+      expect(orchestrator.profile.locationPaused, isFalse);
+    });
+
+    test('the verdict is latched against unrelated evidence', () {
+      final AdaptiveEngineOrchestrator orchestrator = AdaptiveEngineOrchestrator();
+
+      orchestrator.observe(const EngineEvidence(trackingActive: true));
+      orchestrator.observeIdle(true);
+
+      // A caller that only knows about speed must not wipe the verdict: it
+      // lives on its own channel.
+      orchestrator.observe(
+        const EngineEvidence(trackingActive: true, speedMps: 1.2, speedFresh: true),
+      );
+
+      expect(orchestrator.state, EngineState.idleStandby);
+      expect(orchestrator.idle, isTrue);
+    });
+
+    test('waking up re-opens the stream', () {
+      final AdaptiveEngineOrchestrator orchestrator = AdaptiveEngineOrchestrator();
+
+      orchestrator.observe(const EngineEvidence(trackingActive: true));
+      orchestrator.observeIdle(true);
+      final int before = orchestrator.transitionCount;
+
+      orchestrator.observeIdle(false);
+
+      expect(orchestrator.state, EngineState.lowPowerTracking);
+      expect(orchestrator.profile.locationPaused, isFalse);
+      expect(orchestrator.transitionCount, before + 1);
+    });
+
+    test('repeating the same verdict changes nothing', () {
+      final AdaptiveEngineOrchestrator orchestrator = AdaptiveEngineOrchestrator();
+
+      orchestrator.observe(const EngineEvidence(trackingActive: true));
+      orchestrator.observeIdle(true);
+      final int before = orchestrator.transitionCount;
+
+      orchestrator.observeIdle(true);
+      orchestrator.observeIdle(true);
+
+      expect(orchestrator.transitionCount, before);
+    });
+
+    test('suspend forgets the verdict', () {
+      final AdaptiveEngineOrchestrator orchestrator = AdaptiveEngineOrchestrator();
+
+      orchestrator.observe(const EngineEvidence(trackingActive: true));
+      orchestrator.observeIdle(true);
+      orchestrator.suspend();
+
+      expect(orchestrator.idle, isFalse);
+      expect(orchestrator.state, EngineState.idleStandby);
+    });
+
+    test('an idle verdict without a live trip changes nothing', () {
+      final AdaptiveEngineOrchestrator orchestrator = AdaptiveEngineOrchestrator();
+
+      orchestrator.observeIdle(true);
+
+      expect(orchestrator.state, EngineState.idleStandby);
+      expect(orchestrator.transitionCount, 0);
+    });
+  });
+
   group('idempotence and the stream', () {
     test('unchanged evidence does not re-emit or count a transition', () {
       final AdaptiveEngineOrchestrator orchestrator = AdaptiveEngineOrchestrator();
@@ -472,9 +569,10 @@ void main() {
       );
 
       expect(driving.accuracy.index, greaterThan(tracking.accuracy.index));
-      expect(tracking.accuracy.index, lessThanOrEqualTo(
-        LocationAccuracy.low.index,
-      ));
+      // GPS grade is reserved for the confirmed drive: the tracking tier sits
+      // at the balanced-power tier (geolocator's `medium` *is* Android's
+      // `PRIORITY_BALANCED_POWER_ACCURACY`), never at `high`.
+      expect(tracking.accuracy.index, lessThan(LocationAccuracy.high.index));
     });
 
     test('a tunnel backs the accuracy off from GPS grade', () {

@@ -100,6 +100,8 @@ class TransportClassifier {
   StreamSubscription<AccelerometerSample>? _subscription;
   final StreamController<TransportMode> _modes =
       StreamController<TransportMode>.broadcast();
+  final StreamController<double> _residualStream =
+      StreamController<double>.broadcast();
 
   /// Current verdict; [TransportMode.stationary] until a full window has been
   /// analysed.
@@ -113,6 +115,17 @@ class TransportClassifier {
 
   /// Emits whenever the verdict changes (broadcast; buffers nothing).
   Stream<TransportMode> get modes => _modes.stream;
+
+  /// A broadcast stream of the residual RMS (m/s²) of every analysed window.
+  ///
+  /// This is the gravity-free, windowed magnitude the idle detector consumes:
+  /// it is the same number [stationaryRms] is compared against, so "the
+  /// device is still" means exactly the same thing to both. Once the window
+  /// is full the analysis runs on every sample, so this publishes the sliding
+  /// RMS at the accelerometer rate (≈16 Hz at `SENSOR_DELAY_UI`) rather than
+  /// once per window — which is what lets a parked device be woken within its
+  /// wake-up window instead of up to a whole window late.
+  Stream<double> get residualStream => _residualStream.stream;
 
   /// True while the accelerometer stream is subscribed.
   bool get isRunning => _subscription != null;
@@ -138,6 +151,14 @@ class TransportClassifier {
     await subscription?.cancel();
     _residuals.clear();
     _stamps.clear();
+  }
+
+  /// Releases the classifier for good: stops the feed and closes the verdict
+  /// and residual streams. The provider owns this lifetime.
+  Future<void> dispose() async {
+    await stop();
+    await _modes.close();
+    await _residualStream.close();
   }
 
   /// Fuses a GPS Doppler speed (m/s) so fast/slow verdicts can use it.
@@ -173,6 +194,7 @@ class TransportClassifier {
     );
     _dominantHz = dominantFrequencyHzOf(residuals: _residuals, stamps: _stamps);
     _rms = rmsOf(_residuals);
+    if (!_residualStream.isClosed) _residualStream.add(_rms!);
     if (verdict != _mode) {
       _mode = verdict;
       if (!_modes.isClosed) _modes.add(verdict);

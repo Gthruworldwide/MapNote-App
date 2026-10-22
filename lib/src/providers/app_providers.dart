@@ -32,6 +32,7 @@ import '../core/memory/adaptive_profile_repository.dart';
 import '../core/memory/self_diagnostic_monitor.dart';
 import '../core/motion/activity_state_manager.dart';
 import '../core/motion/motion_gate.dart';
+import '../core/motion/stationary_idle_detector.dart';
 import '../core/orchestrator/adaptive_engine_orchestrator.dart';
 import '../core/security/device_lock_detector.dart';
 import '../core/security/session_guard.dart';
@@ -166,10 +167,62 @@ final Provider<GapRecoveryService> gapRecoveryServiceProvider =
 /// Transport-mode classifier over the shared accelerometer feed.
 final Provider<TransportClassifier> transportClassifierProvider =
     Provider<TransportClassifier>((Ref ref) {
-      return TransportClassifier(
+      final TransportClassifier classifier = TransportClassifier(
         accelerometer: ref.watch(motionSensorHubProvider).accelerometer,
       );
+      ref.onDispose(() => unawaited(classifier.dispose()));
+      return classifier;
     });
+
+/// The **idle detector**: the one place that decides "this device has not
+/// moved for a while".
+///
+/// It is fed the gravity-free residual RMS of the transport classifier's
+/// analysis windows (see [TransportClassifier.residualStream]) and the Doppler
+/// speed of every accepted fix, and it publishes a single verdict: moving or
+/// parked. The verdict is *evidence* for the adaptive engine — the
+/// orchestrator decides what it means (see `AdaptiveEngineOrchestrator`).
+///
+/// One instance is shared by both daily trackers, so the two can never
+/// disagree about whether the device is parked.
+///
+/// The thresholds match the classifier's own "still" bar
+/// (`TransportClassifier.stationaryRms`): the wake-up threshold is *not*
+/// higher than the motion threshold, so a device that is too restless to fall
+/// asleep can always wake up again.
+final Provider<StationaryIdleDetector> stationaryIdleDetectorProvider =
+    Provider<StationaryIdleDetector>((Ref ref) {
+      final StationaryIdleDetector detector = StationaryIdleDetector(
+        motionThreshold: 0.28,
+        wakeupThreshold: 0.28,
+        wakeupWindow: const Duration(seconds: 3),
+        stationaryWindow: const Duration(minutes: 5),
+      );
+      ref.onDispose(() => unawaited(detector.dispose()));
+      return detector;
+    });
+
+/// Bridges the idle detector's verdict into the adaptive engine.
+///
+/// The detector is fed the gravity-free residual stream by
+/// [AdaptiveTrackingStack] while either tracker records; the orchestrator
+/// decides what "parked" means (a confirmed drive always wins over the idle
+/// verdict). The bridge lives in its own provider so both tracker controllers
+/// share one subscription and the verdict cannot be double-counted.
+final Provider<StreamSubscription<MotionState>> idleOrchestratorBridgeProvider =
+    Provider<StreamSubscription<MotionState>>((Ref ref) {
+  final AdaptiveEngineOrchestrator orchestrator =
+      ref.read(adaptiveEngineOrchestratorProvider);
+  final StationaryIdleDetector detector =
+      ref.read(stationaryIdleDetectorProvider);
+  final StreamSubscription<MotionState> subscription =
+      detector.stateChanges.listen((MotionState state) {
+    if (!ref.mounted) return;
+    orchestrator.observeIdle(state == MotionState.stationary);
+  });
+  ref.onDispose(() => unawaited(subscription.cancel()));
+  return subscription;
+});
 
 /// On-device motion analytics: the vehicle-frame classifier that turns the
 /// accelerometer into hard brakes, harsh launches, sharp turns, speed bumps and
@@ -260,6 +313,7 @@ final Provider<GpsTrackerService> gpsTrackerProvider =
         deadReckoning: ref.watch(deadReckoningServiceProvider),
         fused: ref.watch(fusedLocationServiceProvider),
         hub: ref.watch(locationHubProvider),
+        stationaryDetector: ref.watch(stationaryIdleDetectorProvider),
       );
     });
 
@@ -274,6 +328,7 @@ final Provider<AutoMotionService> autoMotionServiceProvider =
         behavior: ref.watch(motionBehaviorAnalyzerProvider),
         fused: ref.watch(fusedLocationServiceProvider),
         hub: ref.watch(locationHubProvider),
+        stationaryDetector: ref.watch(stationaryIdleDetectorProvider),
       );
     });
 
@@ -299,6 +354,7 @@ final Provider<ForegroundTrackingService> foregroundTrackingServiceProvider =
 class AdaptiveTrackingStack {
   bool _running = false;
   StreamSubscription<TransportMode>? _modes;
+  StreamSubscription<double>? _residuals;
 
   /// Whether the stack is currently running (diagnostics/tests).
   bool get isRunning => _running;
@@ -313,6 +369,7 @@ class AdaptiveTrackingStack {
     required TransportClassifier classifier,
     required DeadReckoningService deadReckoning,
     required AdaptiveSamplingNotifier sampling,
+    required StationaryIdleDetector idleDetector,
   }) async {
     if (needed == _running) return;
     _running = needed;
@@ -325,15 +382,25 @@ class AdaptiveTrackingStack {
       // Classifier verdicts drive the shared profile (battery arrives through
       // the poll); a disposed stack stops consuming them.
       _modes = classifier.modes.listen(sampling.observeTransport);
+      // The idle detector consumes the gravity-free residual of every analysis
+      // window: once the position stream is closed for a parked device, the
+      // accelerometer is the only witness left that can wake it up again.
+      _residuals = classifier.residualStream.listen(
+        idleDetector.observeAcceleration,
+      );
       sampling.startPolling();
       return;
     }
     await _modes?.cancel();
     _modes = null;
+    await _residuals?.cancel();
+    _residuals = null;
     await classifier.stop();
     await deadReckoning.stop();
     sampling.stopPolling();
     await hub.stop();
+    // No tracker is running any more, so "idle" no longer means anything.
+    idleDetector.reset();
   }
 
   /// Tears down the subscription without touching the (provider-scoped)
@@ -342,6 +409,8 @@ class AdaptiveTrackingStack {
     _running = false;
     unawaited(_modes?.cancel());
     _modes = null;
+    unawaited(_residuals?.cancel());
+    _residuals = null;
   }
 }
 
@@ -1647,6 +1716,10 @@ class GpsTrackingController extends Notifier<GpsTrackingState> {
       unawaited(queue.add(() => applyEngineProfile(watched, profile)));
     });
     ref.onDispose(engineProfiles.cancel);
+    // The idle detector's verdict reaches the FSM through one shared bridge: a
+    // parked device closes the position stream outright, and the accelerometer
+    // is what wakes it up again.
+    ref.read(idleOrchestratorBridgeProvider);
     // The transport classifier's verdicts are *evidence* for the FSM, not a
     // separate authority over the stream: feeding them to the orchestrator lets
     // it decide, and its profile is what reaches the tracker. Routing them
@@ -1776,6 +1849,7 @@ class GpsTrackingController extends Notifier<GpsTrackingState> {
           classifier: ref.read(transportClassifierProvider),
           deadReckoning: ref.read(deadReckoningServiceProvider),
           sampling: ref.read(adaptiveSamplingProvider.notifier),
+          idleDetector: ref.read(stationaryIdleDetectorProvider),
         );
   }
 
@@ -2033,6 +2107,10 @@ class AutoMotionController extends Notifier<AutoMotionState> {
           );
     });
     ref.onDispose(modes.cancel);
+    // The idle detector's verdict reaches the FSM through one shared bridge: a
+    // parked device closes the position stream outright, and the accelerometer
+    // is what wakes it up again.
+    ref.read(idleOrchestratorBridgeProvider);
     // Orchestrator-driven cadence: when the central FSM reaches a decisive
     // state (idle, driving, tunnel) its profile *overrides* the transport-driven
     // adaptive profile, because it knows more — it has the activity gate's
@@ -2260,6 +2338,7 @@ class AutoMotionController extends Notifier<AutoMotionState> {
           classifier: ref.read(transportClassifierProvider),
           deadReckoning: ref.read(deadReckoningServiceProvider),
           sampling: ref.read(adaptiveSamplingProvider.notifier),
+          idleDetector: ref.read(stationaryIdleDetectorProvider),
         );
   }
 

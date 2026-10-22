@@ -211,29 +211,36 @@ void main() {
       expect(settings.foregroundNotificationConfig, isNull);
     });
 
-    test('the background cap is medium accuracy at the same 5 s / 10 m '
-        'cadence', () {
+    test('the background tier is balanced accuracy at a 15 m / 15 s cadence',
+        () {
       overrideToAndroid();
 
       // The background-cap decision: medium is geolocator's name for
-      // Android's balanced-power tier.
+      // Android's balanced-power tier, and the background tier asks the
+      // receiver less often than the foreground baseline (5 s / 10 m).
       expect(
         LocationService.backgroundTrackingLocationSettings.accuracy,
         LocationAccuracy.medium,
       );
       expect(
         LocationService.backgroundTrackingLocationSettings.distanceFilter,
-        LocationService.trackingDistanceFilterMeters,
+        LocationService.backgroundTrackingDistanceFilterMeters,
+      );
+      expect(
+        LocationService.backgroundTrackingLocationSettings.distanceFilter,
+        15,
+      );
+      expect(
+        LocationService.backgroundTrackingInterval,
+        const Duration(seconds: 15),
       );
 
-      // The profile that decision is built from keeps the 5 s default —
-      // only the accuracy tier changes between visible and backgrounded.
       final AndroidSettings backgroundProfile =
-          LocationService.trackingSettingsFor(
-        accuracy: LocationAccuracy.medium,
-      ) as AndroidSettings;
+          LocationService.backgroundTrackingLocationSettings
+              as AndroidSettings;
       expect(backgroundProfile.accuracy, LocationAccuracy.medium);
-      expect(backgroundProfile.intervalDuration, const Duration(seconds: 5));
+      expect(backgroundProfile.intervalDuration, const Duration(seconds: 15));
+      expect(backgroundProfile.distanceFilter, 15);
       expect(backgroundProfile.forceLocationManager, isFalse);
     });
   });

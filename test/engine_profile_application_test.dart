@@ -51,7 +51,7 @@ void main() {
       expect(call['transportSpeed'], isFalse);
     });
 
-    test('lowPowerTracking opens the stream at a coarse tier without GPS grade',
+    test('lowPowerTracking opens the stream at the balanced tracking tier',
         () async {
       final _FakeSamplingTarget target = _FakeSamplingTarget();
       final AdaptiveEngineOrchestrator orchestrator =
@@ -64,10 +64,13 @@ void main() {
       final Map<String, Object?> call = target.calls.single;
       expect(call['paused'], isFalse);
       expect(call['transportSpeed'], isFalse);
-      expect(
-        (call['accuracy']! as LocationAccuracy).index,
-        lessThanOrEqualTo(LocationAccuracy.low.index),
-      );
+      // The tracking tier (the background AutoMotion case): a 15 m movement
+      // filter, a 15 s cadence and the balanced-power tier — geolocator's
+      // `medium` *is* Android's `PRIORITY_BALANCED_POWER_ACCURACY`. GPS grade
+      // stays reserved for the confirmed drive.
+      expect(call['accuracy'], LocationAccuracy.medium);
+      expect(call['distanceFilter'], 15);
+      expect(call['interval'], const Duration(seconds: 15));
     });
 
     test('activeDriveAnalytics asks for GPS grade with the tight filter',

@@ -261,6 +261,49 @@ void main() {
       _feedWalkingWindow(classifier, base: DateTime(2026, 10, 18, 10));
       await expectLater(announced, completion(TransportMode.walking));
     });
+
+    test('the residual stream publishes the RMS of every analysed window',
+        () async {
+      final TransportClassifier classifier = _silentClassifier();
+      final List<double> published = <double>[];
+      final StreamSubscription<double> subscription =
+          classifier.residualStream.listen(published.add);
+      final DateTime base = DateTime(2026, 10, 18, 10);
+
+      // A partial window is no verdict: nothing is published before the
+      // window is full.
+      classifier.feed(0, 0, 9.81, at: base);
+      await _flush();
+      expect(published, isEmpty);
+
+      _feedWalkingWindow(classifier, base: base);
+      await _flush();
+      expect(published, isNotEmpty);
+      expect(published.last, closeTo(classifier.residualRms!, 1e-9));
+      // The idle detector compares against the very same bar.
+      expect(published.last, greaterThan(classifier.stationaryRms));
+
+      // The window slides, so the RMS is republished as it changes: the idle
+      // detector needs a steady feed, not just the verdict changes.
+      final int afterFirstWindow = published.length;
+      _feedWalkingWindow(classifier, base: base, startSample: 64);
+      await _flush();
+      expect(published.length, greaterThan(afterFirstWindow));
+
+      await subscription.cancel();
+    });
+
+    test('the residual stream is closed by dispose', () async {
+      final TransportClassifier classifier = _silentClassifier();
+      await classifier.dispose();
+      // A closed broadcast controller: listening again is legal but yields
+      // nothing, and feeding more samples must not throw.
+      final List<double> published = <double>[];
+      classifier.residualStream.listen(published.add);
+      _feedWalkingWindow(classifier, base: DateTime(2026, 10, 18, 10));
+      await _flush();
+      expect(published, isEmpty);
+    });
   });
 
   group('TransportClassifier speed hint', () {

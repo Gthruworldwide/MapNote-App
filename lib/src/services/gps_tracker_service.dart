@@ -2,6 +2,7 @@
 
 import 'package:geolocator/geolocator.dart';
 
+import '../core/motion/stationary_idle_detector.dart';
 import '../data/local/gps_daily_data_source.dart';
 import 'daily_track_engine.dart';
 import 'dead_reckoning_service.dart';
@@ -35,6 +36,7 @@ class GpsTrackerService implements SamplingTarget {
     MotionSignal? motion,
     GapRecoveryService? gapRecovery,
     DistanceEstimator? deadReckoning,
+    StationaryIdleDetector? stationaryDetector,
     this._fused,
     this._hub,
     Duration flushEvery = persistInterval,
@@ -43,11 +45,16 @@ class GpsTrackerService implements SamplingTarget {
           motion: motion,
           gapRecovery: gapRecovery,
           deadReckoning: deadReckoning,
+          stationaryDetector: stationaryDetector ?? StationaryIdleDetector(),
           flushEvery: flushEvery,
         );
 
   /// Persistence for daily summaries.
   final GpsDailyDataSource dailyStore;
+
+  /// The idle detector that judges "this device has not moved" (shared with
+  /// the AutoMotion tracker, so the two can never disagree).
+  StationaryIdleDetector get stationaryDetector => _engine.stationaryDetector!;
 
   final DailyTrackEngine _engine;
 
@@ -284,7 +291,10 @@ class GpsTrackerService implements SamplingTarget {
       return hub.acquire(
         this,
         accuracy: _effectiveAccuracy,
-        interval: _sampleInterval,
+        // The *effective* interval, not the profile's: a `null` interval would
+        // collapse to the plugin's 5 s default inside the shared hub, which is
+        // exactly the background poll the background tier exists to prevent.
+        interval: _effectiveInterval,
         distanceFilter: _effectiveDistanceFilter,
       );
     }
@@ -299,7 +309,7 @@ class GpsTrackerService implements SamplingTarget {
       highSettings: _streamSettings,
       networkSettings: LocationService.trackingSettingsFor(
         accuracy: _fallbackAccuracy,
-        intervalDuration: _sampleInterval ?? defaultInterval,
+        intervalDuration: _effectiveInterval,
         distanceFilter: _effectiveDistanceFilter,
       ),
       onError: onError,
@@ -325,15 +335,28 @@ class GpsTrackerService implements SamplingTarget {
   /// visible, at the balanced-power tier while backgrounded.
   LocationSettings get _streamSettings => LocationService.trackingSettingsFor(
         accuracy: _effectiveAccuracy,
-        intervalDuration: _sampleInterval ?? defaultInterval,
+        intervalDuration: _effectiveInterval,
         distanceFilter: _effectiveDistanceFilter,
       );
 
+  /// The request cadence the live stream runs with: the sampling profile's
+  /// interval when the engine has dictated one, otherwise the fixed
+  /// foreground baseline — or, once MapNote is backgrounded, the *background*
+  /// tier (15 s), which asks the receiver far less often.
+  Duration get _effectiveInterval => _sampleInterval ??
+      (_backgrounded
+          ? LocationService.backgroundTrackingInterval
+          : defaultInterval);
+
   /// The movement filter the live stream runs with: the sampling profile's
   /// tier (the stationary tier's 50 m swallows jitter outright), or the
-  /// fixed 10 m baseline while no profile is active.
-  int get _effectiveDistanceFilter =>
-      _sampleDistanceFilter ?? LocationService.trackingDistanceFilterMeters;
+  /// fixed 10 m baseline while no profile is active — or, once MapNote is
+  /// backgrounded, the background tier's 15 m, which ignores the
+  /// micro-movement that would otherwise wake the receiver.
+  int get _effectiveDistanceFilter => _sampleDistanceFilter ??
+      (_backgrounded
+          ? LocationService.backgroundTrackingDistanceFilterMeters
+          : LocationService.trackingDistanceFilterMeters);
 
   /// The accuracy the live stream asks for: the sampling profile's tier,
   /// capped at [LocationAccuracy.medium] — geolocator's name for Android's

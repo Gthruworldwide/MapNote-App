@@ -104,18 +104,39 @@ class LocationService {
   /// held Wi-Fi lock *is* "keep the Wi-Fi radio awake" battery drain.
   static final LocationSettings trackingLocationSettings = trackingSettingsFor();
 
+  /// The movement filter of the **background** tracking tier, in metres.
+  ///
+  /// Fifteen metres filters out the micro-movement that would otherwise wake
+  /// the GNSS receiver for every jitter of a phone in a pocket, while still
+  /// following a real walk.
+  static const int backgroundTrackingDistanceFilterMeters = 15;
+
+  /// The request cadence of the **background** tracking tier.
+  ///
+  /// Fifteen seconds between requests in motion: enough to follow a walk, rare
+  /// enough that the receiver is not polled continuously.
+  static const Duration backgroundTrackingInterval = Duration(seconds: 15);
+
   /// The same profile at reduced precision for a **backgrounded** tracker, so
   /// the receiver's duty cycle (and therefore the battery) drops when the
   /// screen is off: [LocationAccuracy.medium] is geolocator's name for
-  /// Android's `PRIORITY_BALANCED_POWER_ACCURACY` — Wi-Fi/cell/sensor-assisted
-  /// fixes instead of demanding a continuous GPS lock (geolocator's enum has
-  /// no literal `balanced` value; `medium` *is* the balanced-power tier) — and
-  /// iOS applies its matching reduced-precision accuracy. The 10 m movement
-  /// filter and the 5 s interval are unchanged, so every measurement rule
-  /// (jitter, min-step, speed caps, gap recovery) behaves identically in both
-  /// modes; only the power cost of obtaining a fix changes.
+  /// Android's `PRIORITY_BALANCED_POWER_ACCURACY` — the balanced-power tier
+  /// (geolocator's enum has no literal `balanced` value; `medium` *is* it) —
+  /// while iOS applies its matching reduced-precision accuracy. GPS grade is
+  /// reserved for a confirmed drive.
+  ///
+  /// The movement filter and the request interval are the background tier's
+  /// own ([backgroundTrackingDistanceFilterMeters] /
+  /// [backgroundTrackingInterval]), not the foreground baseline's: a
+  /// backgrounded tracker asks less often and tolerates less movement, which
+  /// is what keeps the OS from reporting the app as one that "frequently
+  /// checks your location".
   static final LocationSettings backgroundTrackingLocationSettings =
-      trackingSettingsFor(accuracy: LocationAccuracy.medium);
+      trackingSettingsFor(
+    accuracy: LocationAccuracy.medium,
+    intervalDuration: backgroundTrackingInterval,
+    distanceFilter: backgroundTrackingDistanceFilterMeters,
+  );
 
   /// Builds a tracking profile: accuracy (defaults to [LocationAccuracy.high]),
   /// the fused-provider request interval (defaults to 5 s) and the movement

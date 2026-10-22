@@ -13,9 +13,10 @@ import '../motion/activity_state_manager.dart';
 /// is one place that answers "what are we doing right now", instead of four
 /// subsystems each deciding for themselves whether they are needed.
 enum EngineState {
-  /// Nothing is happening: no confirmed movement, no active trip. Almost every
-  /// subsystem sleeps and the location request is stretched to its longest
-  /// interval.
+  /// Nothing is happening: no confirmed movement. Either no trip is being
+  /// recorded, or the device has been parked for the idle window while a trip
+  /// is still live. Almost every subsystem sleeps and the position stream is
+  /// closed outright.
   idleStandby,
 
   /// A trip is being recorded, on foot or in slow traffic. The location feed is
@@ -199,6 +200,10 @@ class EngineEvidence {
 ///                                          tunnelDeadReckoning
 /// ```
 ///
+/// `idleStandby` is also reachable **while a trip is recording**: when the
+/// idle detector reports that the device has not moved for its window, the
+/// orchestrator parks the stream (see [observeIdle]).
+///
 /// Entering `activeDriveAnalytics` requires the activity gate's own
 /// `vehicleDriving` verdict, so the orchestrator inherits the gate's
 /// anti-false-positive work (speed + held vibration + step rejection) rather
@@ -213,15 +218,15 @@ class AdaptiveEngineOrchestrator {
     // stream outright on top of that. It is a safety net for "the stream could
     // not be closed" rather than the mechanism that saves power.
     this.idleLocationInterval = const Duration(minutes: 10),
-    this.trackingLocationInterval = const Duration(seconds: 30),
+    this.trackingLocationInterval = const Duration(seconds: 15),
     this.drivingLocationInterval = const Duration(seconds: 1),
     this.tunnelLocationInterval = const Duration(seconds: 5),
     this.idleDistanceFilterMeters = 200,
-    this.trackingDistanceFilterMeters = 50,
+    this.trackingDistanceFilterMeters = 15,
     this.drivingDistanceFilterMeters = 5,
     this.tunnelDistanceFilterMeters = 30,
     this.idleAccuracy = LocationAccuracy.lowest,
-    this.trackingAccuracy = LocationAccuracy.low,
+    this.trackingAccuracy = LocationAccuracy.medium,
     this.drivingAccuracy = LocationAccuracy.high,
     this.tunnelAccuracy = LocationAccuracy.low,
   })  : assert(speedThresholdKmh >= 0),
@@ -239,17 +244,31 @@ class AdaptiveEngineOrchestrator {
   final Duration tunnelFixAge;
 
   final Duration idleLocationInterval;
+
+  /// The cadence of the *moving but not driving* tier — the background
+  /// AutoMotion/GPS tracking case. Fifteen seconds between requests with a
+  /// 15 m movement filter: enough to follow a walk, coarse enough that a
+  /// parked phone does not wake the GNSS receiver every few seconds.
   final Duration trackingLocationInterval;
   final Duration drivingLocationInterval;
   final Duration tunnelLocationInterval;
 
   final int idleDistanceFilterMeters;
+
+  /// The movement filter of the moving-but-not-driving tier. 15 m filters out
+  /// the micro-movement that would otherwise wake the receiver for every
+  /// jitter of a phone in a pocket, without throwing away a real walk.
   final int trackingDistanceFilterMeters;
   final int drivingDistanceFilterMeters;
   final int tunnelDistanceFilterMeters;
 
   /// Power tier per state (see [EngineProfile.accuracy]).
   final LocationAccuracy idleAccuracy;
+
+  /// The balanced tier of the moving-but-not-driving state: geolocator's
+  /// `medium` *is* Android's `PRIORITY_BALANCED_POWER_ACCURACY`. GPS grade is
+  /// reserved for a confirmed drive — a coarser tier would also starve the
+  /// distance tally, whose accuracy gate is 35 m.
   final LocationAccuracy trackingAccuracy;
   final LocationAccuracy drivingAccuracy;
   final LocationAccuracy tunnelAccuracy;
@@ -260,6 +279,9 @@ class AdaptiveEngineOrchestrator {
   EngineState _state = EngineState.idleStandby;
   EngineEvidence _evidence = const EngineEvidence();
   int _transitions = 0;
+
+  /// The latched idle verdict (see [observeIdle]).
+  bool _idle = false;
 
   /// Current state. [EngineState.idleStandby] until evidence says otherwise:
   /// nothing expensive runs unless something proves it should.
@@ -294,11 +316,34 @@ class AdaptiveEngineOrchestrator {
     return _profileFor(next);
   }
 
+  /// Reports the **idle** verdict — the device has not moved for the idle
+  /// window — and re-resolves the state.
+  ///
+  /// The verdict comes from the accelerometer (see `StationaryIdleDetector`),
+  /// which is asynchronous and independent of the motion evidence, so it gets
+  /// its own latched channel: a caller that only knows about speed or the
+  /// activity gate must not wipe it, and the orchestrator stays the single
+  /// place that maps evidence onto a profile.
+  ///
+  /// An idle device that is still recording a trip drops to
+  /// [EngineState.idleStandby] — the position stream is closed outright
+  /// rather than merely slowed — and a confirmed drive always wins over the
+  /// verdict (see [_resolve]).
+  void observeIdle(bool idle) {
+    if (idle == _idle) return;
+    _idle = idle;
+    observe(_evidence);
+  }
+
+  /// Whether the last idle verdict said the device is parked.
+  bool get idle => _idle;
+
   /// Forces the machine back to [EngineState.idleStandby] and forgets the
   /// evidence — the trip ended, the user switched the feature off, or the app
   /// is shutting the stack down. Everything expensive stops *now*.
   void suspend() {
     _evidence = const EngineEvidence();
+    _idle = false;
     _force(EngineState.idleStandby);
   }
 
@@ -330,6 +375,11 @@ class AdaptiveEngineOrchestrator {
       // to stop analysing braking.
       return EngineState.activeDriveAnalytics;
     }
+
+    // Parked: the trip is still live, but nothing is moving, so the position
+    // stream is closed outright. A confirmed drive above always wins, so a car
+    // that pulls away is never silenced by a stale idle verdict.
+    if (_idle) return EngineState.idleStandby;
 
     // Tracking, but not confirmed driving, and not in a tunnel: relaxed mode.
     return EngineState.lowPowerTracking;
