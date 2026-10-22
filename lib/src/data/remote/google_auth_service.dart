@@ -20,9 +20,7 @@ class GoogleAuthService implements AuthService {
         clientId: AppConfig.googleIosClientId.isEmpty
             ? null
             : AppConfig.googleIosClientId,
-        serverClientId: AppConfig.googleServerClientId.isEmpty
-            ? null
-            : AppConfig.googleServerClientId,
+        serverClientId: null,
       );
       _initialized = true;
     } on GoogleSignInException catch (e) {
