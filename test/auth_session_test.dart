@@ -96,6 +96,20 @@ Future<void> waitFor(
   }
 }
 
+/// Waits a bounded real time so pending async work has landed.
+///
+/// Needed before asserting that something did **not** happen. The restore
+/// decision reads `last_synced` from Hive, and a fixed number of event-loop
+/// yields can return before that read has resolved — the assertion would then
+/// pass vacuously, and would also flip to failing under a fully parallel test
+/// run where the restore had not completed yet. Bounding by real time makes
+/// the negative assertion meaningful and keeps it stable.
+Future<void> settle([
+  Duration duration = const Duration(milliseconds: 150),
+]) async {
+  await Future<void>.delayed(duration);
+}
+
 /// Deletes [dir], retrying briefly while the OS still holds the handle.
 ///
 /// Windows releases the file handle behind a closed Hive box a moment after
@@ -168,7 +182,7 @@ void main() {
     // closed, Windows keeps the file locked and the delete below fails with
     // "being used by another process". Drain the queue so the write lands
     // while the box is still open.
-    await pumpEventQueue();
+    await settle();
 
     await placesBox.close();
     await settingsBox.close();
@@ -271,7 +285,7 @@ void main() {
 
       expect(container.read(authProvider).value, isNull);
 
-      await pumpEventQueue();
+      await settle();
 
       expect(
         auth.silentCalls,
@@ -296,17 +310,17 @@ void main() {
     final ProviderContainer container = containerWith(auth);
 
     container.read(authProvider);
-    await pumpEventQueue();
+    await waitFor(() => auth.silentCalls >= 1);
     expect(auth.silentCalls, 1);
 
     // Simulate the chooser having bounced the app to the foreground: the
     // provider rebuilds, which would re-run `build()`.
     container.invalidate(authProvider);
     container.read(authProvider);
-    await pumpEventQueue();
+    await settle();
     container.invalidate(authProvider);
     container.read(authProvider);
-    await pumpEventQueue();
+    await settle();
 
     expect(
       auth.silentCalls,
@@ -330,7 +344,7 @@ void main() {
     final ProviderContainer container = containerWith(auth);
 
     expect(container.read(authProvider).value?.email, 'keep@example.com');
-    await pumpEventQueue();
+    await waitFor(() => auth.silentCalls >= 1);
 
     // The user stays signed in; a transient refusal must never clear the vault
     // of a locally cached session.
@@ -368,7 +382,7 @@ void main() {
       addTearDown(container.dispose);
 
       expect(container.read(authProvider).value?.email, 'throw11@example.com');
-      await pumpEventQueue();
+      await waitFor(() => auth.silentCalls >= 1);
 
       // No crash, no error UI, and the session survives the failure.
       expect(auth.silentCalls, 1);
@@ -407,7 +421,7 @@ void main() {
 
       // The cached session still renders immediately...
       expect(container.read(authProvider).value?.email, 'fresh@example.com');
-      await pumpEventQueue();
+      await settle();
 
       // ...but the platform was never asked, so no chooser can appear.
       expect(
@@ -464,7 +478,7 @@ void main() {
     final ProviderContainer container = containerWith(auth);
 
     container.read(authProvider);
-    await pumpEventQueue();
+    await waitFor(() => auth.silentCalls >= 1);
 
     expect(auth.silentCalls, 1);
   });
