@@ -86,9 +86,25 @@ class AccountSettingsScreen extends ConsumerWidget {
         padding: EdgeInsets.all(24),
         child: Center(child: CircularProgressIndicator()),
       ),
-      error: (Object error, StackTrace stackTrace) => ListTile(
-        leading: const Icon(Icons.error_outline),
-        title: Text(l10n.errorGeneric),
+      error: (Object error, StackTrace stackTrace) => Column(
+        children: <Widget>[
+          ListTile(
+            leading: Icon(
+              Icons.error_outline,
+              color: Theme.of(context).colorScheme.error,
+            ),
+            title: Text(l10n.errorGeneric),
+            subtitle: Text(l10n.syncSignInRequired),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: FilledButton.tonalIcon(
+              onPressed: () => _signIn(context, ref, l10n),
+              icon: const Icon(Icons.login),
+              label: Text(l10n.signInWithGoogle),
+            ),
+          ),
+        ],
       ),
       data: (AuthUser? user) {
         if (user == null) {
@@ -262,7 +278,9 @@ class AccountSettingsScreen extends ConsumerWidget {
     } catch (e, stackTrace) {
       if (!context.mounted) return;
       debugPrint('MapNote sign-in flow error: $e\n$stackTrace');
-      messenger.showSnackBar(SnackBar(content: Text(l10n.errorGeneric)));
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.signInFailed(e.toString()))),
+      );
     }
   }
 

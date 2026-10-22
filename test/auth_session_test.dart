@@ -29,7 +29,7 @@ class FakePathProvider extends PathProviderPlatform
 
 /// Auth service stand-in that reports a fixed result for the silent attempt.
 class _FakeAuthService implements AuthService {
-  _FakeAuthService({this.silentUser, this.silentError});
+  _FakeAuthService({this.silentUser, this.silentError, this.signInError});
 
   final AuthUser? silentUser;
 
@@ -37,7 +37,12 @@ class _FakeAuthService implements AuthService {
   /// "platform/transport hiccup" branch of the restore contract.
   final Object? silentError;
 
+  /// When set, the interactive sign-in throws (a dismissed chooser, a
+  /// `DEVELOPER_ERROR` from an unregistered signing fingerprint, no network).
+  final Object? signInError;
+
   int silentCalls = 0;
+  int signInCalls = 0;
   AuthUser? _user;
 
   @override
@@ -59,8 +64,19 @@ class _FakeAuthService implements AuthService {
   }
 
   @override
-  Future<AuthUser> signIn() {
-    throw UnimplementedError('signIn is not used in these tests');
+  Future<AuthUser> signIn() async {
+    signInCalls++;
+    final Object? error = signInError;
+    if (error != null) throw error;
+    final AuthUser user =
+        silentUser ??
+        const AuthUser(
+          id: 'signed-in',
+          email: 'signed-in@example.com',
+          displayName: 'Signed In',
+        );
+    _user = user;
+    return user;
   }
 
   @override
@@ -622,4 +638,44 @@ void main() {
       reason: 'a successful upload is the evidence the trust window needs',
     );
   });
+
+  test(
+    'a failed interactive sign-in rethrows and leaves the card usable',
+    () async {
+      // Regression for the settings drill-down: `signIn()` used to funnel the
+      // failure through `AsyncValue.guard`, so the provider entered an
+      // `AsyncError` state, the screen's `catch` never ran (no message), and
+      // the Account card rendered its error branch — which had no sign-in
+      // button. One transient failure (a dismissed Credential Manager chooser,
+      // `DEVELOPER_ERROR`, no network) made sign-in unreachable until restart.
+      final _FakeAuthService auth = _FakeAuthService(
+        signInError: const AuthException('DEVELOPER_ERROR'),
+      );
+      final ProviderContainer container = containerWith(auth);
+
+      await expectLater(
+        container.read(authProvider.notifier).signIn(),
+        throwsA(isA<AuthException>()),
+        reason: 'the caller must receive the failure to show a real message',
+      );
+
+      final AsyncValue<AuthUser?> state = container.read(authProvider);
+      expect(
+        state.hasError,
+        isFalse,
+        reason: 'an error state wedges the card: its branch has no retry',
+      );
+      expect(state.value, isNull, reason: 'the user is still signed out');
+      expect(auth.signInCalls, 1);
+
+      // The retry path must actually work: the next attempt can succeed.
+      final ProviderContainer retry = containerWith(
+        _FakeAuthService(
+          silentUser: const AuthUser(id: 'retry', email: 'retry@example.com'),
+        ),
+      );
+      await retry.read(authProvider.notifier).signIn();
+      expect(retry.read(authProvider).value?.email, 'retry@example.com');
+    },
+  );
 }

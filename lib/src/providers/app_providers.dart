@@ -1152,18 +1152,31 @@ class AuthNotifier extends AsyncNotifier<AuthUser?> {
         });
   }
 
+  /// Interactive Google sign-in.
+  ///
+  /// Errors are **re-thrown** after restoring the previous state. Two reasons:
+  ///
+  ///  * The caller (the Account screen) can only show a specific message if it
+  ///    receives the exception; `AsyncValue.guard` used to swallow it into the
+  ///    provider state, so the screen's `catch` never ran and the user just saw
+  ///    the generic "Something went wrong" tile.
+  ///  * Leaving the provider in an `AsyncError` state wedges the account card:
+  ///    the error branch has no sign-in button, so a single transient failure
+  ///    (a dismissed chooser, `DEVELOPER_ERROR`, no network) made sign-in
+  ///    permanently unreachable until the app restarted.
   Future<void> signIn() async {
+    final AuthUser? previous = state.value;
     state = const AsyncValue<AuthUser?>.loading();
-    state = await AsyncValue.guard<AuthUser?>(
-      () => ref.read(authServiceProvider).signIn(),
-    );
-    final AuthUser? user = state.value;
-    if (user != null) {
+    try {
+      final AuthUser user = await ref.read(authServiceProvider).signIn();
       await _persist(user);
-    }
-    final Object? error = state.error;
-    if (error != null) {
+      state = AsyncValue<AuthUser?>.data(user);
+    } catch (error, stackTrace) {
+      // Fall back to whatever the user was before the attempt (usually
+      // "signed out"), so the card renders its normal controls again.
+      state = AsyncValue<AuthUser?>.data(previous);
       debugPrint('MapNote sign-in error: $error');
+      Error.throwWithStackTrace(error, stackTrace);
     }
   }
 
