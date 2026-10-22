@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>routenote.periodicSync</string>
+	</array>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
@@ -47,12 +51,18 @@
 	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>MapNote records your daily distance and keeps tracking trips in the background while AutoMotion or daily GPS tracking is on.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
 	<string>MapNote records your daily distance and keeps tracking trips in the background while AutoMotion or daily GPS tracking is on.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>MapNote uses your location to save the coordinates of places you capture.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>MapNote uses Face ID to protect locked locations and the Hidden Vault.</string>
+	<key>NSMotionUsageDescription</key>
+	<string>MapNote uses motion and compass sensor data to show the Qibla direction indicator.</string>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>comgooglemaps</string>
@@ -62,6 +72,8 @@
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>location</string>
+		<string>processing</string>
+		<string>fetch</string>
 	</array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
@@ -85,6 +97,8 @@
 		</dict>
 	</dict>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
+	<true/>
+	<key>UIFileSharingEnabled</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>

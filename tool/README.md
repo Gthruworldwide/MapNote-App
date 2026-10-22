@@ -207,6 +207,39 @@ compiles; such a bundle is rejected by Play, which is the intended signal.
 > synced through git, so losing it means Google Play can no longer accept
 > updates for the package under the same signing identity.
 
+## iOS Info.plist validation (`validate_info_plist.py`)
+
+`plutil -lint` is macOS-only, so on a Windows/Linux host this script is the
+equivalent gate for `ios/Runner/Info.plist`. It performs the same two stages
+`plutil` does for the XML plist format, then asserts the app's permission and
+background-mode contract.
+
+```bash
+python tool/validate_info_plist.py
+```
+
+| Stage | What it checks |
+| --- | --- |
+| XML | The file is well-formed XML (`xml.etree.ElementTree`) |
+| Plist | It parses as a plist dictionary (`plistlib.load`) |
+| Contract | Every required key is present and correctly typed |
+| Contract | `UIBackgroundModes` contains `location` and `processing` |
+| Contract | `BGTaskSchedulerPermittedIdentifiers` is non-empty, unique, and covers `routenote.periodicSync` |
+
+The last check is not cosmetic: `processing` requires permitted identifiers,
+and the identifier must be the exact string the app registers with
+`BGTaskScheduler` — here `AppConfig.backgroundSyncUniqueName`, which
+`workmanager_apple` passes straight through as the task identifier. A missing
+or mismatched entry makes the registration throw at runtime and fails App
+Store validation.
+
+> **No `ios/Podfile` on purpose.** This project uses Swift Package Manager
+> (`FlutterGeneratedPluginSwiftPackage`), so `pod install` is not part of the
+> build. The customary `PERMISSION_LOCATION=1` / `PERMISSION_SENSORS=1`
+> `GCC_PREPROCESSOR_DEFINITIONS` belong to `permission_handler_apple`, and
+> `permission_handler` is not a dependency of this app. See the "Platform
+> configuration" section of the top-level `README.md` for the full rationale.
+
 ## Related
 
 - App-side diagnostics: `AppObserverService` / `AppHealthLogger`

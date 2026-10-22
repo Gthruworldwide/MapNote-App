@@ -721,14 +721,57 @@ Already committed — the notes below explain what is in place.
   plugin also needs a Share Extension **target**, which can only be created in
   Xcode — ready-to-use templates and step-by-step instructions live in
   `ios/ShareExtension/README.md`.
-- **iOS** (`ios/Runner/Info.plist`): `NSLocationWhenInUseUsageDescription` and
-  `NSLocationAlwaysAndWhenInUseUsageDescription`, plus `UIBackgroundModes`
-  (`location`) so the daily trackers keep receiving fixes in the background,
-  `LSApplicationQueriesSchemes` (`comgooglemaps`, `googlemaps`, `waze`), and
-  `CFBundleURLTypes` containing the reversed iOS client ID
-  (`com.googleusercontent.apps.<ios-client-id>`) so the OAuth flow can return to
-  the app, plus the `ShareMedia-$(PRODUCT_BUNDLE_IDENTIFIER)` scheme used by the
-  share extension.
+- **iOS** (`ios/Runner/Info.plist`):
+  - **Privacy strings:** `NSLocationWhenInUseUsageDescription`,
+    `NSLocationAlwaysAndWhenInUseUsageDescription`, `NSLocationAlwaysUsageDescription`,
+    `NSFaceIDUsageDescription` (biometric unlock of locked places and the Hidden
+    Vault) and `NSMotionUsageDescription`. The motion string is **not
+    decorative**: the Qibla indicator (`lib/src/widgets/qibla_indicator.dart`)
+    uses `flutter_compass`, which instantiates a `CMMotionManager` on iOS, and
+    iOS terminates the app when a `CMMotionManager` is used without
+    `NSMotionUsageDescription`.
+  - **Background modes:** `UIBackgroundModes` = `location` (the daily trackers
+    keep receiving fixes in the background), `processing` and `fetch` (the
+    `workmanager` periodic backup is a `BGAppRefreshTask`, which iOS only
+    delivers under the Background fetch mode).
+    `processing` additionally requires `BGTaskSchedulerPermittedIdentifiers`,
+    which must list the exact identifiers the app registers with
+    `BGTaskScheduler` — here `routenote.periodicSync`, i.e.
+    `AppConfig.backgroundSyncUniqueName`, which `workmanager_apple` passes
+    straight through as the task identifier. A missing or mismatched entry makes
+    the registration throw at runtime and fails App Store validation.
+  - **Document sharing:** `LSSupportsOpeningDocumentsInPlace` +
+    `UIFileSharingEnabled` expose the app documents directory in the Files app.
+    That directory holds the Hive boxes (`places.hive`, `settings.hive` — the
+    latter carries the Google account snapshot `{id, email, displayName,
+    photoUrl}`, never a token) and the redacted `app_logs.txt`, so the user can
+    back the data up but can also edit or delete it.
+  - **URL schemes:** `LSApplicationQueriesSchemes` (`comgooglemaps`, `googlemaps`,
+    `waze`), and `CFBundleURLTypes` containing the reversed iOS client ID
+    (`com.googleusercontent.apps.<ios-client-id>`) so the OAuth flow can return to
+    the app, plus the `ShareMedia-$(PRODUCT_BUNDLE_IDENTIFIER)` scheme used by the
+    share extension.
+  - **Validation:** `plutil -lint` is macOS-only, so
+    `python tool/validate_info_plist.py` is the cross-platform equivalent: it
+    checks XML well-formedness, parses the file with `plistlib` and asserts the
+    permission / background-mode contract above.
+  > **There is deliberately no `ios/Podfile` — the project uses Swift Package
+  > Manager.** Plugins are pulled in through `FlutterGeneratedPluginSwiftPackage`
+  > (an `XCLocalSwiftPackageReference` in `ios/Runner.xcodeproj/project.pbxproj`);
+  > there is no `ios/Pods/`, no `Podfile.lock` and no `Pods-Runner.*.xcconfig`.
+  > Flutter skips CocoaPods processing **only when the Podfile is absent**
+  > (`flutter_tools/lib/src/macos/cocoapod_utils.dart`), so *adding* a Podfile
+  > would silently switch the iOS build to CocoaPods: `pod install` would become
+  > mandatory on every build machine, and a `post_install` hook's
+  > `installer.pods_project.targets` would contain none of the SPM-compiled
+  > plugins.
+  > The customary `PERMISSION_LOCATION=1` / `PERMISSION_SENSORS=1`
+  > `GCC_PREPROCESSOR_DEFINITIONS` are **`permission_handler_apple`'s**
+  > compile-time macros, and `permission_handler` is not a dependency of this app
+  > (it uses `geolocator`, `local_auth` and `workmanager` instead) — so such a
+  > hook would gate code that is never compiled here. Do not add a Podfile
+  > unless `permission_handler` is adopted **and** the project is deliberately
+  > migrated off SwiftPM.
 - **Application ID / bundle ID:** `com.routenote.routenote` on both platforms.
 - **Icons:** the Figma "Location Notebook" pin. `flutter_launcher_icons` builds the
   light icon from `assets/icon/ic_launcher_master_light.png` (white backdrop) plus
