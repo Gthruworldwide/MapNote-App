@@ -8,6 +8,7 @@ import '../../../data/models/place.dart';
 import '../../../providers/app_providers.dart';
 import '../domain/usecases/unlock_vault.dart';
 import 'providers/saved_places_providers.dart';
+import 'widgets/vault_pin_dialog.dart';
 import 'widgets/vault_privacy_dimmer.dart';
 
 /// The biometric-gated, AES-256 encrypted "saved places" vault.
@@ -28,11 +29,20 @@ class _SavedPlacesVaultScreenState
   /// Captured once so [dispose] can re-lock without touching `ref`.
   late final VaultPlacesNotifier _vault;
 
+  /// Whether the user has set a vault PIN, so the locked screen can offer the
+  /// PIN as an alternative to the biometric prompt.
+  bool _hasPin = false;
+
   @override
   void initState() {
     super.initState();
     _vault = ref.read(vaultPlacesProvider.notifier);
-    WidgetsBinding.instance.addPostFrameCallback((Duration _) => _unlock());
+    WidgetsBinding.instance.addPostFrameCallback((Duration _) async {
+      // The PIN status only decides whether the extra "Use PIN" button is
+      // offered, so it must never delay or block the unlock.
+      unawaited(_loadPinStatus());
+      await _unlock();
+    });
   }
 
   @override
@@ -40,6 +50,12 @@ class _SavedPlacesVaultScreenState
     // Re-lock on the way out: the key must not outlive this screen.
     unawaited(_vault.lock());
     super.dispose();
+  }
+
+  Future<void> _loadPinStatus() async {
+    final bool hasPin = await ref.read(vaultPinVerifierProvider).hasPin();
+    if (!mounted) return;
+    setState(() => _hasPin = hasPin);
   }
 
   Future<void> _unlock() async {
@@ -54,6 +70,40 @@ class _SavedPlacesVaultScreenState
     // gets the same warning every other locked-location gate shows.
     final String? message = switch (result) {
       VaultUnlockResult.unlocked => null,
+      VaultUnlockResult.denied => l10n.authenticationFailed,
+      VaultUnlockResult.unlockedUnverified => l10n.noDeviceSecurityWarning,
+      // The biometric path never produces these; they belong to the PIN path.
+      VaultUnlockResult.pinRejected => l10n.vaultPinRejected,
+      VaultUnlockResult.pinLockedOut => l10n.vaultPinLockedOut,
+    };
+    if (message != null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
+    }
+  }
+
+  /// Unlocks with the vault PIN instead of the biometric prompt.
+  ///
+  /// A wrong or locked-out PIN leaves the vault locked: the screen falls back
+  /// to the locked state and says why.
+  Future<void> _unlockWithPin() async {
+    if (!mounted) return;
+    final AppLocalizations l10n = AppLocalizations.of(context);
+    final String? pin = await showVaultPinDialog(
+      context,
+      l10n: l10n,
+      title: l10n.usePinInstead,
+    );
+    if (pin == null || !mounted) return;
+
+    final VaultUnlockResult result = await _vault.unlockWithPin(pin);
+    if (!mounted) return;
+
+    final String? message = switch (result) {
+      VaultUnlockResult.unlocked => null,
+      VaultUnlockResult.pinRejected => l10n.vaultPinRejected,
+      VaultUnlockResult.pinLockedOut => l10n.vaultPinLockedOut,
       VaultUnlockResult.denied => l10n.authenticationFailed,
       VaultUnlockResult.unlockedUnverified => l10n.noDeviceSecurityWarning,
     };
@@ -96,7 +146,14 @@ class _SavedPlacesVaultScreenState
           error: (Object error, StackTrace stackTrace) =>
               Center(child: Text(l10n.errorGeneric)),
           data: (List<Place>? places) {
-            if (places == null) return _LockedVault(l10n: l10n, onUnlock: _unlock);
+            if (places == null) {
+              return _LockedVault(
+                l10n: l10n,
+                onUnlock: _unlock,
+                onUnlockWithPin: _unlockWithPin,
+                showPin: _hasPin,
+              );
+            }
             if (places.isEmpty) return _EmptyVault(l10n: l10n);
             return ListView.separated(
               padding: const EdgeInsets.all(16),
@@ -115,10 +172,19 @@ class _SavedPlacesVaultScreenState
 }
 
 class _LockedVault extends StatelessWidget {
-  const _LockedVault({required this.l10n, required this.onUnlock});
+  const _LockedVault({
+    required this.l10n,
+    required this.onUnlock,
+    required this.onUnlockWithPin,
+    required this.showPin,
+  });
 
   final AppLocalizations l10n;
   final Future<void> Function() onUnlock;
+  final Future<void> Function() onUnlockWithPin;
+
+  /// Whether the PIN alternative is offered (the user has set a PIN).
+  final bool showPin;
 
   @override
   Widget build(BuildContext context) {
@@ -154,6 +220,14 @@ class _LockedVault extends StatelessWidget {
               icon: const Icon(Icons.lock_open),
               label: Text(l10n.savedPlacesVaultUnlock),
             ),
+            if (showPin) ...<Widget>[
+              const SizedBox(height: 8),
+              TextButton.icon(
+                onPressed: onUnlockWithPin,
+                icon: const Icon(Icons.pin_outlined),
+                label: Text(l10n.usePinInstead),
+              ),
+            ],
           ],
         ),
       ),
@@ -260,9 +334,14 @@ class _VaultedPlaceCard extends ConsumerWidget {
     }
   }
 
+  /// Moves a vaulted place back into the plain saved-places list.
+  ///
+  /// No extra identity check is needed: the card only exists while the vault
+  /// is open, and opening it was the gate.
   Future<void> _restore(BuildContext context, WidgetRef ref) async {
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
     await ref.read(vaultPlacesProvider.notifier).moveOut(place);
+    if (!context.mounted) return;
     messenger.showSnackBar(
       SnackBar(content: Text(l10n.restoreFromEncryptedVaultDone)),
     );

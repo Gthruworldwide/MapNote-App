@@ -63,6 +63,11 @@ dependencies:
   # plugin does not apply the Kotlin Gradle Plugin, so it is built-in-Kotlin
   # safe. See README > "Android / Kotlin build notes".
   flutter_secure_storage: ^11.2.0
+  # Hashing for the optional vault PIN. Already in the dependency graph
+  # (hive_ce, uuid), so promoting it to a direct dependency adds no new
+  # package — it only makes the import explicit. Used for PBKDF2-HMAC-SHA256
+  # in features/saved_places/domain/services/vault_pin_hasher.dart.
+  crypto: ^3.0.7
   qr_flutter: ^4.1.0
   quick_actions: ^1.1.0
   # Modern replacement for the removed `flutter_dynamic_icon` (whose legacy

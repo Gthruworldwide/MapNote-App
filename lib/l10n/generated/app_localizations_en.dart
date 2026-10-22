@@ -1121,6 +1121,64 @@ class AppLocalizationsEn extends AppLocalizations {
       'Verify to move the place into the encrypted vault';
 
   @override
+  String get enterPin => 'Enter PIN';
+
+  @override
+  String get vaultPinLabel => 'PIN';
+
+  @override
+  String get vaultPinConfirmLabel => 'Confirm PIN';
+
+  @override
+  String get vaultPinHint =>
+      'Use 4 to 12 digits. The PIN unlocks the encrypted vault when biometrics are not available.';
+
+  @override
+  String get vaultPinTooShort => 'Use at least 4 digits.';
+
+  @override
+  String get vaultPinMismatch => 'The two PINs don\'t match.';
+
+  @override
+  String get vaultPinRejected => 'Wrong PIN.';
+
+  @override
+  String get vaultPinLockedOut =>
+      'Too many attempts. Try again in a few minutes.';
+
+  @override
+  String get vaultPinSet => 'Vault PIN set.';
+
+  @override
+  String get vaultPinChanged => 'Vault PIN changed.';
+
+  @override
+  String get vaultPinRemoved => 'Vault PIN removed.';
+
+  @override
+  String get vaultPinNotSet => 'No PIN set';
+
+  @override
+  String get usePinInstead => 'Use PIN';
+
+  @override
+  String get changeVaultPin => 'Vault PIN';
+
+  @override
+  String get changeVaultPinSubtitle =>
+      'Set a PIN to open the encrypted vault when biometrics are not available.';
+
+  @override
+  String get removeVaultPin => 'Remove PIN';
+
+  @override
+  String get biometricVaultEnabled => 'Biometric vault';
+
+  @override
+  String get biometricVaultEnabledSubtitle =>
+      'Keep places in an AES-256 encrypted vault, behind your biometrics or a PIN.';
+
+  @override
   String get suggestedPlaceLinks => 'Places you may want to link';
 
   @override

@@ -591,6 +591,31 @@ final NotifierProvider<LockOnDeviceLockController, bool>
       LockOnDeviceLockController.new,
     );
 
+/// Whether the biometric (encrypted) vault is offered.
+///
+/// Turning it off hides the encrypted-vault entry points and closes an open
+/// vault session. It never deletes anything: places already moved into the
+/// encrypted box stay encrypted on disk and reappear as soon as the vault is
+/// switched back on, so the toggle can never lose a place.
+class BiometricVaultEnabledController extends Notifier<bool> {
+  @override
+  bool build() => ref.watch(settingsRepositoryProvider).isBiometricVaultEnabled;
+
+  Future<void> setEnabled(bool value) async {
+    await ref
+        .read(settingsRepositoryProvider)
+        .setBiometricVaultEnabled(value);
+    state = value;
+  }
+}
+
+/// Whether the biometric vault is available to the user.
+final NotifierProvider<BiometricVaultEnabledController, bool>
+biometricVaultEnabledProvider =
+    NotifierProvider<BiometricVaultEnabledController, bool>(
+      BiometricVaultEnabledController.new,
+    );
+
 /// Distinguishes a hand-held device from one lying still on a surface, from
 /// accelerometer micro-movements.
 ///

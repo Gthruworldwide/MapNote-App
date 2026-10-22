@@ -10,13 +10,16 @@ import '../../data/datasources/flutter_secure_secret_store.dart';
 import '../../data/datasources/secret_store.dart';
 import '../../data/datasources/trip_stop_detector.dart';
 import '../../data/datasources/vault_key_store.dart';
+import '../../data/datasources/vault_pin_store.dart';
 import '../../data/repositories/biometric_vault_authenticator.dart';
 import '../../data/repositories/hive_vault_repository.dart';
+import '../../data/repositories/keystore_vault_pin_verifier.dart';
 import '../../domain/entities/place_link_suggestion.dart';
 import '../../domain/entities/trip_stop.dart';
 import '../../domain/repositories/vault_repository.dart';
 import '../../domain/services/place_link_suggester.dart';
 import '../../domain/services/vault_authenticator.dart';
+import '../../domain/services/vault_pin_verifier.dart';
 import '../../domain/usecases/unlock_vault.dart';
 
 // ---------------------------------------------------------------------------
@@ -54,11 +57,34 @@ final Provider<VaultAuthenticator> vaultAuthenticatorProvider =
       ),
     );
 
+/// Holds the optional vault PIN record in the platform keystore.
+final Provider<VaultPinStore> vaultPinStoreProvider = Provider<VaultPinStore>(
+  (Ref ref) => VaultPinStore(ref.watch(vaultSecretStoreProvider)),
+);
+
+/// Verifies the optional vault PIN.
+final Provider<VaultPinVerifier> vaultPinVerifierProvider =
+    Provider<VaultPinVerifier>(
+      (Ref ref) => KeystoreVaultPinVerifier(
+        store: ref.watch(vaultPinStoreProvider),
+      ),
+    );
+
+/// Whether a vault PIN has been set.
+///
+/// A [FutureProvider] because the answer lives in the platform keystore. The
+/// UI invalidates it after a PIN is set or removed, so the row never shows a
+/// stale answer.
+final FutureProvider<bool> vaultPinSetProvider = FutureProvider<bool>(
+  (Ref ref) async => await ref.watch(vaultPinVerifierProvider).hasPin(),
+);
+
 /// Use case that verifies the user, then opens the encrypted box.
 final Provider<UnlockVault> unlockVaultProvider = Provider<UnlockVault>(
   (Ref ref) => UnlockVault(
     ref.watch(vaultAuthenticatorProvider),
     ref.watch(vaultRepositoryProvider),
+    ref.watch(vaultPinVerifierProvider),
   ),
 );
 
@@ -93,19 +119,42 @@ class VaultPlacesNotifier extends AsyncNotifier<List<Place>?> {
     final VaultUnlockResult result = await ref
         .read(unlockVaultProvider)
         .call(reason: reason);
-    if (result != VaultUnlockResult.denied) {
-      // A successful unlock opens the session window; the session guard is what
-      // later closes it (device lock, inactivity, backgrounding, or an explicit
-      // lock), so every unlock path gets an expiry without any screen having to
-      // set one.
-      await ref.read(sessionGuardProvider).beginSession();
-      // With a session open there is now something to protect, so watch the
-      // accelerometer for the hand-held / surface-idle verdict that decides
-      // whether the idle clock is the long one or the short one.
-      unawaited(ref.read(deviceLockDetectorProvider).start());
-      await _refresh();
-    }
+    if (_isUnlocked(result)) await _openSession();
     return result;
+  }
+
+  /// Opens the vault with the PIN instead of the biometric prompt.
+  ///
+  /// A rejected or locked-out PIN leaves the vault locked and opens no
+  /// session, exactly like a failed biometric check.
+  Future<VaultUnlockResult> unlockWithPin(String pin) async {
+    final VaultUnlockResult result = await ref
+        .read(unlockVaultProvider)
+        .unlockWithPin(pin);
+    if (_isUnlocked(result)) await _openSession();
+    return result;
+  }
+
+  /// Whether [result] means the vault is open.
+  ///
+  /// Explicit rather than `!= denied`, so a *rejected PIN* never counts as an
+  /// unlock.
+  static bool _isUnlocked(VaultUnlockResult result) =>
+      result == VaultUnlockResult.unlocked ||
+      result == VaultUnlockResult.unlockedUnverified;
+
+  /// Opens the session window and refreshes the vault contents.
+  ///
+  /// The session guard is what later closes it (device lock, inactivity,
+  /// backgrounding, or an explicit lock), so every unlock path gets an expiry
+  /// without any screen having to set one.
+  Future<void> _openSession() async {
+    await ref.read(sessionGuardProvider).beginSession();
+    // With a session open there is now something to protect, so watch the
+    // accelerometer for the hand-held / surface-idle verdict that decides
+    // whether the idle clock is the long one or the short one.
+    unawaited(ref.read(deviceLockDetectorProvider).start());
+    await _refresh();
   }
 
   /// Closes the vault and forgets the key.

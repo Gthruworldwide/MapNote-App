@@ -29,6 +29,7 @@ class SettingsRepository {
   static const String _hapticFeedbackKey = 'haptic_feedback';
   static const String _uiDensityCompactKey = 'ui_density_compact';
   static const String _smartBatterySaverKey = 'smart_battery_saver';
+  static const String _biometricVaultEnabledKey = 'enable_biometric_vault';
 
   /// BCP-47 language code of the selected locale, or null for system default.
   String? get localeCode => _box.get(_localeKey) as String?;
@@ -239,5 +240,18 @@ class SettingsRepository {
 
   Future<void> setSmartBatterySaverEnabled(bool enabled) async {
     await _box.put(_smartBatterySaverKey, enabled);
+  }
+
+  /// Whether the biometric (encrypted) vault is offered (default on).
+  ///
+  /// Turning it off hides the encrypted-vault entry points. It never deletes
+  /// anything: places already moved into the encrypted box stay encrypted on
+  /// disk and reappear the moment the vault is switched back on, so the toggle
+  /// can never lose a place.
+  bool get isBiometricVaultEnabled =>
+      (_box.get(_biometricVaultEnabledKey) as bool?) ?? true;
+
+  Future<void> setBiometricVaultEnabled(bool enabled) async {
+    await _box.put(_biometricVaultEnabledKey, enabled);
   }
 }

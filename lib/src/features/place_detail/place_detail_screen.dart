@@ -9,6 +9,8 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../providers/app_providers.dart';
 import '../../services/lock_gate.dart';
 import '../add_place/add_place_screen.dart';
+import '../saved_places/domain/usecases/unlock_vault.dart';
+import '../saved_places/presentation/providers/saved_places_providers.dart';
 import 'widgets/route_preview_card.dart';
 
 /// Shows a saved location with navigation, copy, edit and delete actions.
@@ -179,6 +181,14 @@ class PlaceDetailScreen extends ConsumerWidget {
           ],
         ),
         const SizedBox(height: 32),
+        if (ref.watch(biometricVaultEnabledProvider)) ...<Widget>[
+          OutlinedButton.icon(
+            onPressed: () => _moveToEncryptedVault(context, ref, l10n, place),
+            icon: const Icon(Icons.enhanced_encryption_outlined),
+            label: _PillLabel(text: l10n.moveToEncryptedVault),
+          ),
+          const SizedBox(height: 32),
+        ],
         Center(
           child: TextButton.icon(
             onPressed: () => _confirmDelete(context, ref, l10n, place),
@@ -191,6 +201,55 @@ class PlaceDetailScreen extends ConsumerWidget {
         ),
       ],
     );
+  }
+
+  /// Moves the place into the AES-256 encrypted vault.
+  ///
+  /// The vault is unlocked first, which is also what opens the encrypted box
+  /// the place is written to — one prompt, not two. A device that cannot
+  /// verify at all still gets the standard warning and the move goes ahead, so
+  /// a place can never end up stuck in a vault the user cannot open.
+  Future<void> _moveToEncryptedVault(
+    BuildContext context,
+    WidgetRef ref,
+    AppLocalizations l10n,
+    Place place,
+  ) async {
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    final NavigatorState navigator = Navigator.of(context);
+
+    final VaultUnlockResult result = await ref
+        .read(vaultPlacesProvider.notifier)
+        .unlock(reason: l10n.unlockToMoveToEncryptedVault);
+    if (!context.mounted) return;
+
+    switch (result) {
+      case VaultUnlockResult.denied:
+        messenger.showSnackBar(
+          SnackBar(content: Text(l10n.authenticationFailed)),
+        );
+        return;
+      case VaultUnlockResult.pinRejected:
+      case VaultUnlockResult.pinLockedOut:
+        // The biometric path never produces these.
+        return;
+      case VaultUnlockResult.unlocked:
+      case VaultUnlockResult.unlockedUnverified:
+        break;
+    }
+    if (result == VaultUnlockResult.unlockedUnverified) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.noDeviceSecurityWarning)),
+      );
+    }
+
+    await ref.read(vaultPlacesProvider.notifier).moveIn(place);
+    if (!context.mounted) return;
+    messenger.showSnackBar(
+      SnackBar(content: Text(l10n.moveToEncryptedVaultDone)),
+    );
+    // The place is no longer in the plain list, so leave its detail screen.
+    navigator.pop();
   }
 
   Future<void> _openEdit(

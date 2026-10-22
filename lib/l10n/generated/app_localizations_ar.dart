@@ -1117,6 +1117,63 @@ class AppLocalizationsAr extends AppLocalizations {
       'تحقق لنقل المكان إلى الخزنة المشفّرة';
 
   @override
+  String get enterPin => 'أدخل رمز PIN';
+
+  @override
+  String get vaultPinLabel => 'رمز PIN';
+
+  @override
+  String get vaultPinConfirmLabel => 'تأكيد رمز PIN';
+
+  @override
+  String get vaultPinHint =>
+      'استخدم من 4 إلى 12 رقمًا. يفتح الرمز الخزنة المشفّرة عندما لا تتوفر البصمة.';
+
+  @override
+  String get vaultPinTooShort => 'استخدم 4 أرقام على الأقل.';
+
+  @override
+  String get vaultPinMismatch => 'رمزا PIN غير متطابقين.';
+
+  @override
+  String get vaultPinRejected => 'رمز PIN غير صحيح.';
+
+  @override
+  String get vaultPinLockedOut => 'محاولات كثيرة. حاول مرة أخرى بعد بضع دقائق.';
+
+  @override
+  String get vaultPinSet => 'تم تعيين رمز PIN.';
+
+  @override
+  String get vaultPinChanged => 'تم تغيير رمز PIN.';
+
+  @override
+  String get vaultPinRemoved => 'تمت إزالة رمز PIN.';
+
+  @override
+  String get vaultPinNotSet => 'لا يوجد رمز PIN';
+
+  @override
+  String get usePinInstead => 'استخدام رمز PIN';
+
+  @override
+  String get changeVaultPin => 'رمز PIN للخزنة';
+
+  @override
+  String get changeVaultPinSubtitle =>
+      'عيّن رمز PIN لفتح الخزنة المشفّرة عندما لا تتوفر البصمة.';
+
+  @override
+  String get removeVaultPin => 'إزالة الرمز';
+
+  @override
+  String get biometricVaultEnabled => 'خزنة حيوية';
+
+  @override
+  String get biometricVaultEnabledSubtitle =>
+      'احفظ الأماكن في خزنة مشفّرة بـ AES-256 خلف البصمة أو رمز PIN.';
+
+  @override
   String get suggestedPlaceLinks => 'أماكن قد ترغب في ربطها';
 
   @override

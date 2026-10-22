@@ -2114,6 +2114,114 @@ abstract class AppLocalizations {
   /// **'Verify to move the place into the encrypted vault'**
   String get unlockToMoveToEncryptedVault;
 
+  /// No description provided for @enterPin.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter PIN'**
+  String get enterPin;
+
+  /// No description provided for @vaultPinLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'PIN'**
+  String get vaultPinLabel;
+
+  /// No description provided for @vaultPinConfirmLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm PIN'**
+  String get vaultPinConfirmLabel;
+
+  /// No description provided for @vaultPinHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Use 4 to 12 digits. The PIN unlocks the encrypted vault when biometrics are not available.'**
+  String get vaultPinHint;
+
+  /// No description provided for @vaultPinTooShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Use at least 4 digits.'**
+  String get vaultPinTooShort;
+
+  /// No description provided for @vaultPinMismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'The two PINs don\'t match.'**
+  String get vaultPinMismatch;
+
+  /// No description provided for @vaultPinRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Wrong PIN.'**
+  String get vaultPinRejected;
+
+  /// No description provided for @vaultPinLockedOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many attempts. Try again in a few minutes.'**
+  String get vaultPinLockedOut;
+
+  /// No description provided for @vaultPinSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Vault PIN set.'**
+  String get vaultPinSet;
+
+  /// No description provided for @vaultPinChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Vault PIN changed.'**
+  String get vaultPinChanged;
+
+  /// No description provided for @vaultPinRemoved.
+  ///
+  /// In en, this message translates to:
+  /// **'Vault PIN removed.'**
+  String get vaultPinRemoved;
+
+  /// No description provided for @vaultPinNotSet.
+  ///
+  /// In en, this message translates to:
+  /// **'No PIN set'**
+  String get vaultPinNotSet;
+
+  /// No description provided for @usePinInstead.
+  ///
+  /// In en, this message translates to:
+  /// **'Use PIN'**
+  String get usePinInstead;
+
+  /// No description provided for @changeVaultPin.
+  ///
+  /// In en, this message translates to:
+  /// **'Vault PIN'**
+  String get changeVaultPin;
+
+  /// No description provided for @changeVaultPinSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Set a PIN to open the encrypted vault when biometrics are not available.'**
+  String get changeVaultPinSubtitle;
+
+  /// No description provided for @removeVaultPin.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove PIN'**
+  String get removeVaultPin;
+
+  /// No description provided for @biometricVaultEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Biometric vault'**
+  String get biometricVaultEnabled;
+
+  /// No description provided for @biometricVaultEnabledSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep places in an AES-256 encrypted vault, behind your biometrics or a PIN.'**
+  String get biometricVaultEnabledSubtitle;
+
   /// No description provided for @suggestedPlaceLinks.
   ///
   /// In en, this message translates to:
