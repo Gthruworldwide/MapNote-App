@@ -87,11 +87,19 @@ Write-Host ''
 Write-Host '=== 3. passphrase ==='
 $generated = $false
 if ([string]::IsNullOrWhiteSpace($Password)) {
+    # RandomNumberGenerator::Fill() does not exist in .NET Framework (Windows
+    # PowerShell 5.1) - it silently leaves the buffer untouched and yields a
+    # predictable passphrase. Use the stream API, which works everywhere.
     $bytes = New-Object byte[] 24
-    [System.Security.Cryptography.RandomNumberGenerator]::Fill($bytes)
+    $rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+    try { $rng.GetBytes($bytes) } finally { $rng.Dispose() }
     $Password = [Convert]::ToBase64String($bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_')
     $generated = $true
 }
+# Guard against a degenerate passphrase (all-same-character, too few distinct
+# characters) - an encrypted archive is only as strong as this string.
+$distinct = ($Password.ToCharArray() | Select-Object -Unique).Count
+if ($distinct -lt 8) { Fail ("the passphrase looks degenerate ({0} distinct characters) - refusing to use it" -f $distinct) }
 if ($Password.Length -lt 12) { Fail 'the passphrase must be at least 12 characters' }
 Write-Host ("  length {0}" -f $Password.Length)
 if ($generated) {

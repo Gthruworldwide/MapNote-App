@@ -246,12 +246,18 @@ encrypted** 7-Zip archive with encrypted headers, writes it to a folder
 staged plaintext copies in a `finally` block.
 
 ```bash
-# interactive: a random passphrase is generated and printed once
+# interactive: a passphrase is generated and printed once
 powershell -ExecutionPolicy Bypass -File tool/backup_upload_keystore.ps1 -DestinationDirectory D:\SecureBackup
 
 # non-interactive
 powershell -ExecutionPolicy Bypass -File tool/backup_upload_keystore.ps1 -DestinationDirectory E:\keys -Password "..."
 ```
+
+Without `-Password` the passphrase is 24 bytes from a CSPRNG, printed once
+(32 base64url characters). The script refuses a passphrase with fewer than 8
+distinct characters, so a broken RNG can never silently produce a guessable
+archive — `RandomNumberGenerator::Fill()` does not exist in .NET Framework, and
+using it leaves the buffer untouched.
 
 Why an encrypted archive instead of a plain copy:
 
