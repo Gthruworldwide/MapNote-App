@@ -237,6 +237,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get sectionAccount => 'الحساب';
 
   @override
+  String get sectionSecurityVault => 'خزنة الأمان';
+
+  @override
   String get signInWithGoogle => 'تسجيل الدخول بجوجل';
 
   @override

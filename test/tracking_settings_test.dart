@@ -11,7 +11,7 @@ import 'package:routenote/src/data/local/auto_motion_data_source.dart';
 import 'package:routenote/src/data/local/hive_database.dart';
 import 'package:routenote/src/data/models/daily_gps_summary.dart';
 import 'package:routenote/src/data/remote/auth_service.dart';
-import 'package:routenote/src/features/settings/settings_screen.dart';
+import 'package:routenote/src/features/settings/location_settings_screen.dart';
 import 'package:routenote/src/providers/app_providers.dart';
 import 'package:routenote/src/services/app_health_logger.dart';
 import 'package:routenote/src/services/auto_motion_service.dart';
@@ -130,7 +130,7 @@ void main() {
         child: MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
-          home: const SettingsScreen(),
+          home: const LocationSettingsScreen(),
         ),
       ),
     );

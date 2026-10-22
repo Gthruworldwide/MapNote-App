@@ -11,7 +11,7 @@ import 'package:routenote/src/core/config/preferred_nav_app.dart';
 import 'package:routenote/src/data/local/hive_database.dart';
 import 'package:routenote/src/data/remote/auth_service.dart';
 import 'package:routenote/src/features/home/widgets/smart_insights_card.dart';
-import 'package:routenote/src/features/settings/settings_screen.dart';
+import 'package:routenote/src/features/settings/preferences_settings_screen.dart';
 import 'package:routenote/src/providers/app_providers.dart';
 import 'package:routenote/src/services/app_health_logger.dart';
 
@@ -118,7 +118,7 @@ void main() {
         child: MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
-          home: const SettingsScreen(),
+          home: const PreferencesSettingsScreen(),
         ),
       ),
     );

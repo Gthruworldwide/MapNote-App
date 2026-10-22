@@ -1,0 +1,93 @@
+# CocoaPods side of the iOS build.
+#
+# The Runner target itself is a Swift Package Manager project (see
+# `ios/Flutter/ephemeral/Packages/FlutterGeneratedPluginSwiftPackage`), so
+# Flutter resolves every plugin that ships an SPM manifest through SPM and only
+# falls back to CocoaPods for the ones that do not. This file therefore exists
+# for (a) that fallback and (b) the compile-time flags below, which have no SPM
+# equivalent.
+
+# CocoaPods analytics sends network stats synchronously, which only adds build
+# latency on a project whose whole point is to work offline.
+ENV['COCOAPODS_DISABLE_STATS'] = 'true'
+
+# Matches IPHONEOS_DEPLOYMENT_TARGET in Runner.xcodeproj.
+platform :ios, '13.0'
+
+project 'Runner', {
+  'Debug' => :debug,
+  'Profile' => :release,
+  'Release' => :release,
+}
+
+def flutter_root
+  generated_xcode_build_settings_path = File.expand_path(File.join('..', 'Flutter', 'Generated.xcconfig'), __FILE__)
+  unless File.exist?(generated_xcode_build_settings_path)
+    raise "#{generated_xcode_build_settings_path} must exist. If you're running pod install manually, make sure flutter pub get is executed first"
+  end
+
+  File.foreach(generated_xcode_build_settings_path) do |line|
+    matches = line.match(/FLUTTER_ROOT\=(.*)/)
+    return matches[1].strip if matches
+  end
+  raise "FLUTTER_ROOT not found in #{generated_xcode_build_settings_path}. Try deleting Generated.xcconfig, then run flutter pub get"
+end
+
+require File.expand_path(File.join('packages', 'flutter_tools', 'bin', 'podhelper'), flutter_root)
+
+flutter_ios_podfile_setup
+
+target 'Runner' do
+  use_frameworks!
+  use_modular_headers!
+
+  flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
+  target 'RunnerTests' do
+    inherit! :search_paths
+  end
+end
+
+# The permission gates permission_handler compiles with.
+#
+# permission_handler ships one Objective-C handler per permission *group* and
+# preprocesses away every group that is not switched on. Left unset it compiles
+# all of them; setting any group compiles only that group. MapNote touches the
+# device through geolocator (location), `local_auth` (Face ID — not a
+# permission_handler group) and the sensor feed, so the two groups it can
+# actually need are:
+#
+#   PERMISSION_LOCATION  location / locationAlways          → NSLocation* keys
+#   PERMISSION_SENSORS   sensors (motion & fitness)         → NSMotionUsageDescription
+#
+# Everything else stays off, so the app cannot ask for a permission it has no
+# Info.plist purpose string for — which is exactly the case App Review rejects.
+# If a future feature needs another group, add its flag here *and* its usage
+# description to Info.plist; the pair is pinned by
+# test/ios_permissions_audit_test.dart.
+PERMISSION_FLAGS = [
+  '$(inherited)',
+  'PERMISSION_LOCATION=1',
+  'PERMISSION_SENSORS=1',
+].freeze
+
+post_install do |installer|
+  installer.pods_project.targets.each do |target|
+    flutter_additional_ios_build_settings(target)
+
+    target.build_configurations.each do |config|
+      # Merge rather than overwrite: `$(inherited)` must stay first or the
+      # configuration-level defines (DEBUG=1, COCOAPODS=1, …) disappear, and a
+      # plain `||=` would silently skip the flags on any target that already
+      # has a definition list.
+      definitions = config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] || []
+      definitions = [definitions] if definitions.is_a?(String)
+      definitions = definitions.dup
+
+      PERMISSION_FLAGS.each do |flag|
+        definitions << flag unless definitions.include?(flag)
+      end
+
+      config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = definitions
+    end
+  end
+end

@@ -8,7 +8,7 @@ import 'package:hive_ce/hive.dart';
 import 'package:routenote/l10n/generated/app_localizations.dart';
 import 'package:routenote/src/data/local/hive_database.dart';
 import 'package:routenote/src/data/remote/auth_service.dart';
-import 'package:routenote/src/features/settings/settings_screen.dart';
+import 'package:routenote/src/features/settings/location_settings_screen.dart';
 import 'package:routenote/src/providers/app_providers.dart';
 import 'package:routenote/src/services/app_health_logger.dart';
 
@@ -76,7 +76,7 @@ void main() {
         child: MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
-          home: const SettingsScreen(),
+          home: const LocationSettingsScreen(),
         ),
       ),
     );

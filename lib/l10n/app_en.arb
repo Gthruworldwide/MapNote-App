@@ -93,6 +93,7 @@
   "themeDark": "Dark",
 
   "sectionAccount": "Account",
+  "sectionSecurityVault": "Security Vault",
   "signInWithGoogle": "Sign in with Google",
   "signOut": "Sign out",
   "signedInAs": "Signed in as {email}",

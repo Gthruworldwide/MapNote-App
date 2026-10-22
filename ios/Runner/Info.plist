@@ -52,7 +52,7 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>LSSupportsOpeningDocumentsInPlace</key>
-	<true/>
+	<false/>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>MapNote records your daily distance and keeps tracking trips in the background while AutoMotion or daily GPS tracking is on.</string>
 	<key>NSLocationAlwaysUsageDescription</key>
@@ -62,7 +62,7 @@
 	<key>NSFaceIDUsageDescription</key>
 	<string>MapNote uses Face ID to protect locked locations and the Hidden Vault.</string>
 	<key>NSMotionUsageDescription</key>
-	<string>MapNote uses motion and compass sensor data to show the Qibla direction indicator.</string>
+	<string>MapNote uses motion sensor data for stationary idle detection, so background location polling can pause when you are parked, and to show the Qibla compass.</string>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>comgooglemaps</string>
@@ -99,7 +99,7 @@
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UIFileSharingEnabled</key>
-	<true/>
+	<false/>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

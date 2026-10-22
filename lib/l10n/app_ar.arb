@@ -83,6 +83,7 @@
   "themeDark": "داكن",
 
   "sectionAccount": "الحساب",
+  "sectionSecurityVault": "خزنة الأمان",
   "signInWithGoogle": "تسجيل الدخول بجوجل",
   "signOut": "تسجيل الخروج",
   "signedInAs": "مسجّل الدخول باسم {email}",

@@ -236,6 +236,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sectionAccount => 'Account';
 
   @override
+  String get sectionSecurityVault => 'Security Vault';
+
+  @override
   String get signInWithGoogle => 'Sign in with Google';
 
   @override

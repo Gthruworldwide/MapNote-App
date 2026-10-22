@@ -542,6 +542,12 @@ abstract class AppLocalizations {
   /// **'Account'**
   String get sectionAccount;
 
+  /// No description provided for @sectionSecurityVault.
+  ///
+  /// In en, this message translates to:
+  /// **'Security Vault'**
+  String get sectionSecurityVault;
+
   /// No description provided for @signInWithGoogle.
   ///
   /// In en, this message translates to:
