@@ -727,9 +727,11 @@ Already committed — the notes below explain what is in place.
     `NSFaceIDUsageDescription` (biometric unlock of locked places and the Hidden
     Vault) and `NSMotionUsageDescription`. The motion string is **not
     decorative**: the Qibla indicator (`lib/src/widgets/qibla_indicator.dart`)
-    uses `flutter_compass`, which instantiates a `CMMotionManager` on iOS, and
-    iOS terminates the app when a `CMMotionManager` is used without
-    `NSMotionUsageDescription`.
+    uses `flutter_compass`, whose iOS plugin calls
+    `startDeviceMotionUpdates(...)` in its initializer — so the motion feed
+    starts at **plugin registration**, i.e. at app launch, not when the Qibla
+    widget is first shown. Apple: *"If you don't include this key, your app will
+    crash when it attempts to access motion data."*
   - **Background modes:** `UIBackgroundModes` = `location` (the daily trackers
     keep receiving fixes in the background), `processing` and `fetch` (the
     `workmanager` periodic backup is a `BGAppRefreshTask`, which iOS only
