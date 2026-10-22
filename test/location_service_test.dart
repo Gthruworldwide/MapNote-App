@@ -228,7 +228,7 @@ void main() {
       );
       expect(
         LocationService.backgroundTrackingLocationSettings.distanceFilter,
-        15,
+        30,
       );
       expect(
         LocationService.backgroundTrackingInterval,
@@ -240,7 +240,7 @@ void main() {
               as AndroidSettings;
       expect(backgroundProfile.accuracy, LocationAccuracy.medium);
       expect(backgroundProfile.intervalDuration, const Duration(seconds: 15));
-      expect(backgroundProfile.distanceFilter, 15);
+      expect(backgroundProfile.distanceFilter, 30);
       expect(backgroundProfile.forceLocationManager, isFalse);
     });
   });

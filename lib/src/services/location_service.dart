@@ -106,10 +106,11 @@ class LocationService {
 
   /// The movement filter of the **background** tracking tier, in metres.
   ///
-  /// Fifteen metres filters out the micro-movement that would otherwise wake
+  /// Thirty metres filters out the micro-movement that would otherwise wake
   /// the GNSS receiver for every jitter of a phone in a pocket, while still
-  /// following a real walk.
-  static const int backgroundTrackingDistanceFilterMeters = 15;
+  /// following a real walk. Coarser than the in-motion tier on purpose: a
+  /// backgrounded app does not need to resolve every step.
+  static const int backgroundTrackingDistanceFilterMeters = 30;
 
   /// The request cadence of the **background** tracking tier.
   ///

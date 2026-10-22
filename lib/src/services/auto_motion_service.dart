@@ -348,7 +348,7 @@ class AutoMotionService implements SamplingTarget {
   /// The movement filter the live stream runs with: the sampling profile's
   /// tier (the stationary tier's 50 m swallows jitter outright), or the
   /// fixed 10 m baseline while no profile is active — or, once MapNote is
-  /// backgrounded, the background tier's 15 m, which ignores the
+  /// backgrounded, the background tier's 30 m, which ignores the
   /// micro-movement that would otherwise wake the receiver.
   int get _effectiveDistanceFilter => _sampleDistanceFilter ??
       (_backgrounded
