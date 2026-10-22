@@ -160,36 +160,36 @@ class PreferencesSettingsScreen extends ConsumerWidget {
             ],
           ),
           const Divider(height: 24),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.text_fields),
-            title: Text(l10n.fontScale),
-            trailing: DropdownButton<FontScalePreset>(
-              value: fontScale,
-              underline: const SizedBox.shrink(),
-              items: <DropdownMenuItem<FontScalePreset>>[
-                DropdownMenuItem<FontScalePreset>(
-                  value: FontScalePreset.small,
-                  child: Text(l10n.fontScaleSmall),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Row(
+                  children: <Widget>[
+                    const Icon(Icons.text_fields),
+                    const SizedBox(width: 12),
+                    Text(l10n.fontScale, style: theme.textTheme.titleSmall),
+                  ],
                 ),
-                DropdownMenuItem<FontScalePreset>(
-                  value: FontScalePreset.standard,
-                  child: Text(l10n.fontScaleStandard),
-                ),
-                DropdownMenuItem<FontScalePreset>(
-                  value: FontScalePreset.large,
-                  child: Text(l10n.fontScaleLarge),
-                ),
-                DropdownMenuItem<FontScalePreset>(
-                  value: FontScalePreset.extraLarge,
-                  child: Text(l10n.fontScaleExtraLarge),
+                Slider(
+                  value: fontScale.index.toDouble(),
+                  min: 0,
+                  max: (FontScalePreset.values.length - 1).toDouble(),
+                  divisions: FontScalePreset.values.length - 1,
+                  label: switch (fontScale) {
+                    FontScalePreset.small => l10n.fontScaleSmall,
+                    FontScalePreset.standard => l10n.fontScaleStandard,
+                    FontScalePreset.large => l10n.fontScaleLarge,
+                    FontScalePreset.extraLarge => l10n.fontScaleExtraLarge,
+                  },
+                  onChanged: (double value) {
+                    ref
+                        .read(fontScaleProvider.notifier)
+                        .setFontScale(FontScalePreset.values[value.round()]);
+                  },
                 ),
               ],
-              onChanged: (FontScalePreset? value) {
-                if (value != null) {
-                  ref.read(fontScaleProvider.notifier).setFontScale(value);
-                }
-              },
             ),
           ),
           const Divider(height: 24),
