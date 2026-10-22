@@ -96,6 +96,24 @@ Future<void> waitFor(
   }
 }
 
+/// Deletes [dir], retrying briefly while the OS still holds the handle.
+///
+/// Windows releases the file handle behind a closed Hive box a moment after
+/// `close()` returns, so an immediate delete can still fail with "being used
+/// by another process". A short real-time retry turns that transient lock
+/// into a non-event instead of a failed suite.
+Future<void> _deleteTempDir(Directory dir) async {
+  for (int attempt = 0; attempt < 20; attempt++) {
+    try {
+      await dir.delete(recursive: true);
+      return;
+    } on FileSystemException {
+      if (attempt == 19) rethrow;
+      await Future<void>.delayed(const Duration(milliseconds: 25));
+    }
+  }
+}
+
 /// Drive stand-in that records uploads without touching the network.
 class _FakeDriveService implements DriveService {
   _FakeDriveService({this.failUpload = false});
@@ -144,9 +162,17 @@ void main() {
   });
 
   tearDown(() async {
+    // `AuthNotifier.build` kicks off an *unawaited* silent restore that
+    // persists the refreshed session to `settingsBox`. That write can still be
+    // in flight when the test body ends, and if it lands after the box is
+    // closed, Windows keeps the file locked and the delete below fails with
+    // "being used by another process". Drain the queue so the write lands
+    // while the box is still open.
+    await pumpEventQueue();
+
     await placesBox.close();
     await settingsBox.close();
-    await tempDir.delete(recursive: true);
+    await _deleteTempDir(tempDir);
   });
 
   ProviderContainer containerWith(AuthService auth) {
