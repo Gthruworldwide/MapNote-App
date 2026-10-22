@@ -95,7 +95,7 @@ class GoogleAuthService implements AuthService {
     await initialize();
     try {
       final GoogleSignInAccount account = await GoogleSignIn.instance
-          .authenticate(scopeHint: AppConfig.driveScopes);
+          .authenticate();
       _account = account;
       // Build the user into a final local before the `await` below so the
       // non-null value cannot be lost to a concurrent mutation of `_user`.
