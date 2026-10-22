@@ -94,8 +94,18 @@ class GoogleAuthService implements AuthService {
   Future<AuthUser> signIn() async {
     await initialize();
     try {
-      final GoogleSignInAccount account = await GoogleSignIn.instance
-          .authenticate();
+      // Try the non-interactive path first: if the platform still has a
+      // restorable credential (e.g. a chooser dismissal left the session
+      // half-alive), reuse it instead of raising the Credential Manager
+      // chooser again — the chooser is what triggers "Account reauth
+      // failed" on some devices/accounts.
+      GoogleSignInAccount? account;
+      final Future<GoogleSignInAccount?>? lightweight =
+          GoogleSignIn.instance.attemptLightweightAuthentication();
+      if (lightweight != null) {
+        account = await lightweight;
+      }
+      account ??= await GoogleSignIn.instance.authenticate();
       _account = account;
       // Build the user into a final local before the `await` below so the
       // non-null value cannot be lost to a concurrent mutation of `_user`.
