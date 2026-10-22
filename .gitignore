@@ -49,6 +49,14 @@ app.*.map.json
 /android/.gradle/
 /android/local.properties
 
+# Android signing secrets — never commit these.
+# `android/.gitignore` already covers the android/ tree; these root-level
+# patterns are the explicit backstop in case a keystore is ever created
+# outside `android/`. See tool/create_upload_keystore.ps1.
+key.properties
+*.jks
+*.keystore
+
 # Dev-machine supervisor agent (tool/) — never commit keys or reports
 /tool/.env
 /tool/reports/

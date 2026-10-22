@@ -174,6 +174,39 @@ box back, so Hive does not overwrite it from its in-memory state.
 > is really signed in. The trust evidence heals on its own: the next
 > successful Drive round-trip re-stamps `last_synced`.
 
+## Android release signing (`create_upload_keystore.ps1`)
+
+Creates the **upload keystore** for the Android release build and the
+`key.properties` file that points at it. Dev-machine only; nothing here
+ships to the device.
+
+```bash
+powershell -ExecutionPolicy Bypass -File tool/create_upload_keystore.ps1
+powershell -ExecutionPolicy Bypass -File tool/create_upload_keystore.ps1 -Password "my-secret"
+powershell -ExecutionPolicy Bypass -File tool/create_upload_keystore.ps1 -Alias upload -Validity 10000
+```
+
+It writes two files:
+
+| Path | Git | Contents |
+| --- | --- | --- |
+| `android/app/upload-keystore.jks` | ignored | The RSA-2048 upload key, alias `upload`, valid 10 000 days |
+| `android/key.properties` | ignored | `storePassword`, `keyPassword`, `keyAlias`, `storeFile` |
+
+Both are ignored by the root `.gitignore` (`key.properties`, `*.jks`,
+`*.keystore`) and by `android/.gitignore`. The passwords are generated with
+`RandomNumberGenerator` and hex-encoded, so they need no escaping in a Java
+`.properties` file — and nothing sensitive ever reaches git.
+
+`android/app/build.gradle.kts` parses `key.properties` at configuration time
+and binds it to `signingConfigs.release`. If the file is missing the release
+build falls back to the **debug** key with a warning, so a fresh clone still
+compiles; such a bundle is rejected by Play, which is the intended signal.
+
+> **Back the keystore up outside the repository.** It is deliberately not
+> synced through git, so losing it means Google Play can no longer accept
+> updates for the package under the same signing identity.
+
 ## Related
 
 - App-side diagnostics: `AppObserverService` / `AppHealthLogger`

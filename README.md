@@ -490,14 +490,45 @@ secrets):
 
 ### 5. Build for release
 
+The Android release build is signed with an **upload keystore** that is not
+part of the repository. Create it once per machine before the first release
+build:
+
+```sh
+# Generates android/app/upload-keystore.jks (alias "upload") and the
+# gitignored android/key.properties that points at it.
+powershell -ExecutionPolicy Bypass -File tool\create_upload_keystore.ps1
+```
+
+> **Back the keystore up outside the repository.** `key.properties` and
+> `*.jks` are git-ignored, so the key is never shared through git — which also
+> means losing it locks you out of Play updates under the same signing
+> identity.
+
+Without `android/key.properties` the release build still works, but it falls
+back to the **debug** key and logs a warning; such a bundle is rejected by
+Play. `android/app/build.gradle.kts` reads the file at configuration time and
+binds it to `signingConfigs.release`.
+
 ```sh
 # Android
 flutter build apk     --release --dart-define=GOOGLE_SERVER_CLIENT_ID=... --dart-define=GOOGLE_IOS_CLIENT_ID=...
 flutter build appbundle --release --dart-define=GOOGLE_SERVER_CLIENT_ID=... --dart-define=GOOGLE_IOS_CLIENT_ID=...
 
+# Obfuscated release bundle with the symbols kept out of the artifact
+# (upload build/app/outputs/symbols to Crashlytics so Dart stack traces
+# can be deobfuscated):
+flutter build appbundle --release --obfuscate --split-debug-info=build/app/outputs/symbols
+
 # iOS (requires macOS + Xcode)
 flutter build ios      --release --dart-define=GOOGLE_SERVER_CLIENT_ID=... --dart-define=GOOGLE_IOS_CLIENT_ID=...
 ```
+
+The release build type runs **R8** (`isMinifyEnabled`) and shrinks resources
+(`isShrinkResources`). The ProGuard rules that make that safe live in
+`android/app/proguard-rules.pro` — each one covers a dependency that is only
+reached by reflection (the Flutter plugin registrant, Tink's Protobuf fields
+behind `flutter_secure_storage`, and the JNI bridge).
 
 Regenerate the native launcher icons after changing the source art. The Figma
 exports live in `assets/icon/src/` (light + dark SVG); the rasterised 1024×1024
