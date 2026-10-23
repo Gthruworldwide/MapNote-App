@@ -84,8 +84,15 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
   }
 
-  testWidgets('settings shows the daily GPS toggle (off by default)',
-      (WidgetTester tester) async {
+  testWidgets(
+      'the shared tracking toggle is off when AutoMotion is opted out and GPS '
+      'was never enabled', (WidgetTester tester) async {
+    // AutoMotion defaults to on, so exercise this branch from an explicit
+    // opt-out; the daily-GPS engine itself is still off by default.
+    await tester.runAsync(
+      () => settingsBox.put('enable_auto_motion', false),
+    );
+
     await pumpSettings(tester);
 
     expect(find.text('Enable Smart AutoMotion'), findsOneWidget);
@@ -96,10 +103,10 @@ void main() {
       findsOneWidget,
     );
 
-    // Off by default: the report tile is hidden.
+    // Both engines off: the report tile is hidden.
     expect(find.text('Distance today'), findsNothing);
 
-    // The switch reflects the default (off).
+    // The switch reflects that state (off).
     final Finder gpsSwitch = find.descendant(
       of: find.widgetWithText(
         SwitchListTile,
@@ -138,6 +145,10 @@ void main() {
 
   testWidgets('flipping the toggle on persists it and reveals the report tile',
       (WidgetTester tester) async {
+    // Start from both engines off (AutoMotion is on by default).
+    await tester.runAsync(
+      () => settingsBox.put('enable_auto_motion', false),
+    );
     await pumpSettings(tester);
     expect(find.text('Distance today'), findsNothing);
 

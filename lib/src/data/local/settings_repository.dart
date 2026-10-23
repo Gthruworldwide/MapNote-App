@@ -132,9 +132,16 @@ class SettingsRepository {
 
   /// Whether AutoMotion is switched on (Settings → AutoMotion).
   ///
-  /// Defaults to off; AutoMotion only records while the app is open and while a
-  /// location permission is granted.
-  bool get isAutoMotionEnabled => _box.get(_autoMotionEnabledKey) == true;
+  /// **Defaults to on.** A fresh install records from its very first launch, so
+  /// the user does not have to find Settings → Location before getting a day's
+  /// distance. Only an explicit `false` — the user flipping the toggle off —
+  /// disables it: a missing key *and* a corrupt (non-bool) value both read as
+  /// on, because AutoMotion works entirely on the device and never transmits a
+  /// trip. The toggle still persists every change, so an opt-out survives.
+  bool get isAutoMotionEnabled {
+    final Object? stored = _box.get(_autoMotionEnabledKey);
+    return stored is bool ? stored : true;
+  }
 
   Future<void> setAutoMotionEnabled(bool enabled) async {
     await _box.put(_autoMotionEnabledKey, enabled);

@@ -79,6 +79,18 @@ class _MapNoteAppState extends ConsumerState<MapNoteApp>
     _listenForThemeIconChanges();
     _startSessionWatch();
     _startDiagnostics();
+    // AutoMotion is on by default, so start it from the persisted preference at
+    // launch instead of relying on the Home card happening to mount: a fresh
+    // install must record from its very first drive. `build()` reconciles the
+    // tracker against the flag on a serialized queue (and `start()` is a no-op
+    // while live), so this cannot double-start a trip or fight the toggle.
+    // Deferred to the first frame because requesting the location permission
+    // before the activity is resumed is dropped by Android.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (!ref.read(autoMotionEnabledProvider)) return;
+      ref.read(autoMotionControllerProvider);
+    });
     // A Plus Code can already be on the clipboard at cold start.
     WidgetsBinding.instance.addPostFrameCallback((_) => _checkClipboard());
   }

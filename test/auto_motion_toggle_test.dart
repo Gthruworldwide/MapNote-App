@@ -157,7 +157,7 @@ void main() {
         matching: find.byType(Switch),
       );
 
-  testWidgets('settings shows the AutoMotion toggle (off by default)',
+  testWidgets('settings shows the AutoMotion toggle (on by default)',
       (WidgetTester tester) async {
     await pumpSettings(tester);
 
@@ -168,6 +168,20 @@ void main() {
       ),
       findsOneWidget,
     );
+    // A fresh install has no `enable_auto_motion` key and AutoMotion records by
+    // default, so the toggle reads on without the user visiting this screen.
+    expect(
+      tester.widget<Switch>(switchFinder('Enable Smart AutoMotion')).value,
+      isTrue,
+    );
+  });
+
+  testWidgets('an explicit opt-out wins over the default', (WidgetTester tester) async {
+    // Only a stored `false` disables AutoMotion: the default must never
+    // resurrect an opt-out the user already made.
+    await tester.runAsync(() => settingsBox.put('enable_auto_motion', false));
+    await pumpSettings(tester);
+
     expect(
       tester.widget<Switch>(switchFinder('Enable Smart AutoMotion')).value,
       isFalse,
@@ -184,6 +198,8 @@ void main() {
 
   testWidgets('flipping the AutoMotion toggle persists enable_auto_motion',
       (WidgetTester tester) async {
+    // Start from the stored opt-out so this exercises the off→on flip.
+    await tester.runAsync(() => settingsBox.put('enable_auto_motion', false));
     await pumpSettings(tester);
     expect(find.text('Enable Smart AutoMotion'), findsOneWidget);
 
@@ -242,6 +258,8 @@ void main() {
       'toggle is off (Paused badge)', (WidgetTester tester) async {
     // AutoMotion is off, but today already has recorded motion from an earlier
     // session — stored directly in the auto_motion box under its YYYY-MM-DD key.
+    // The opt-out is explicit: AutoMotion is on by default.
+    await tester.runAsync(() => settingsBox.put('enable_auto_motion', false));
     final DateTime today = DailyGpsSummary.dayOf(DateTime.now());
     await tester.runAsync(() => settingsBox.put(
           DailyGpsSummary.dayKey(today),
@@ -269,6 +287,9 @@ void main() {
 
   testWidgets('home hides the AutoMotion card when disabled and no motion yet',
       (WidgetTester tester) async {
+    // On by default, so an empty Home would show the card: seed the opt-out to
+    // cover the "nothing to show" branch.
+    await tester.runAsync(() => settingsBox.put('enable_auto_motion', false));
     await pumpApp(tester);
     expect(find.byType(AutoMotionCard), findsNothing);
   });

@@ -54,6 +54,26 @@ void main() {
     expect(box.get('smart_insights_enabled'), isFalse);
   });
 
+  test('SettingsRepository defaults AutoMotion to enabled', () async {
+    final SettingsRepository repo = SettingsRepository(box);
+
+    // A fresh install has no key at all: AutoMotion records from the first
+    // launch instead of waiting for the user to find Settings → Location.
+    expect(repo.isAutoMotionEnabled, isTrue);
+
+    // A corrupt (non-bool) value must not silently turn tracking off either.
+    await box.put('enable_auto_motion', 'yes');
+    expect(repo.isAutoMotionEnabled, isTrue);
+
+    // The user's explicit opt-out wins, and both directions persist.
+    await repo.setAutoMotionEnabled(false);
+    expect(repo.isAutoMotionEnabled, isFalse);
+    expect(box.get('enable_auto_motion'), isFalse);
+
+    await repo.setAutoMotionEnabled(true);
+    expect(repo.isAutoMotionEnabled, isTrue);
+  });
+
   test('preferredNavAppProvider controller persists and notifies', () async {
     final ProviderContainer container = ProviderContainer(
       overrides: [hiveDatabaseProvider.overrideWithValue(database)],

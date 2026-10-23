@@ -128,7 +128,8 @@ is the operating system's local storage plus the user's own Google Drive.
 - 🛰️ **Daily GPS tracking** — an optional toggle that records today's distance
   and max speed in the foreground *and background* (a location foreground service
   keeps the stream alive once tracking is switched on).
-- 🚶 **AutoMotion** — an independent daily motion tracker with a custom
+- 🚶 **AutoMotion** — an independent daily motion tracker that records from the
+  very first launch (switch it off in Settings → Location) with a custom
   electric-blue/mint status badge; when paused, the Home card stays visible with
   today's recorded totals. Tapping the card opens an **AutoMotion dashboard**
   with a live driver-mode speed readout and a trip history of recorded days.

@@ -178,6 +178,13 @@ void main() {
 
   testWidgets('with both engines off no report tile is shown',
       (WidgetTester tester) async {
+    // AutoMotion is on by default, so the "both off" branch needs an explicit
+    // opt-out for both engines.
+    await tester.runAsync(() async {
+      await settingsBox.put('enable_auto_motion', false);
+      await settingsBox.put('gps_tracking_enabled', false);
+    });
+
     await pumpSettings(tester);
 
     expect(find.text('Distance today'), findsNothing);

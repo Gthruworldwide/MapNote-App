@@ -335,70 +335,113 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         ],
       ),
-      body: Column(
-        children: <Widget>[
-          // Dynamic Island expansion slot: long-pressing the compass action in
-          // the app bar toggles the live Qibla indicator above the search bar.
-          AnimatedSize(
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeInOut,
-            child: _isCompassExpanded
-                ? Padding(
-                    padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 0),
-                    child: QiblaIndicator(
-                      locationHub: ref.read(locationHubProvider),
+      body: _buildBody(placesAsync, l10n),
+    );
+  }
+
+  /// The block above the saved-places list: compass slot, search, location
+  /// status and the AutoMotion / Smart Insights cards.
+  ///
+  /// It scrolls **with** the list instead of sitting in a fixed header above
+  /// it. AutoMotion is on by default, so this stack is tall enough to overflow
+  /// a short viewport (an 800×600 window lost 24 px); a fixed header would then
+  /// either clip the cards or starve the list of its remaining height.
+  Widget _buildHeader(AppLocalizations l10n) {
+    return Column(
+      children: <Widget>[
+        // Dynamic Island expansion slot: long-pressing the compass action in
+        // the app bar toggles the live Qibla indicator above the search bar.
+        AnimatedSize(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+          child: _isCompassExpanded
+              ? Padding(
+                  padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 0),
+                  child: QiblaIndicator(
+                    locationHub: ref.read(locationHubProvider),
+                  ),
+                )
+              : const SizedBox.shrink(),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+          child: TextField(
+            controller: _searchController,
+            onChanged: (String value) {
+              setState(() => _query = value.trim().toLowerCase());
+            },
+            decoration: InputDecoration(
+              hintText: l10n.searchHint,
+              prefixIcon: const Icon(Icons.search),
+              suffixIcon: _query.isEmpty
+                  ? null
+                  : IconButton(
+                      onPressed: () {
+                        _searchController.clear();
+                        setState(() => _query = '');
+                      },
+                      icon: const Icon(Icons.clear),
                     ),
-                  )
-                : const SizedBox.shrink(),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-            child: TextField(
-              controller: _searchController,
-              onChanged: (String value) {
-                setState(() => _query = value.trim().toLowerCase());
-              },
-              decoration: InputDecoration(
-                hintText: l10n.searchHint,
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: _query.isEmpty
-                    ? null
-                    : IconButton(
-                        onPressed: () {
-                          _searchController.clear();
-                          setState(() => _query = '');
-                        },
-                        icon: const Icon(Icons.clear),
-                      ),
-              ),
             ),
           ),
-          const LocationStatusChip(),
-          // Keep the card on screen while AutoMotion is enabled, or while the
-          // day already has recorded motion, so paused users can still see
-          // today's totals from the Paused badge.
-          if (ref.watch(autoMotionEnabledProvider) ||
-              ref.watch(autoMotionControllerProvider).totalKm > 0)
-            const AutoMotionCard(),
-          if (ref.watch(smartInsightsEnabledProvider))
-            const SmartInsightsCard(),
-          Expanded(child: _buildBody(placesAsync, l10n)),
+        ),
+        const LocationStatusChip(),
+        // Keep the card on screen while AutoMotion is enabled, or while the
+        // day already has recorded motion, so paused users can still see
+        // today's totals from the Paused badge.
+        if (ref.watch(autoMotionEnabledProvider) ||
+            ref.watch(autoMotionControllerProvider).totalKm > 0)
+          const AutoMotionCard(),
+        if (ref.watch(smartInsightsEnabledProvider))
+          const SmartInsightsCard(),
+      ],
+    );
+  }
+
+  /// One scroll surface for the header and the saved places.
+  ///
+  /// A fixed header above an `Expanded` list cannot guarantee room for both:
+  /// now that AutoMotion's card is always present the block is taller than a
+  /// short viewport. Slivers let the cards scroll away instead of overflowing,
+  /// and one [RefreshIndicator] still owns pull-to-refresh in every state.
+  Widget _buildBody(
+    AsyncValue<List<Place>> placesAsync,
+    AppLocalizations l10n,
+  ) {
+    return RefreshIndicator(
+      onRefresh: _refresh,
+      child: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: <Widget>[
+          SliverToBoxAdapter(child: _buildHeader(l10n)),
+          ..._buildPlaceSlivers(placesAsync, l10n),
         ],
       ),
     );
   }
 
-  Widget _buildBody(
+  /// The saved-places half of the scroll view: a status state or the list.
+  List<Widget> _buildPlaceSlivers(
     AsyncValue<List<Place>> placesAsync,
     AppLocalizations l10n,
   ) {
     return placesAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (Object error, StackTrace stackTrace) => _MessageView(
-        icon: Icons.error_outline,
-        title: l10n.errorGeneric,
-        message: '$error',
-      ),
+      loading: () => const <Widget>[
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: Center(child: CircularProgressIndicator()),
+        ),
+      ],
+      error: (Object error, StackTrace stackTrace) => <Widget>[
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: _MessageContent(
+            icon: Icons.error_outline,
+            title: l10n.errorGeneric,
+            message: '$error',
+          ),
+        ),
+      ],
       data: (List<Place> allPlaces) {
         // Hidden places live only in the Settings → Hidden Vault.
         final List<Place> places = allPlaces
@@ -406,14 +449,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             .toList();
 
         if (places.isEmpty && _query.isEmpty) {
-          return RefreshIndicator(
-            onRefresh: _refresh,
-            child: _MessageView(
-              icon: Icons.place_outlined,
-              title: l10n.emptyPlacesTitle,
-              message: l10n.emptyPlacesMessage,
+          return <Widget>[
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: _MessageContent(
+                icon: Icons.place_outlined,
+                title: l10n.emptyPlacesTitle,
+                message: l10n.emptyPlacesMessage,
+              ),
             ),
-          );
+          ];
         }
 
         final List<Place> filtered = _query.isEmpty
@@ -434,39 +479,41 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         });
 
         if (filtered.isEmpty) {
-          return RefreshIndicator(
-            onRefresh: _refresh,
-            child: _MessageView(
-              icon: Icons.search_off,
-              title: l10n.noSearchResults,
+          return <Widget>[
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: _MessageContent(
+                icon: Icons.search_off,
+                title: l10n.noSearchResults,
+              ),
             ),
-          );
+          ];
         }
 
-        return RefreshIndicator(
-          onRefresh: _refresh,
-          child: ListView.separated(
-            physics: const AlwaysScrollableScrollPhysics(),
+        return <Widget>[
+          SliverPadding(
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 96),
-            itemCount: filtered.length,
-            separatorBuilder: (BuildContext context, int index) =>
-                const SizedBox(height: 10),
-            itemBuilder: (BuildContext context, int index) {
-              final Place place = filtered[index];
-              // Staggered fade + rise so the list settles in instead of
-              // snapping into place.
-              return StaggeredReveal(
-                index: index,
-                child: PlaceCard(
-                  place: place,
-                  onTap: () => _openPlace(context, place),
-                  onNavigate: () => _navigateToPlace(place),
-                  onLongPress: () => _showPlaceActions(place),
-                ),
-              );
-            },
+            sliver: SliverList.separated(
+              itemCount: filtered.length,
+              separatorBuilder: (BuildContext context, int index) =>
+                  const SizedBox(height: 10),
+              itemBuilder: (BuildContext context, int index) {
+                final Place place = filtered[index];
+                // Staggered fade + rise so the list settles in instead of
+                // snapping into place.
+                return StaggeredReveal(
+                  index: index,
+                  child: PlaceCard(
+                    place: place,
+                    onTap: () => _openPlace(context, place),
+                    onNavigate: () => _navigateToPlace(place),
+                    onLongPress: () => _showPlaceActions(place),
+                  ),
+                );
+              },
+            ),
           ),
-        );
+        ];
       },
     );
   }
@@ -554,10 +601,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 }
 
-/// Centered icon + text state, scrollable so it works inside a
-/// [RefreshIndicator].
-class _MessageView extends StatelessWidget {
-  const _MessageView({required this.icon, required this.title, this.message});
+/// Centered icon + text state used by the list's empty, no-results and error
+/// slivers.
+///
+/// It paints only the content: the surrounding [CustomScrollView] already
+/// provides the scrollable surface (and the pull-to-refresh gesture), so
+/// nesting another scrollable here would swallow the drag.
+class _MessageContent extends StatelessWidget {
+  const _MessageContent({required this.icon, required this.title, this.message});
 
   final IconData icon;
   final String title;
@@ -566,61 +617,47 @@ class _MessageView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
-    return LayoutBuilder(
-      builder: (BuildContext context, BoxConstraints constraints) {
-        return SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: constraints.maxHeight),
-            child: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(32),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    Container(
-                      width: 96,
-                      height: 96,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: theme.colorScheme.primary.withValues(
-                          alpha: 0.10,
-                        ),
-                        border: Border.all(
-                          color: theme.colorScheme.primary.withValues(
-                            alpha: 0.20,
-                          ),
-                        ),
-                      ),
-                      child: Icon(
-                        icon,
-                        size: 40,
-                        color: theme.colorScheme.primary,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    Text(
-                      title,
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.titleMedium,
-                    ),
-                    if (message != null) ...<Widget>[
-                      const SizedBox(height: 8),
-                      Text(
-                        message!,
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ],
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Container(
+              width: 96,
+              height: 96,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: theme.colorScheme.primary.withValues(alpha: 0.10),
+                border: Border.all(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.20),
                 ),
               ),
+              child: Icon(
+                icon,
+                size: 40,
+                color: theme.colorScheme.primary,
+              ),
             ),
-          ),
-        );
-      },
+            const SizedBox(height: 20),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.titleMedium,
+            ),
+            if (message != null) ...<Widget>[
+              const SizedBox(height: 8),
+              Text(
+                message!,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }
