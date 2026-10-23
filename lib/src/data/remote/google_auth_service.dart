@@ -20,7 +20,9 @@ class GoogleAuthService implements AuthService {
         clientId: AppConfig.googleIosClientId.isEmpty
             ? null
             : AppConfig.googleIosClientId,
-        serverClientId: null,
+        serverClientId: AppConfig.googleServerClientId.isEmpty
+            ? null
+            : AppConfig.googleServerClientId,
       );
       _initialized = true;
     } on GoogleSignInException catch (e) {
@@ -122,10 +124,20 @@ class GoogleAuthService implements AuthService {
 
   Future<void> _ensureAuthorized(GoogleSignInAccount account) async {
     final GoogleSignInAuthorizationClient client = account.authorizationClient;
-    final GoogleSignInClientAuthorization? existing = await client
-        .authorizationForScopes(AppConfig.driveScopes);
-    if (existing == null) {
-      await client.authorizeScopes(AppConfig.driveScopes);
+    try {
+      final GoogleSignInClientAuthorization? existing = await client
+          .authorizationForScopes(AppConfig.driveScopes);
+      if (existing == null) {
+        // Request Drive scope separately (two-step authorization).
+        // If the user denies, we keep them signed in but sync stays unavailable.
+        await client.authorizeScopes(AppConfig.driveScopes);
+      }
+    } on GoogleSignInException catch (e) {
+      debugPrint(
+        'MapNote Drive scope authorization failed: '
+        'code=${e.code.name} description=${e.description}',
+      );
+      // Don't throw — the user is still signed in, just without Drive access.
     }
   }
 
