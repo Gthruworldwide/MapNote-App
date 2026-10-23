@@ -27,9 +27,11 @@ void main() {
     );
 
     logger.log(HealthEventType.appLaunch);
-    logger.log(HealthEventType.syncFailed, message: 'timeout');
-    logger.log(HealthEventType.syncFailed, message: 'timeout');
+    // The success comes first on purpose: `syncFailed` counts the *unrecovered*
+    // run, so a success after the failures below would zero it.
     logger.log(HealthEventType.syncSucceeded);
+    logger.log(HealthEventType.syncFailed, message: 'timeout');
+    logger.log(HealthEventType.syncFailed, message: 'timeout');
     logger.logParseFailure(source: 'clipboard');
     logger.logParseFailure(source: 'share', shortLink: true);
     logger.logUiLatency('home', const Duration(milliseconds: 320));
@@ -42,6 +44,39 @@ void main() {
     expect(summary.parseFailures, 1);
     expect(summary.shortLinkFailures, 1);
     expect(summary.lastUiLatency, const Duration(milliseconds: 320));
+  });
+
+  test('a successful sync clears the unrecovered failure run', () {
+    final AppHealthLogger logger = AppHealthLogger(
+      box,
+      clock: () => DateTime.utc(2026, 1, 10, 12),
+    );
+
+    logger.log(HealthEventType.syncFailed, message: 'timeout');
+    logger.log(HealthEventType.syncFailed, message: 'timeout');
+    expect(logger.summary().syncFailed, 2);
+
+    // The recovering round-trip — Account screen Sync, a "Sync now" insight or
+    // pull-to-refresh — must end the run, so the "A sync didn't finish" banner
+    // clears itself instead of surviving until it is dismissed.
+    logger.log(HealthEventType.syncSucceeded);
+
+    final HealthSummary summary = logger.summary();
+    expect(summary.syncFailed, 0);
+    expect(summary.syncSucceeded, 1);
+  });
+
+  test('a failure after a success starts a new run', () {
+    final AppHealthLogger logger = AppHealthLogger(
+      box,
+      clock: () => DateTime.utc(2026, 1, 10, 12),
+    );
+
+    logger.log(HealthEventType.syncFailed, message: 'timeout');
+    logger.log(HealthEventType.syncSucceeded);
+    logger.log(HealthEventType.syncFailed, message: 'timeout');
+
+    expect(logger.summary().syncFailed, 1);
   });
 
   test('drops events older than the window', () {

@@ -126,6 +126,26 @@ void main() {
     );
   });
 
+  test('a recovered sync run stops raising the sync issue', () {
+    // End-to-end over the real logger so the "unrecovered run" rule and the
+    // insight stay pinned together: tapping Sync, a "Sync now" insight or
+    // pulling to refresh logs a success, and the banner must clear on its own.
+    final AppHealthLogger logger = AppHealthLogger(null);
+    final List<Place> places = <Place>[
+      _place(id: 'a', latitude: 30, longitude: 31),
+    ];
+    bool raisesSyncIssue() => engine
+        .analyze(AgentContext(places: places, health: logger.summary()))
+        .any((AgentInsight i) => i.kind == AgentInsightKind.syncIssues);
+
+    logger.log(HealthEventType.syncFailed, message: 'timeout');
+    expect(raisesSyncIssue(), isTrue);
+
+    logger.log(HealthEventType.syncSucceeded);
+
+    expect(raisesSyncIssue(), isFalse);
+  });
+
   test('reports parse problems once they accumulate', () {
     final List<AgentInsight> insights = engine.analyze(
       AgentContext(

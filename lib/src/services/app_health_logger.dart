@@ -124,7 +124,15 @@ class HealthSummary {
   final int appLaunches;
   final int appResumes;
   final int syncSucceeded;
+
+  /// **Unrecovered** sync failures: how many failures were recorded after the
+  /// most recent success (a "run"). A later success zeroes the counter, so the
+  /// "A sync didn't finish" insight clears itself as soon as any round-trip
+  /// succeeds. Counting every failure inside the window instead kept that
+  /// banner on screen for the whole window after a single failure — the banner
+  /// then only went away by tapping its dismiss button.
   final int syncFailed;
+
   final int syncSkipped;
   final int parseFailures;
   final int shortLinkFailures;
@@ -278,6 +286,11 @@ class AppHealthLogger {
           resumes++;
         case HealthEventType.syncSucceeded:
           syncOk++;
+          // A success resolves the current failure run (see [syncFailed]).
+          // This is what lets the recovery banner clear from *any* sync path —
+          // the Account screen button, a "Sync now" insight, pull-to-refresh —
+          // because all of them log this event.
+          syncFailed = 0;
         case HealthEventType.syncFailed:
           syncFailed++;
         case HealthEventType.syncSkipped:

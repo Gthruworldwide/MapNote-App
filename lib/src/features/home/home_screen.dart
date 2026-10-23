@@ -489,9 +489,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   ///
   /// User-initiated: the user asked for fresh data, so re-establishing the
   /// session here is expected.
-  Future<void> _refresh() => ref
-      .read(syncControllerProvider.notifier)
-      .syncNow(userInitiated: true);
+  ///
+  /// The Smart Insights card is derived from the **health log**, not from the
+  /// places list, so `syncNow`'s `placesProvider` reload alone is not enough:
+  /// when the download changes nothing the list still re-emits, but a stale
+  /// "A sync didn't finish" banner would only be re-evaluated if the agent runs
+  /// again. Re-running it here makes the recovery visible on the same pull that
+  /// fixed it.
+  Future<void> _refresh() async {
+    await ref
+        .read(syncControllerProvider.notifier)
+        .syncNow(userInitiated: true);
+    if (!mounted) return;
+    unawaited(ref.read(agentProvider.notifier).refresh());
+  }
 
   /// Records that the Qibla compass became visible to the user. Fired by both
   /// entry points (the Dynamic Island expansion and the full sheet).
