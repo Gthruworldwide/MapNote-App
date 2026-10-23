@@ -222,6 +222,36 @@ the first frame. Flow: `AuthNotifier.build` → `_signInSilentlyInBackground()` 
 > identity with a placeholder, which would leave the device showing a fake
 > account. The trust evidence heals by itself — the next successful Drive
 > round-trip re-stamps `last_synced`.
+>
+> **Release-build OAuth client prerequisite (resolved 2026-10-23).** The Android
+> `google_sign_in` flow resolves an **Android OAuth 2.0 client** from Google by
+> `package name + signing certificate`, not from `google-services.json`. That
+> client only exists once the **Google provider is enabled in Firebase
+> Authentication** (console → Authentication → Sign-in method → Google). The
+> plugin README states the same dependency: the web client "should have been
+> created automatically when enabling Google Sign In using the Firebase
+> console". Registering the SHA-1
+> (`firebase apps:android:sha:create`) and shipping a correctly signed APK are
+> **both necessary and neither sufficient**. With the provider switched off, an
+> otherwise flawless setup fails with
+> `GoogleSignInException(code canceled, [16] Account reauth failed)`, and
+> `logcat` carries the real reason:
+> `Auth.Api.Credentials: [GetGoogleIdOperation] Operation failed` together with
+> `RequestTokenManager: getToken() -> NEED_REMOTE_CONSENT … Service:
+> oauth2:https://www.googleapis.com/auth/lams`. Enabling the provider fixed it
+> outright; **no app-side change was required**.
+>
+> **Diagnosis order for any "[16] Account reauth failed" report.** (1) the APK's
+> real signing SHA — `apksigner verify --print-certs`, never assume the release
+> keystore was picked up; (2) that SHA is listed for the app —
+> `firebase apps:android:sha:list`; (3) **the Google provider is enabled**;
+> (4) `serverClientId` equals the `client_type: 3` web client in
+> `google-services.json`. A `GenerateCallerVerificationTokenOperation …
+> succeeded` line in `logcat` already proves the package/signature side is
+> sound, so jump to (3). Do **not** chase `scopeHint`, Drive-scope placement,
+> Play Services data wiping, account re-adding or a different Google account
+> until (3) is confirmed — every one of those was tried here, repeatedly, with
+> no effect.
 
 **Eval.**
 
