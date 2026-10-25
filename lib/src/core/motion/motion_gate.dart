@@ -112,6 +112,17 @@ class MotionGate {
   /// holding an already-open feed) can drive it without a stream at all.
   void feed(AccelerometerSample sample) => _onSample(sample);
 
+  /// Fuses a GPS Doppler speed (m/s) into the gate's own evidence.
+  ///
+  /// The verdict needs it: `ActivityStateManager` opens only when the device is
+  /// too fast to be on foot *and* vibrating in the vehicle range *without* a
+  /// step cadence. Without a speed the first half is always missing, the gate
+  /// can never confirm a drive, and whatever coarser signal is left (the
+  /// transport classifier, which calls a non-rhythmic walk `vehicle`) ends up
+  /// owning the decision. Callers hand over the speed of each accepted fix.
+  void observeSpeed(double metersPerSecond) =>
+      manager.observeSpeed(metersPerSecond);
+
   void _onSample(AccelerometerSample sample) {
     manager.feed(sample.x, sample.y, sample.z, at: sample.at);
     if (manager.isAnalysisEnabled) {

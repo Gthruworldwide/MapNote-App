@@ -140,9 +140,20 @@ class DailyGpsSummary {
     return '$y-$m-$d';
   }
 
-  /// The local calendar day containing [time], normalised to midnight.
-  static DateTime dayOf(DateTime time) =>
-      DateTime(time.year, time.month, time.day);
+  /// The local calendar day containing [time], normalised to local midnight.
+  ///
+  /// The calendar fields are read **after `toLocal()`**, because the two inputs
+  /// this is given are not expressed the same way: the trackers call it with
+  /// `DateTime.now()` (local) while every fix carries a UTC `timestamp`
+  /// (geolocator builds it with `isUtc: true`). Reading the raw fields of a UTC
+  /// instant files the fix one day early anywhere east of Greenwich — measured
+  /// on device, a 01:09 local walk (22:09 UTC) landed on the previous day, so
+  /// "today" stayed empty in Motion history while yesterday grew. Idempotent
+  /// for an already-local value, so every existing caller keeps its meaning.
+  static DateTime dayOf(DateTime time) {
+    final DateTime local = time.toLocal();
+    return DateTime(local.year, local.month, local.day);
+  }
 
   Map<String, dynamic> toMap() {
     // Local alias: instance fields never promote, and `path` is checked once

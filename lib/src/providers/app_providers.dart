@@ -2113,25 +2113,6 @@ class AutoMotionState {
   }
 }
 
-/// Maps a transport verdict onto the orchestrator's activity vocabulary.
-///
-/// A `vehicle` verdict is the only one that means "road vehicle"; a train is
-/// deliberately **not** mapped to driving, because the maneuver classifier's
-/// tires-and-road dynamics do not apply and the orchestrator's analytics would
-/// be classifying rail joints as potholes. `stationary` and `walking` both map
-/// to the gate's still/walking state, which is the honest description: neither
-/// is worth paying for vehicle analytics.
-ActivityState _activityFrom(TransportMode mode) {
-  switch (mode) {
-    case TransportMode.vehicle:
-      return ActivityState.vehicleDriving;
-    case TransportMode.stationary:
-    case TransportMode.walking:
-    case TransportMode.train:
-      return ActivityState.stationaryOrWalking;
-  }
-}
-
 /// Bridges the [AutoMotionService] stream into a widget-friendly state.
 ///
 /// [build] watches the enabled toggle and reconciles the tracker against it
@@ -2152,6 +2133,8 @@ class AutoMotionController extends Notifier<AutoMotionState> {
         enabled: enabled,
         active: tracker.isTracking,
       ).copyWith(unavailable: state.unavailable, failure: state.failure);
+      // Every accepted fix is also the gate's only speed witness.
+      _observeGateSpeed(tracker);
     });
     ref.onDispose(updates.cancel);
     // The transport classifier's verdicts gate the driving-behavior analyzer
@@ -2167,18 +2150,17 @@ class AutoMotionController extends Notifier<AutoMotionState> {
         classifier.modes.listen((TransportMode mode) {
       if (!ref.mounted) return;
       analyzer.observeTransport(mode);
-      // The same verdict drives the orchestrator's FSM: a vehicle trip is what
-      // lifts the app out of low-power tracking into full analytics. The gate
-      // itself judges from the raw accelerometer plus GPS speed, so this only
-      // steers the *profile*, never the gate's own evidence.
-      ref.read(adaptiveEngineOrchestratorProvider).observe(
-            EngineEvidence(
-              trackingActive: tracker.isTracking,
-              activityState: _activityFrom(mode),
-              speedMps: tracker.currentSpeedKmh / 3.6,
-              speedFresh: true,
-            ),
-          );
+      // **Evidence only — never an activity verdict.** The transport classifier
+      // below riding speed cannot tell a gait it failed to recognise from a
+      // car: its decision order falls through to `vehicle` for any non-still,
+      // non-rhythmic window, and a hand-held walk is exactly that. Feeding that
+      // straight in as `activityState: vehicleDriving` therefore held the FSM in
+      // `activeDriveAnalytics` for the whole measured walk (1 s / HIGH_ACCURACY,
+      // `MONITOR_HIGH_POWER_LOCATION (running)`), the exact background drain
+      // §6 exists to prevent. The activity gate (`ActivityStateManager`, which
+      // requires speed *and* held vehicle-range vibration and rejects step
+      // cadence) is the single authority and reaches the FSM through
+      // [_onActivityState]; this listener only steers the analyzer's own view.
     });
     ref.onDispose(modes.cancel);
     // The idle detector's verdict reaches the FSM through one shared bridge: a
@@ -2240,6 +2222,22 @@ class AutoMotionController extends Notifier<AutoMotionState> {
   /// The gate's activity verdicts, while a trip records. Lives here rather than
   /// in a provider because it must be created and cancelled with the trip.
   StreamSubscription<ActivityState>? _gateStates;
+
+  /// Hands the gate the Doppler speed of the fix that just landed.
+  ///
+  /// The gate opens on speed **and** held vehicle-range vibration, so the speed
+  /// half is not optional: without it `ActivityStateManager` can never leave
+  /// `stationaryOrWalking` (a cold start has no reading, and every "fast
+  /// enough" test then fails), which is exactly how the app ended up with the
+  /// transport classifier as its only — and wrong — vehicle authority. Measured
+  /// on device: walking, the FSM sat in `activeDriveAnalytics`.
+  ///
+  /// Fed from [AutoMotionState]'s own change stream, so the gate always judges
+  /// against the reading from the most recent accepted fix and nothing polls.
+  void _observeGateSpeed(AutoMotionService tracker) {
+    if (!tracker.isTracking) return;
+    ref.read(motionGateProvider).observeSpeed(tracker.currentSpeedKmh / 3.6);
+  }
 
   /// Translates one gate verdict into orchestrator evidence.
   ///

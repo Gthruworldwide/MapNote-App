@@ -460,6 +460,63 @@ void main() {
     });
   });
 
+  group('GpsTrackerService day keys', () {
+    // Regression: `Position.timestamp` is built by geolocator with
+    // `isUtc: true`, while every other day source in the app is a local
+    // `DateTime.now()`. `dayOf` used to truncate the raw calendar fields, so a
+    // UTC instant was filed one day early everywhere east of Greenwich —
+    // measured on device: a 01:09 local walk (22:09 UTC) grew *yesterday* while
+    // Motion history's "Today" stayed at 0.00 km with no timeline.
+    test('dayOf reads the local calendar fields of a UTC instant', () {
+      final DateTime evening = DateTime(2026, 10, 25, 23, 30);
+      final DateTime instant = evening.toUtc();
+
+      expect(instant.isUtc, isTrue);
+      expect(DailyGpsSummary.dayOf(instant), DateTime(2026, 10, 25));
+
+      // The contract, stated for any host timezone: a calendar day comes from
+      // the local wall clock, never from the UTC clock.
+      expect(
+        DailyGpsSummary.dayOf(instant),
+        DailyGpsSummary.dayOf(instant.toLocal()),
+      );
+      // Idempotent for an already-local value, so no existing caller changes
+      // meaning.
+      expect(DailyGpsSummary.dayOf(evening), DateTime(2026, 10, 25));
+    });
+
+    test('a UTC-stamped evening fix files under today, not yesterday',
+        () async {
+      final GpsDailyDataSource store = await openStore('utc_day_key');
+      final GpsTrackerService service = GpsTrackerService(dailyStore: store);
+      final DateTime today = DailyGpsSummary.dayOf(DateTime.now());
+      // 23:30 local, rebuilt as the UTC instant a platform fix actually carries.
+      final DateTime first =
+          today.add(const Duration(hours: 23, minutes: 30)).toUtc();
+
+      service.recordPosition(_fix(0, 0, at: first));
+      service.recordPosition(
+        _fix(
+          0.009,
+          0,
+          at: first.add(const Duration(minutes: 5)),
+          speed: 7,
+        ),
+      );
+      await service.stop();
+      // The fired-and-forgotten save completes on the event loop.
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+
+      // Exactly one record, not two: with the UTC day key the first fix looked
+      // like a midnight rollover, which persisted an *empty* "today" and filed
+      // the walk under the previous day.
+      expect(store.all().length, 1);
+      expect(store.summaryFor(today), isNotNull);
+      expect(store.summaryFor(today)!.totalKm, closeTo(1.0, 0.05));
+      expect(service.totalDistanceKm, closeTo(1.0, 0.05));
+    });
+  });
+
   group('GpsTrackerService typed start failures', () {
     test('reports GPS disabled', () async {
       final GpsTrackerService service =

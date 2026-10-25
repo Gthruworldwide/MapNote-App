@@ -34,13 +34,15 @@ AccelerometerSample _walkSample(int index, DateTime start) => AccelerometerSampl
     );
 
 /// Feeds [count] samples of a confirmed drive through [gate], fusing the
-/// Doppler speed the gate's speed test needs.
-void _feedDrive(MotionGate gate, ActivityStateManager manager, DateTime start,
-    {int count = 50 * 20}) {
+/// Doppler speed **through the gate's own seam** — the path production uses.
+///
+/// Regression: the helper used to reach past the gate into the manager, which
+/// is why the shipped wiring (no caller at all) still looked green. The speed
+/// half of the verdict is only real if it arrives the way the app sends it.
+void _feedDrive(MotionGate gate, DateTime start, {int count = 50 * 20}) {
   for (int index = 0; index < count; index++) {
-    final AccelerometerSample sample = _driveSample(index, start);
-    manager.observeSpeed(12, at: sample.at);
-    gate.feed(sample);
+    gate.observeSpeed(12);
+    gate.feed(_driveSample(index, start));
   }
 }
 
@@ -92,7 +94,7 @@ void main() {
       final subscription = gate.gated.listen(received.add);
 
       await gate.start();
-      _feedDrive(gate, manager, epoch);
+      _feedDrive(gate, epoch);
       await Future<void>.delayed(Duration.zero);
 
       expect(gate.allowsAnalysis, isTrue);
@@ -109,7 +111,7 @@ void main() {
           MotionGate(manager: manager, hub: _hub());
 
       await gate.start();
-      _feedDrive(gate, manager, epoch);
+      _feedDrive(gate, epoch);
       expect(gate.allowsAnalysis, isTrue);
       final int afterDrive = gate.forwardedSamples;
 
@@ -138,7 +140,7 @@ void main() {
       final subB = gate.gated.listen(second.add);
 
       await gate.start();
-      _feedDrive(gate, manager, epoch);
+      _feedDrive(gate, epoch);
       await Future<void>.delayed(Duration.zero);
 
       // Both the analyzer and the classifier subscribe to the same gated feed.
@@ -146,6 +148,45 @@ void main() {
       expect(first.length, second.length);
       await subA.cancel();
       await subB.cancel();
+      await gate.dispose();
+    });
+  });
+
+  group('the gate is the only vehicle authority', () {
+    test('a walking-speed rumble never becomes a drive', () async {
+      // Regression, measured on device: a hand-held walk is broadband rather
+      // than rhythmic, so `TransportClassifier.analyse` falls through to
+      // `vehicle` for every window. That verdict used to reach the FSM as
+      // `activityState`, which held it in `activeDriveAnalytics` (1 s /
+      // HIGH_ACCURACY, `MONITOR_HIGH_POWER_LOCATION (running)`) for the whole
+      // walk. At 1.7 km/h the gate must stay shut however loud the residual is.
+      final ActivityStateManager manager =
+          ActivityStateManager(clock: () => epoch);
+      final MotionGate gate = MotionGate(manager: manager, hub: _hub());
+      await gate.start();
+
+      for (int index = 0; index < 20 * 50; index++) {
+        gate.observeSpeed(1.7 / 3.6);
+        gate.feed(_driveSample(index, epoch));
+      }
+
+      expect(manager.state, ActivityState.stationaryOrWalking);
+      expect(gate.allowsAnalysis, isFalse);
+      expect(gate.forwardedSamples, 0);
+      await gate.dispose();
+    });
+
+    test('a road-speed rumble confirms the drive through the same seam',
+        () async {
+      final ActivityStateManager manager =
+          ActivityStateManager(clock: () => epoch);
+      final MotionGate gate = MotionGate(manager: manager, hub: _hub());
+      await gate.start();
+
+      _feedDrive(gate, epoch);
+
+      expect(manager.state, ActivityState.vehicleDriving);
+      expect(gate.allowsAnalysis, isTrue);
       await gate.dispose();
     });
   });
