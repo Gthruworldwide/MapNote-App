@@ -10,6 +10,7 @@ import '../../widgets/motion_metric.dart';
 import '../../widgets/track_failure_text.dart';
 import '../home/widgets/auto_motion_badge.dart';
 import '../saved_places/presentation/widgets/place_link_suggestions_card.dart';
+import 'route_history_screen.dart';
 import 'widgets/auto_motion_export_sheet.dart';
 import 'widgets/driving_events_card.dart';
 import 'widgets/motion_summary_sheet.dart';
@@ -38,6 +39,15 @@ class AutoMotionScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text(l10n.autoMotionDashboardTitle),
         actions: <Widget>[
+          IconButton(
+            tooltip: l10n.motionHistoryTitle,
+            icon: const Icon(Icons.view_timeline_outlined),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const RouteHistoryScreen(),
+              ),
+            ),
+          ),
           IconButton(
             tooltip: l10n.autoMotionExport,
             icon: const Icon(Icons.file_download_outlined),

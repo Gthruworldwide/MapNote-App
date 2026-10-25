@@ -7,9 +7,12 @@ import '../core/utils/geo_distance.dart';
 import '../core/motion/stationary_idle_detector.dart';
 import '../data/local/daily_track_store.dart';
 import '../data/models/daily_gps_summary.dart';
+import '../data/models/daily_motion_summary.dart';
+import '../data/models/track_point.dart';
 import 'dead_reckoning_service.dart';
 import 'gap_recovery_service.dart';
 import 'location_service.dart';
+import 'motion_classifier_service.dart';
 import 'motion_profiler.dart';
 import 'motion_signal.dart';
 import 'polyline_smoother.dart';
@@ -62,6 +65,9 @@ class DailyTrackEngine {
     this.flushEvery = persistInterval,
     this.maxAccuracyMeters = maxAccuracyMetersDefault,
     this.stationaryDetector,
+    this.activityHint,
+    this.takeSteps,
+    this.trackBreakdown = false,
   })  : _motion = motion ?? const NoMotionSignal(),
         _gapRecovery = gapRecovery ?? const GapRecoveryService(),
         _deadReckoning = deadReckoning ?? const NoopDistanceEstimator(),
@@ -93,6 +99,31 @@ class DailyTrackEngine {
 
   /// Optional stationary/idle detector fed with each fix's speed.
   final StationaryIdleDetector? stationaryDetector;
+
+  /// Optional motion-state hint stamped onto each recorded [TrackPoint]
+  /// (`In_Vehicle` / `Walking` / `Still`). Wired to the shared transport
+  /// classifier by `AutoMotionService`; `null` (unit tests, the plain GPS
+  /// tracker) records an empty hint and the classifier falls back to speed.
+  final String Function()? activityHint;
+
+  /// Optional hardware step counter drain, called exactly once per **accepted**
+  /// fix (see `StepMeter.drain`).
+  ///
+  /// Returns the steps taken since the previous fix, or `null` when the device
+  /// has no pedometer. Draining here — after the accuracy gate — is what keeps
+  /// the day's step total exact: a fix the filter rejects keeps its steps
+  /// pending, and they are attributed to the next accepted fix instead of
+  /// being lost.
+  final int? Function()? takeSteps;
+
+  /// Whether each persist also recomputes the day's three-category breakdown
+  /// (walk / run / vehicle distance and duration) and stores it on the
+  /// summary.
+  ///
+  /// Off by default so the plain GPS tracker's records stay byte-identical to
+  /// what it wrote before the breakdown existed; `AutoMotionService` turns it
+  /// on because its dashboard, aggregates and export all read those fields.
+  final bool trackBreakdown;
 
   /// How often the periodic flush runs. Defaults to [persistInterval]; tests
   /// pass a short value so the cadence can be observed without waiting 10 s.
@@ -150,6 +181,13 @@ class DailyTrackEngine {
   /// while the count is capped.
   static const int maxPathPoints = 4096;
 
+  /// The classified track is halved at this many points for the same reason as
+  /// [maxPathPoints] but on a tighter budget: classification only needs a
+  /// representative fix every few seconds, and each entry costs six numbers on
+  /// disk. At 2048 points a day still resolves a 3-minute stopover from a dozen
+  /// fixes even after a full day of high-cadence sampling.
+  static const int maxTrackPoints = 2048;
+
   double _dayKm = 0;
   double _dayMaxKmh = 0;
   double _currentKmh = 0;
@@ -164,6 +202,13 @@ class DailyTrackEngine {
   /// Every accepted fix of the current day, in order — the raw recorded track
   /// that [smoothedPath] filters and [_saveDay] persists.
   List<RoutePoint> _dayPath = <RoutePoint>[];
+
+  /// The same fixes carrying their motion scalars (see
+  /// `DailyGpsSummary.trackPoints`), bounded by [maxTrackPoints]. It is
+  /// self-contained — each entry has its own coordinates and timestamp — so it
+  /// is decimated independently of [_dayPath] and the two never have to stay
+  /// index-aligned.
+  List<TrackPoint> _dayTrackPoints = <TrackPoint>[];
 
   /// True once this run accepted at least one fix (i.e. there is something
   /// worth writing back).
@@ -208,6 +253,10 @@ class DailyTrackEngine {
   /// `[]` until the first fix of the day, or after a rollover).
   List<RoutePoint> get dayPath => List<RoutePoint>.unmodifiable(_dayPath);
 
+  /// Today's recorded fixes with their motion scalars, in order.
+  List<TrackPoint> get dayTrackPoints =>
+      List<TrackPoint>.unmodifiable(_dayTrackPoints);
+
   /// Today's recorded route with GPS jitter removed — the exact vertices the
   /// dashboard draws and [_saveDay] stores. Recomputed per read; the Kalman
   /// pass is a few microseconds per vertex, so repaint-frequency calls stay
@@ -237,6 +286,7 @@ class DailyTrackEngine {
     // A live in-memory path wins; otherwise the day's stored route resumes so
     // the dashboard never loses the morning's path across a restart.
     if (_dayPath.isEmpty) _dayPath = _pathOf(stored);
+    if (_dayTrackPoints.isEmpty) _dayTrackPoints = _trackPointsOf(stored);
   }
 
   /// Resolves the runtime location permission for [locations].
@@ -401,6 +451,7 @@ class DailyTrackEngine {
       // above; today's route starts fresh, resuming any earlier session's
       // stored path for this same day.
       _dayPath = _pathOf(stored);
+      _dayTrackPoints = _trackPointsOf(stored);
     }
 
     // Doppler speed, with impossible spikes (a GPS glitch reports hundreds of
@@ -433,6 +484,13 @@ class DailyTrackEngine {
         latitude: position.latitude,
         longitude: position.longitude,
         at: position.timestamp,
+      ),
+    );
+    _appendTrackPoint(
+      TrackPoint.fromPosition(
+        position,
+        activityHint?.call() ?? '',
+        steps: takeSteps?.call(),
       ),
     );
 
@@ -645,6 +703,7 @@ class DailyTrackEngine {
     // The finished day's path went to disk in the persist above (its summary
     // is built synchronously); the new day's route starts fresh.
     _dayPath = _pathOf(stored);
+    _dayTrackPoints = _trackPointsOf(stored);
     _currentKmh = 0;
   }
 
@@ -657,6 +716,12 @@ class DailyTrackEngine {
     final List<RoutePoint>? path = _dayPath.isEmpty
         ? null
         : _smoother.smooth(_dayPath);
+    final List<TrackPoint>? track = _dayTrackPoints.isEmpty
+        ? null
+        : List<TrackPoint>.unmodifiable(_dayTrackPoints);
+    final _Breakdown breakdown = trackBreakdown && track != null
+        ? _breakdownOf(day, track)
+        : const _Breakdown.zero();
     return store.save(
       DailyGpsSummary(
         date: day,
@@ -666,9 +731,45 @@ class DailyTrackEngine {
         lastLongitude: lastAt == null ? null : _lastLon,
         lastFixAt: lastAt,
         path: path,
+        trackPoints: track,
+        walkKm: breakdown.walkKm,
+        runKm: breakdown.runKm,
+        vehicleKm: breakdown.vehicleKm,
+        walkDurationSeconds: breakdown.walkSeconds,
+        runDurationSeconds: breakdown.runSeconds,
+        vehicleDurationSeconds: breakdown.vehicleSeconds,
+        stepCount: breakdown.steps,
       ),
     );
   }
+
+  /// Recomputes the day's walk / run / vehicle distance and duration from the
+  /// same classification the Motion history screen renders.
+  ///
+  /// Recomputing (rather than accumulating) is what makes the *persisted*
+  /// breakdown self-healing: a restart, a decimation pass or a late step sample
+  /// can never double-count, because the stored numbers are always a pure
+  /// function of the day's stored fixes.
+  _Breakdown _breakdownOf(DateTime day, List<TrackPoint> points) {
+    final DailyMotionSummary motion = const MotionClassifierService().classify(
+      date: day,
+      points: points,
+    );
+    return _Breakdown(
+      walkKm: motion.walkingDistanceKm,
+      runKm: motion.runningDistanceKm,
+      vehicleKm: motion.vehicleDistanceKm,
+      walkSeconds: motion.walkingDuration.inSeconds,
+      runSeconds: motion.runningDuration.inSeconds,
+      vehicleSeconds: motion.vehicleDuration.inSeconds,
+      steps: motion.stepCount,
+    );
+  }
+
+  /// Copies [stored]'s classified track (a day restored from disk) or starts
+  /// empty.
+  static List<TrackPoint> _trackPointsOf(DailyGpsSummary? stored) =>
+      List<TrackPoint>.of(stored?.trackPoints ?? const <TrackPoint>[]);
 
   /// Copies [stored]'s route (a day restored from disk) or starts empty.
   static List<RoutePoint> _pathOf(DailyGpsSummary? stored) =>
@@ -687,6 +788,47 @@ class DailyTrackEngine {
     _dayPath.add(point);
   }
 
+  /// Appends one accepted fix to today's classified track, halving the list
+  /// (every other entry) when it reaches [maxTrackPoints]. Entries carry their
+  /// own coordinates and timestamp, so decimation never breaks their meaning.
+  ///
+  /// **Step counts are folded, never dropped.** A dropped entry's steps are
+  /// carried into the *next* surviving entry, which is exactly the interval it
+  /// belongs to (the survivor's own bucket starts at the previous survivor), so
+  /// the day's walking/running totals and the classifier's cadence windows stay
+  /// identical to what an undecimated record would have produced.
+  void _appendTrackPoint(TrackPoint point) {
+    if (_dayTrackPoints.length >= maxTrackPoints) {
+      final List<TrackPoint> halved = <TrackPoint>[];
+      int carried = 0;
+      bool carriedMeasured = false;
+      for (int i = 0; i < _dayTrackPoints.length; i++) {
+        final TrackPoint current = _dayTrackPoints[i];
+        final int? steps = current.steps;
+        if (steps != null) {
+          carriedMeasured = true;
+          carried += steps;
+        }
+        if (i.isEven) {
+          halved.add(
+            carriedMeasured ? current.withSteps(carried) : current,
+          );
+          carried = 0;
+          carriedMeasured = false;
+        }
+      }
+      if (carriedMeasured && halved.isNotEmpty) {
+        // A trailing dropped entry with no successor: fold its steps into the
+        // last survivor rather than losing them from the day's total.
+        halved[halved.length - 1] = halved.last.withSteps(
+          (halved.last.steps ?? 0) + carried,
+        );
+      }
+      _dayTrackPoints = halved;
+    }
+    _dayTrackPoints.add(point);
+  }
+
   /// Great-circle distance between two coordinates, in kilometres (Haversine).
   static double distanceKmBetween(
     double lat1,
@@ -695,4 +837,40 @@ class DailyTrackEngine {
     double lon2,
   ) =>
       haversineKm(lat1, lon1, lat2, lon2);
+}
+
+/// The day's three measured categories, ready for `DailyGpsSummary`.
+///
+/// A tiny value type on purpose: it keeps `_saveDay` a single expression and
+/// makes "nothing measured" explicit (`zero`) instead of seven loose locals.
+class _Breakdown {
+  const _Breakdown({
+    required this.walkKm,
+    required this.runKm,
+    required this.vehicleKm,
+    required this.walkSeconds,
+    required this.runSeconds,
+    required this.vehicleSeconds,
+    required this.steps,
+  });
+
+  const _Breakdown.zero()
+      : walkKm = 0,
+        runKm = 0,
+        vehicleKm = 0,
+        walkSeconds = 0,
+        runSeconds = 0,
+        vehicleSeconds = 0,
+        steps = 0;
+
+  final double walkKm;
+  final double runKm;
+  final double vehicleKm;
+  final int walkSeconds;
+  final int runSeconds;
+  final int vehicleSeconds;
+
+  /// Steps measured on foot today — the number `walkKm` and `runKm` are
+  /// derived from, persisted so the totals survive without replaying the track.
+  final int steps;
 }

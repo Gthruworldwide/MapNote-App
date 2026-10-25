@@ -413,7 +413,12 @@ void main() {
 
     test('resumes an in-progress trip after an app restart', () async {
       final AutoMotionDataSource store = await openStore('_resume');
-      final DateTime start = DateTime.now();
+      // Anchored to today's midnight, not `now`: the synthetic trip spans seven
+      // minutes, and a wall-clock start near midnight would split it across two
+      // calendar days — which is a *rollover*, not the restart this covers.
+      // Timestamps only drive the gap and the day key, so being ahead of the
+      // real clock is harmless.
+      final DateTime start = DailyGpsSummary.dayOf(DateTime.now());
 
       final AutoMotionService service = AutoMotionService(dailyStore: store);
       service.recordPosition(_fix(0, 0, at: start));
@@ -670,8 +675,59 @@ void main() {
       await service.stop();
     });
 
-    test('sampling tiers are capped by the background power budget', () async {
+    // Regression: the trackers used to open the platform stream at their own
+    // unprofiled baseline (5 s / high / 10 m) and only then apply the FSM's
+    // profile, a tick later. That is a genuine leak on Android: the plugin
+    // registers a request *asynchronously* (`checkLocationSettings` →
+    // `requestLocationUpdates`), so a baseline handle closed before that
+    // callback lands still registers afterwards — and nothing remains to remove
+    // it. Measured on Android 15 as a `@+5s0ms HIGH_ACCURACY` request held for
+    // the app's whole lifetime while the FSM believed 15 s / medium. The start
+    // paths now apply the orchestrator's *current* profile first
+    // (AGENT_SKILLS §6), so the very first request is already the profiled one.
+    test('a profile applied before start shapes the first platform request',
+        () async {
       overrideToAndroid();
+      final _RecordingLocationService scripted = _RecordingLocationService();
+      final AutoMotionService service =
+          AutoMotionService(dailyStore: await openStore('_profile_first'));
+
+      await service.applySampling(
+        interval: const Duration(seconds: 15),
+        accuracy: LocationAccuracy.medium,
+        distanceFilter: 15,
+      );
+      expect(await service.start(locations: scripted), isTrue);
+
+      expect(scripted.openCount, 1, reason: 'exactly one registration');
+      final AndroidSettings first = scripted.openedWith.single as AndroidSettings;
+      expect(first.intervalDuration, const Duration(seconds: 15));
+      expect(first.accuracy, LocationAccuracy.medium);
+      expect(first.distanceFilter, 15);
+
+      await service.stop();
+    });
+
+    test('a paused profile opens no platform stream at all', () async {
+      overrideToAndroid();
+      final _RecordingLocationService scripted = _RecordingLocationService();
+      final AutoMotionService service =
+          AutoMotionService(dailyStore: await openStore('_paused_first'));
+
+      // The FSM already sits in `idleStandby` when the trip starts.
+      await service.applySampling(paused: true);
+      expect(await service.start(locations: scripted), isTrue);
+
+      expect(
+        scripted.openCount,
+        0,
+        reason: 'an idle FSM must not register a location client',
+      );
+
+      await service.stop();
+    });
+
+    test('sampling tiers are capped by the background power budget', () async {      overrideToAndroid();
       final _RecordingLocationService scripted = _RecordingLocationService();
       final AutoMotionService service =
           AutoMotionService(dailyStore: await openStore('_sampling_bg'));

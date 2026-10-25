@@ -62,7 +62,7 @@
 	<key>NSFaceIDUsageDescription</key>
 	<string>MapNote uses Face ID to protect locked locations and the Hidden Vault.</string>
 	<key>NSMotionUsageDescription</key>
-	<string>MapNote uses motion sensor data for stationary idle detection, so background location polling can pause when you are parked, and to show the Qibla compass.</string>
+	<string>MapNote uses motion sensor data to count your steps for walking and running distance, for stationary idle detection so background location polling can pause when you are parked, and to show the Qibla compass.</string>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>comgooglemaps</string>

@@ -64,6 +64,12 @@ class LocationHub {
   Timer? _reconnectTimer;
   bool _closed = false;
 
+  /// True while a replacement is waiting for the previous platform cancel.
+  ///
+  /// Guarding the swap keeps two `acquire`s from each opening a listener in the
+  /// same turn: the in-flight replacement re-resolves the request instead.
+  bool _reopening = false;
+
   /// A shared broadcast feed of live fixes. Buffers nothing while unlistened.
   Stream<Position> get positions => _positions.stream;
 
@@ -93,10 +99,12 @@ class LocationHub {
       interval: interval,
       distanceFilter: distanceFilter,
     );
-    // Open (or lift) the single handle *synchronously*: a consumer that calls
-    // `acquire` must be able to observe `isOpen` right away, and the soonest
-    // possible registration is the point — deferring it a microtask would leave
-    // a window where the app is tracked as "active" with no handle.
+    // Open (or lift) the single handle *synchronously* when nothing has to be
+    // torn down: a consumer that calls `acquire` must be able to observe
+    // `isOpen` right away, and the soonest possible registration is the point —
+    // deferring it a microtask would leave a window where the app is tracked as
+    // "active" with no handle. A *replacement* can only be serialized behind
+    // the old platform cancel (see [_syncHandle]).
     _syncHandle();
     return _positions.stream;
   }
@@ -138,9 +146,20 @@ class LocationHub {
   /// Re-opens the handle when the resolved tier changed, or closes it when the
   /// last consumer left. Never opens a second concurrent subscription.
   ///
-  /// The teardown and the re-open happen *before* the first `await`, so the
-  /// hub's observable state flips in the same turn as the caller's
-  /// `acquire`/`release`; only the platform cancel is awaited.
+  /// Opening and closing happen *before* the first `await`, so a consumer that
+  /// acquires with no handle live sees it registered in the same turn. A
+  /// **replacement** is the one exception, and it is deliberately asynchronous:
+  /// `geolocator`'s position channel is a single-client `EventChannel` — its
+  /// `onListen` overwrites the plugin's one `LocationClient` *without stopping
+  /// the previous one*, and `onCancel` stops whichever client is current. So
+  /// listening before the old subscription is cancelled abandons the old OS
+  /// registration forever (a leaked `@+5s HIGH_ACCURACY` request that no later
+  /// pause can reach) and then tears down the *new* one, leaving the app
+  /// registered at the wrong tier with no profiled request at all. Measured on
+  /// Android 15: `dumpsys location` kept one `@+5s0ms HIGH_ACCURACY` client for
+  /// the app's whole lifetime while the hub believed it was at 15 s/`medium`.
+  /// The cancel therefore lands first; the observable state during the swap is
+  /// "no handle", which is honest and never "active with no consumer".
   Future<void> _syncHandle() async {
     if (_closed) return;
     final LocationRequest? wanted = _resolveRequest();
@@ -154,16 +173,39 @@ class LocationHub {
         _subscription != null) {
       return;
     }
+    // A replacement is already in flight; it re-resolves the request when the
+    // platform cancel returns, so this caller must not open a second handle.
+    if (_reopening) return;
 
-    // Replace, never stack: cancel the old handle *before* opening the new one,
-    // so the app is at most one client on the fused provider at any instant.
     final StreamSubscription<Position>? previous = _subscription;
     _subscription = null;
     _openRequest = null;
     _reconnectTimer?.cancel();
     _reconnectTimer = null;
-    _open(wanted);
-    await previous?.cancel();
+
+    if (previous == null) {
+      // Nothing to tear down: register in this same turn.
+      _open(wanted);
+      return;
+    }
+
+    // Replace, never stack: the old handle must be gone from the platform
+    // *before* the new listener exists (see the class note above).
+    _reopening = true;
+    try {
+      await previous.cancel();
+    } finally {
+      _reopening = false;
+    }
+    if (_closed) return;
+    // Re-resolve: a consumer may have acquired, released or paused while the
+    // cancel was in flight.
+    final LocationRequest? current = _resolveRequest();
+    if (current == null) {
+      await pauseAll();
+      return;
+    }
+    _open(current);
   }
 
   /// The strongest request any live consumer has asked for, or `null` when
@@ -179,14 +221,15 @@ class LocationHub {
   void _open(LocationRequest request) {
     if (_closed) return;
     _openRequest = request;
+    final LocationSettings settings = LocationService.trackingSettingsFor(
+      accuracy: request.accuracy,
+      intervalDuration: request.interval,
+      distanceFilter: request.distanceFilter,
+    );
     try {
       _subscription = locations
           .trackingPositionStream(
-            settings: LocationService.trackingSettingsFor(
-              accuracy: request.accuracy,
-              intervalDuration: request.interval,
-              distanceFilter: request.distanceFilter,
-            ),
+            settings: settings,
           )
           .listen(
         (Position position) {

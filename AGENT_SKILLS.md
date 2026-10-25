@@ -556,6 +556,27 @@ nothing about it leaves the device.
   the native subscription *and* closes both broadcast controllers, so a later
   `start()` cannot revive a hub the container already dropped. Covered by
   `test/resource_leak_audit_test.dart`.
+- **One owner for the step counter: the `pedometer` plugin.** The pedometer is
+  the *measurement* source for walking and running — the timeline never infers
+  a gait from GPS speed when the hardware counted steps. `TYPE_STEP_COUNTER` is
+  read **only** through `lib/src/services/pedometer_steps.dart` (Android
+  `step_count` channel, iOS `CMPedometer`); `MotionSensorChannel.kt` carries
+  accelerometer + gyroscope only, and the old tag-2 step path must not come back
+  (two subscriptions would double every reading and register the sensor twice).
+  `StepMeter` is the single adapter from the monotonic absolute counter to the
+  per-fix increment stamped on `TrackPoint.steps`, and its three answers are
+  load-bearing: `null` = no pedometer (fall back to the GPS bands), `0` = a
+  measurement of no steps, `>0` = the increment. Distances come from the
+  documented stride constants (0.75 m walking, 0.95 m running, run threshold
+  120 steps/min) and only when the segment's step total is `> 0`.
+  `ACTIVITY_RECOGNITION` is requested **after** recording starts (never
+  delaying the first fix) and a granted answer must re-open the plugin's stream
+  (`StepMeter.refresh`) — the plugin's pre-grant `listen` registers nothing and
+  never retries. `pedometer` is vendored in `third_party/pedometer` for the
+  build only (its Gradle script applies the legacy KGP unconditionally; the Dart
+  and Kotlin sources are the published 4.0.1 release). Covered by
+  `test/pedometer_steps_test.dart`, `test/step_meter_test.dart` and the
+  "step-counter payloads are ignored" case in `test/motion_sensor_hub_test.dart`.
 
 ---
 
@@ -617,6 +638,20 @@ no network, no PII.
   `adb shell dumpsys location` / `cmd appops get … MONITOR_HIGH_POWER_LOCATION`:
   the `(running)` flag and the fused request must be absent once the app is
   backgrounded while idle.
+- **The *first* request is the one the platform registers.** `geolocator`
+  registers a request **asynchronously** (`checkLocationSettings` →
+  `requestLocationUpdates`, ~100 ms), so a tracker that opens at its own
+  unprofiled baseline (5 s / high / 10 m) and swaps to the FSM profile a tick
+  later can still register the *baseline* afterwards — after the handle was
+  already closed, so nothing remains to remove it. Measured on Android 15: a
+  `@+5s0ms HIGH_ACCURACY` client held for the app's whole lifetime, with
+  `MONITOR_HIGH_POWER_LOCATION` `(running)`, while the FSM believed 15 s /
+  `medium`; the profiled request never reached the platform at all. Start paths
+  therefore apply the current profile **before** `start()` (both controllers),
+  and both services open nothing when that profile is `paused`. Covered by
+  `test/auto_motion_service_test.dart` ("a profile applied before start shapes
+  the first platform request" / "a paused profile opens no platform stream at
+  all"). After the fix a parked phone registers **no** provider request at all.
 - **One OS location client, owned by `LocationHub`.** `getPositionStream` is
   never called by a feature. Android registers the app as a separate location
   client for **every** open request, so each extra Dart subscription is another

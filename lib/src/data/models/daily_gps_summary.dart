@@ -1,4 +1,5 @@
 import '../../services/polyline_smoother.dart';
+import 'track_point.dart';
 
 /// Aggregated GPS metrics for a single calendar day.
 ///
@@ -13,12 +14,14 @@ class DailyGpsSummary {
     this.lastLongitude,
     this.lastFixAt,
     this.path,
+    this.trackPoints,
     this.walkKm = 0,
     this.runKm = 0,
     this.vehicleKm = 0,
     this.walkDurationSeconds = 0,
     this.runDurationSeconds = 0,
     this.vehicleDurationSeconds = 0,
+    this.stepCount = 0,
   });
 
   /// The calendar day this summary belongs to, at local midnight.
@@ -47,6 +50,16 @@ class DailyGpsSummary {
   /// would be a trap.
   final List<RoutePoint>? path;
 
+  /// The day's accepted fixes with their per-fix motion scalars (speed,
+  /// accuracy, activity hint), or `null` when nothing was recorded.
+  ///
+  /// Kept **alongside** [path] rather than replacing it: `path` is the
+  /// jitter-smoothed geometry the map draws, while classification needs the
+  /// receiver's own speed, which smoothing would invent. Also an additive key
+  /// (absent on older records → `null`), and — like [path] — excluded from
+  /// [==]/[hashCode] because value identity here is the day's metrics.
+  final List<TrackPoint>? trackPoints;
+
   /// Distance travelled on foot during the day, in kilometres.
   final double walkKm;
 
@@ -65,6 +78,16 @@ class DailyGpsSummary {
   /// Time spent in a vehicle during the day, in seconds.
   final int vehicleDurationSeconds;
 
+  /// Steps the hardware pedometer counted today, summed over the day's walking
+  /// and running segments.
+  ///
+  /// Persisted so the day's totals survive without replaying its track points:
+  /// `walkKm` and `runKm` are derived from exactly this count
+  /// (`steps × 0.75 m` / `steps × 0.95 m`), so a day recorded before the
+  /// pedometer existed reads back as `0` — an honest "not measured", never an
+  /// estimate dressed up as a measurement.
+  final int stepCount;
+
   /// Total distance across all modes, in kilometres.
   double get totalModeKm => walkKm + runKm + vehicleKm;
 
@@ -80,12 +103,14 @@ class DailyGpsSummary {
     double? lastLongitude,
     DateTime? lastFixAt,
     List<RoutePoint>? path,
+    List<TrackPoint>? trackPoints,
     double? walkKm,
     double? runKm,
     double? vehicleKm,
     int? walkDurationSeconds,
     int? runDurationSeconds,
     int? vehicleDurationSeconds,
+    int? stepCount,
   }) {
     return DailyGpsSummary(
       date: date ?? this.date,
@@ -95,6 +120,7 @@ class DailyGpsSummary {
       lastLongitude: lastLongitude ?? this.lastLongitude,
       lastFixAt: lastFixAt ?? this.lastFixAt,
       path: path ?? this.path,
+      trackPoints: trackPoints ?? this.trackPoints,
       walkKm: walkKm ?? this.walkKm,
       runKm: runKm ?? this.runKm,
       vehicleKm: vehicleKm ?? this.vehicleKm,
@@ -102,6 +128,7 @@ class DailyGpsSummary {
       runDurationSeconds: runDurationSeconds ?? this.runDurationSeconds,
       vehicleDurationSeconds:
           vehicleDurationSeconds ?? this.vehicleDurationSeconds,
+      stepCount: stepCount ?? this.stepCount,
     );
   }
 
@@ -121,6 +148,7 @@ class DailyGpsSummary {
     // Local alias: instance fields never promote, and `path` is checked once
     // for both the null guard and the comprehension below.
     final List<RoutePoint>? route = path;
+    final List<TrackPoint>? track = trackPoints;
     return <String, dynamic>{
       'date': dayKey(date),
       'total_km': totalKm,
@@ -142,12 +170,22 @@ class DailyGpsSummary {
                   point.at?.millisecondsSinceEpoch,
                 ],
             ],
+      // Compact `[lat, lon, epochMs, speed, accuracy, activityCode]` rows. An
+      // additive key: summaries written before classification existed simply
+      // parse back as `null`, and the classifier then derives speed from the
+      // path itself.
+      'track_points': track == null
+          ? null
+          : <List<Object?>>[
+              for (final TrackPoint point in track) point.toList(),
+            ],
       'walk_km': walkKm,
       'run_km': runKm,
       'vehicle_km': vehicleKm,
       'walk_duration_s': walkDurationSeconds,
       'run_duration_s': runDurationSeconds,
       'vehicle_duration_s': vehicleDurationSeconds,
+      'step_count': stepCount,
     };
   }
 
@@ -162,12 +200,16 @@ class DailyGpsSummary {
       lastLongitude: (map['last_lon'] as num?)?.toDouble(),
       lastFixAt: _parseInstant(map['last_fix_at']),
       path: _parsePath(map['path']),
+      trackPoints: _parseTrackPoints(map['track_points']),
       walkKm: (map['walk_km'] as num?)?.toDouble() ?? 0,
       runKm: (map['run_km'] as num?)?.toDouble() ?? 0,
       vehicleKm: (map['vehicle_km'] as num?)?.toDouble() ?? 0,
       walkDurationSeconds: (map['walk_duration_s'] as num?)?.toInt() ?? 0,
       runDurationSeconds: (map['run_duration_s'] as num?)?.toInt() ?? 0,
       vehicleDurationSeconds: (map['vehicle_duration_s'] as num?)?.toInt() ?? 0,
+      // Additive key: days written before the pedometer (or by a build without
+      // a step sensor) parse back as `0` measured steps.
+      stepCount: (map['step_count'] as num?)?.toInt() ?? 0,
     );
   }
 
@@ -200,8 +242,19 @@ class DailyGpsSummary {
     return points;
   }
 
-  static DateTime? _parseInstant(Object? value) {
-    if (value is DateTime) return value;
+  /// Tolerant track-point parser: same policy as [_parsePath] — a missing or
+  /// wrong-typed value yields `null`, and malformed rows are skipped.
+  static List<TrackPoint>? _parseTrackPoints(Object? value) {
+    if (value is! List) return null;
+    final List<TrackPoint> points = <TrackPoint>[];
+    for (final Object? entry in value) {
+      final TrackPoint? point = TrackPoint.tryFromList(entry);
+      if (point != null) points.add(point);
+    }
+    return points;
+  }
+
+  static DateTime? _parseInstant(Object? value) {    if (value is DateTime) return value;
     if (value is String) return DateTime.tryParse(value);
     if (value is int) return DateTime.fromMillisecondsSinceEpoch(value);
     return null;
@@ -230,7 +283,8 @@ class DailyGpsSummary {
       other.vehicleKm == vehicleKm &&
       other.walkDurationSeconds == walkDurationSeconds &&
       other.runDurationSeconds == runDurationSeconds &&
-      other.vehicleDurationSeconds == vehicleDurationSeconds;
+      other.vehicleDurationSeconds == vehicleDurationSeconds &&
+      other.stepCount == stepCount;
 
   @override
   int get hashCode => Object.hash(
@@ -246,6 +300,7 @@ class DailyGpsSummary {
         walkDurationSeconds,
         runDurationSeconds,
         vehicleDurationSeconds,
+        stepCount,
       );
 
   @override

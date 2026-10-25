@@ -14,6 +14,7 @@ import 'motion_profiler.dart';
 import 'motion_signal.dart';
 import 'polyline_smoother.dart';
 import 'sampling_target.dart';
+import 'step_meter.dart';
 
 export 'daily_track_engine.dart' show TrackStartFailure;
 
@@ -21,6 +22,12 @@ export 'daily_track_engine.dart' show TrackStartFailure;
 /// distance (km), the current speed, today's max speed (km/h) and the day's
 /// recorded route, and stores one daily summary (keyed `YYYY-MM-DD`) in the
 /// `auto_motion_box` Hive box.
+///
+/// It also owns the **pedometer**: a [StepMeter] is drained once per accepted
+/// fix, so each recorded point carries the steps taken since the previous one.
+/// That is what lets classification tell walking and running apart from riding
+/// without guessing from GPS speed, and it is what fills the persisted
+/// walk / run / vehicle breakdown (`DailyGpsSummary.walkKm` and friends).
 ///
 /// All measurement logic is shared with the GPS tracker through
 /// [DailyTrackEngine]; this façade keeps AutoMotion's own storage box and
@@ -34,10 +41,13 @@ class AutoMotionService implements SamplingTarget {
     PolylineSmoother? smoother,
     MotionBehaviorAnalyzer? behavior,
     StationaryIdleDetector? stationaryDetector,
+    String Function()? activityHint,
+    StepMeter? stepMeter,
     this._fused,
     this._hub,
     Duration flushEvery = persistInterval,
-  }) : _engine = DailyTrackEngine(
+  })  : _stepMeter = stepMeter,
+        _engine = DailyTrackEngine(
           store: dailyStore,
           maxAccuracyMeters: 20,
           motion: motion,
@@ -47,10 +57,19 @@ class AutoMotionService implements SamplingTarget {
           smoother: smoother,
           behavior: behavior,
           flushEvery: flushEvery,
+          activityHint: activityHint,
+          // Drained once per accepted fix (see the pedometer docs above).
+          takeSteps: stepMeter?.drain,
+          // AutoMotion's dashboard, aggregates and export all read the
+          // persisted three-category breakdown, so this tracker computes it.
+          trackBreakdown: true,
         );
 
   /// Persistence for daily metrics.
   final AutoMotionDataSource dailyStore;
+
+  /// Hardware pedometer bridge; `null` in tests and on devices without one.
+  final StepMeter? _stepMeter;
 
   /// Stationary/idle detector used to throttle GPS during zero-motion periods.
   StationaryIdleDetector get stationaryDetector =>
@@ -121,6 +140,9 @@ class AutoMotionService implements SamplingTarget {
   /// Speed of the most recent accepted fix, in km/h.
   double get currentSpeedKmh => _engine.currentSpeedKmh;
 
+  /// Steps counted by the pedometer since this trip began (0 without one).
+  int get stepsThisSession => _stepMeter?.totalSteps ?? 0;
+
   /// Raw accepted fixes recorded for the current day (unmodifiable snapshot).
   List<RoutePoint> get dayPath => _engine.dayPath;
 
@@ -171,10 +193,21 @@ class AutoMotionService implements SamplingTarget {
       providerStatus = loc.serviceStatusStream();
       _activeLocations = loc;
       _activeStatus = providerStatus;
-      source = _openFixes(loc);
+      // Shape the very first platform request with the profile the FSM already
+      // holds, and honour a *paused* one outright. Opening the handle at the
+      // unprofiled baseline and swapping it a tick later is not harmless: the
+      // plugin registers the first request asynchronously (`checkLocationSettings`
+      // → `requestLocationUpdates`), so a baseline handle closed before that
+      // callback lands still registers afterwards, and nothing is left to remove
+      // it. Measured on Android 15: the app held a `@+5s0ms HIGH_ACCURACY`
+      // request for its whole lifetime while the FSM believed 15 s / medium.
+      source = _streamPaused ? const Stream<Position>.empty() : _openFixes(loc);
     }
 
     await _engine.attach(source, serviceStatus: providerStatus);
+    // The pedometer starts with the trip and re-baselines, so steps taken while
+    // nothing was recording are never attributed to this session.
+    await _stepMeter?.start();
     return true;
   }
 
@@ -183,6 +216,7 @@ class AutoMotionService implements SamplingTarget {
   /// Tallies stay in memory afterwards so the dashboard card does not drop to
   /// zero; the next [start] re-seeds them from the store.
   Future<void> stop() async {
+    await _stepMeter?.stop();
     await _releaseHub();
     await _engine.detach();
     _activeStatus = null;

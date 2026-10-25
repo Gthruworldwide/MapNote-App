@@ -192,4 +192,117 @@ void main() {
       isTrue,
     );
   });
+
+  group('measured motion', () {
+    /// A context whose only content is [motion]: one pinned place with notes
+    /// raises no other rule, so whatever comes out is the motion insight.
+    AgentContext contextWith(MotionSnapshot motion) => AgentContext(
+          places: <Place>[
+            _place(id: 'a', latitude: 30, longitude: 31, pinned: true),
+          ],
+          health: HealthSummary.empty,
+          motion: motion,
+        );
+
+    test('a day with over a kilometre of motion is summarised', () {
+      final List<AgentInsight> insights = engine.analyze(
+        contextWith(
+          const MotionSnapshot(
+            walkingKm: 1.2,
+            runningKm: 3.5,
+            vehicleKm: 18,
+            steps: 6200,
+          ),
+        ),
+      );
+
+      expect(insights, hasLength(1));
+      final AgentInsight insight = insights.single;
+      expect(insight.kind, AgentInsightKind.motionSummary);
+      expect(insight.id, 'motion-summary');
+      expect(insight.action, AgentInsightAction.none);
+      // The params are the numbers the tracker persisted — nothing derived,
+      // nothing rounded, and no coordinate or place name among them.
+      expect(insight.params['walkingKm'], 1.2);
+      expect(insight.params['runningKm'], 3.5);
+      expect(insight.params['vehicleKm'], 18.0);
+      expect(insight.params['steps'], 6200);
+      expect(insight.params.keys, hasLength(4));
+    });
+
+    test('exactly the threshold is enough to qualify', () {
+      final List<AgentInsight> insights = engine.analyze(
+        contextWith(const MotionSnapshot(walkingKm: 1)),
+      );
+
+      expect(insights.single.kind, AgentInsightKind.motionSummary);
+    });
+
+    test('a few hundred metres of motion stays quiet', () {
+      // A walk to the shop is not news: below `motionSummaryMinKm` the card
+      // must not appear at all.
+      final List<AgentInsight> insights = engine.analyze(
+        contextWith(const MotionSnapshot(walkingKm: 0.9, steps: 1200)),
+      );
+
+      expect(insights, isEmpty);
+    });
+
+    test('the categories add up: walking and running alone can qualify', () {
+      final List<AgentInsight> insights = engine.analyze(
+        contextWith(
+          const MotionSnapshot(walkingKm: 0.4, runningKm: 0.7, steps: 1400),
+        ),
+      );
+
+      expect(insights.single.kind, AgentInsightKind.motionSummary);
+      expect(insights.single.params['vehicleKm'], 0.0);
+    });
+
+    test('the default snapshot is empty and changes nothing', () {
+      // Every caller that predates motion tracking gets `MotionSnapshot.none`,
+      // so its insights must match what it produced before the feature.
+      final List<Place> places = <Place>[
+        _place(id: 'a', latitude: 30, longitude: 31, notes: ''),
+      ];
+      final List<AgentInsight> implicit = engine.analyze(
+        AgentContext(places: places, health: HealthSummary.empty),
+      );
+      final List<AgentInsight> explicit = engine.analyze(
+        AgentContext(
+          places: places,
+          health: HealthSummary.empty,
+          motion: MotionSnapshot.none,
+        ),
+      );
+
+      expect(MotionSnapshot.none.isEmpty, isTrue);
+      expect(MotionSnapshot.none.totalKm, 0);
+      expect(
+        implicit.any(
+          (AgentInsight i) => i.kind == AgentInsightKind.motionSummary,
+        ),
+        isFalse,
+      );
+      expect(
+        implicit.map((AgentInsight i) => i.kind).toList(),
+        explicit.map((AgentInsight i) => i.kind).toList(),
+      );
+    });
+
+    test('the snapshot compares by value', () {
+      const MotionSnapshot a =
+          MotionSnapshot(walkingKm: 0.4, runningKm: 0.7, steps: 1400);
+      const MotionSnapshot b =
+          MotionSnapshot(walkingKm: 0.4, runningKm: 0.7, steps: 1400);
+      const MotionSnapshot c =
+          MotionSnapshot(walkingKm: 0.4, runningKm: 0.7, steps: 1401);
+
+      expect(a, b);
+      expect(a.hashCode, b.hashCode);
+      expect(a, isNot(c));
+      expect(a.totalKm, closeTo(1.1, 1e-9));
+      expect(a.toString(), contains('1400 steps'));
+    });
+  });
 }

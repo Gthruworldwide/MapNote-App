@@ -419,6 +419,26 @@
   },
   "insightOptimizationTitle": "Keep MapNote tidy",
   "insightOptimizationBody": "A large list loads slower. Review duplicate or unused places and remove what you no longer need.",
+  "insightMotionSummaryTitle": "Your motion today",
+  "insightMotionSummaryBody": "You covered {walking} walking and {running} running, plus {vehicle} by vehicle.",
+  "@insightMotionSummaryBody": {
+    "description": "Today's measured motion, without a step count (the device has no step sensor).",
+    "placeholders": {
+      "walking": { "type": "String" },
+      "running": { "type": "String" },
+      "vehicle": { "type": "String" }
+    }
+  },
+  "insightMotionSummaryBodySteps": "You covered {walking} walking and {running} running, plus {vehicle} by vehicle, on {steps} counted steps.",
+  "@insightMotionSummaryBodySteps": {
+    "description": "Today's measured motion, including the step count read from the hardware step counter.",
+    "placeholders": {
+      "walking": { "type": "String" },
+      "running": { "type": "String" },
+      "vehicle": { "type": "String" },
+      "steps": { "type": "int" }
+    }
+  },
   "insightActionSyncNow": "Sync now",
 
   "coordinateDetails": "Latitude & longitude",
@@ -527,5 +547,70 @@
     }
   },
   "suggestedPlaceSaved": "Saved to your places",
-  "suggestedPlaceLinkFailed": "Couldn't link the place"
+  "suggestedPlaceLinkFailed": "Couldn't link the place",
+
+  "motionHistoryTitle": "Motion history",
+  "motionHistorySubtitle": "Trips, walks, runs and stops recorded for this day",
+  "motionTypeDrive": "Drive",
+  "motionTypeWalk": "Walk",
+  "motionTypeRun": "Run",
+  "motionTypeStopover": "Stopover",
+  "motionHistoryToday": "Today",
+  "motionHistoryYesterday": "Yesterday",
+  "motionHistoryPickDate": "Pick a day",
+  "motionHistoryPreviousDay": "Previous day",
+  "motionHistoryNextDay": "Next day",
+  "motionHistoryViewTimeline": "Timeline",
+  "motionHistoryViewMap": "Map",
+  "motionHistoryTotalDistance": "Distance",
+  "motionHistoryDriveTime": "Drive time",
+  "motionHistoryStopoverTime": "Idle time",
+  "motionHistoryEmptyTitle": "No motion recorded",
+  "motionHistoryEmptyBody": "Nothing was recorded for this day. Turn on AutoMotion, then drive or walk to build a timeline.",
+  "motionHistoryNoRoute": "No route to draw for this day.",
+  "motionHistoryShowOnMap": "Show on map",
+  "motionHistoryDriveStats": "{distance} km · {duration}",
+  "@motionHistoryDriveStats": {
+    "placeholders": {
+      "distance": { "type": "String" },
+      "duration": { "type": "String" }
+    }
+  },
+  "motionHistoryAverageSpeed": "Avg {speed} km/h",
+  "@motionHistoryAverageSpeed": {
+    "placeholders": {
+      "speed": { "type": "String" }
+    }
+  },
+  "motionHistoryStepStats": "{distance} m · {steps} steps",
+  "@motionHistoryStepStats": {
+    "description": "Measured step count, read from the hardware step counter. Never shown with an approximation mark.",
+    "placeholders": {
+      "distance": { "type": "String" },
+      "steps": { "type": "int" }
+    }
+  },
+  "motionHistorySteps": "Steps",
+  "motionHistoryModeBreakdownHint": "Walk and run distances are measured by the step counter; vehicle distance comes from GPS.",
+  "motionHistoryStopoverStats": "Stopped for {duration}",
+  "@motionHistoryStopoverStats": {
+    "placeholders": {
+      "duration": { "type": "String" }
+    }
+  },
+  "durationHoursMinutes": "{hours} h {minutes} min",
+  "@durationHoursMinutes": {
+    "placeholders": {
+      "hours": { "type": "int" },
+      "minutes": { "type": "int" }
+    }
+  },
+  "durationMinutes": "{minutes} min",
+  "@durationMinutes": {
+    "placeholders": {
+      "minutes": { "type": "int" }
+    }
+  },
+  "durationZero": "0 min",
+  "durationLessThanMinute": "less than a minute"
 }

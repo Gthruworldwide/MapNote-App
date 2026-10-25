@@ -954,6 +954,28 @@ class AppLocalizationsAr extends AppLocalizations {
       'القائمة الكبيرة تُحمّل أبطأ. راجع الأماكن المكررة أو غير المستخدمة واحذف ما لا تحتاجه.';
 
   @override
+  String get insightMotionSummaryTitle => 'حركتك اليوم';
+
+  @override
+  String insightMotionSummaryBody(
+    String walking,
+    String running,
+    String vehicle,
+  ) {
+    return 'قطعت اليوم $walking مشيًا و$running جريًا، إضافة إلى $vehicle بالمركبة.';
+  }
+
+  @override
+  String insightMotionSummaryBodySteps(
+    String walking,
+    String running,
+    String vehicle,
+    int steps,
+  ) {
+    return 'قطعت اليوم $walking مشيًا و$running جريًا، إضافة إلى $vehicle بالمركبة، على $steps خطوة معدودة.';
+  }
+
+  @override
   String get insightActionSyncNow => 'زامن الآن';
 
   @override
@@ -1211,4 +1233,109 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get suggestedPlaceLinkFailed => 'تعذّر ربط المكان';
+
+  @override
+  String get motionHistoryTitle => 'سجل الحركة';
+
+  @override
+  String get motionHistorySubtitle =>
+      'الرحلات والمشي والجري والتوقفات المسجلة في هذا اليوم';
+
+  @override
+  String get motionTypeDrive => 'قيادة';
+
+  @override
+  String get motionTypeWalk => 'مشي';
+
+  @override
+  String get motionTypeRun => 'جري';
+
+  @override
+  String get motionTypeStopover => 'توقف';
+
+  @override
+  String get motionHistoryToday => 'اليوم';
+
+  @override
+  String get motionHistoryYesterday => 'أمس';
+
+  @override
+  String get motionHistoryPickDate => 'اختر يومًا';
+
+  @override
+  String get motionHistoryPreviousDay => 'اليوم السابق';
+
+  @override
+  String get motionHistoryNextDay => 'اليوم التالي';
+
+  @override
+  String get motionHistoryViewTimeline => 'الخط الزمني';
+
+  @override
+  String get motionHistoryViewMap => 'الخريطة';
+
+  @override
+  String get motionHistoryTotalDistance => 'المسافة';
+
+  @override
+  String get motionHistoryDriveTime => 'زمن القيادة';
+
+  @override
+  String get motionHistoryStopoverTime => 'زمن التوقف';
+
+  @override
+  String get motionHistoryEmptyTitle => 'لا توجد حركة مسجلة';
+
+  @override
+  String get motionHistoryEmptyBody =>
+      'لم يُسجَّل شيء في هذا اليوم. شغّل AutoMotion ثم قد أو امشِ لبناء الخط الزمني.';
+
+  @override
+  String get motionHistoryNoRoute => 'لا يوجد مسار لرسمه في هذا اليوم.';
+
+  @override
+  String get motionHistoryShowOnMap => 'اعرض على الخريطة';
+
+  @override
+  String motionHistoryDriveStats(String distance, String duration) {
+    return '$distance كم · $duration';
+  }
+
+  @override
+  String motionHistoryAverageSpeed(String speed) {
+    return 'المتوسط $speed كم/س';
+  }
+
+  @override
+  String motionHistoryStepStats(String distance, int steps) {
+    return '$distance م · $steps خطوة';
+  }
+
+  @override
+  String get motionHistorySteps => 'خطوات';
+
+  @override
+  String get motionHistoryModeBreakdownHint =>
+      'تُقاس مسافات المشي والجري بالعداد الخطوي، أما مسافة المركبة فتُستمد من GPS.';
+
+  @override
+  String motionHistoryStopoverStats(String duration) {
+    return 'توقفت لمدة $duration';
+  }
+
+  @override
+  String durationHoursMinutes(int hours, int minutes) {
+    return '$hours س $minutes د';
+  }
+
+  @override
+  String durationMinutes(int minutes) {
+    return '$minutes د';
+  }
+
+  @override
+  String get durationZero => '0 د';
+
+  @override
+  String get durationLessThanMinute => 'أقل من دقيقة';
 }

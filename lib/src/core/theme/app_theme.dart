@@ -41,6 +41,24 @@ class AppColors {
 
   static const Color error = Color(0xFFE5484D);
 
+  // --- Motion palette (history timeline & route map) ------------------------
+  /// Drive accent — the blue used by the drive card's rail and the vehicle
+  /// polyline, so a trip reads as one colour in both surfaces.
+  static const Color motionDrive = Color(0xFF1E6BFF);
+
+  /// Walking accent — green, distinct from [motionDrive] in both brightnesses.
+  /// Colour is never the only cue: every surface also carries the icon and the
+  /// localized label.
+  static const Color motionWalk = Color(0xFF128C46);
+
+  /// Running accent — violet. Sits between [motionWalk] and [motionStop] in
+  /// hue so a run reads as "faster walking" without ever being confused with a
+  /// drive; icon and label still carry the meaning on their own.
+  static const Color motionRun = Color(0xFF8E24AA);
+
+  /// Stopover accent — amber. Deliberately not [error]: a stop is not a fault.
+  static const Color motionStop = Color(0xFFB26A00);
+
   /// Subtle 1px card border in light mode (electric blue @ 15%).
   static final Color lightBorder = primaryBlue.withValues(alpha: 0.15);
 

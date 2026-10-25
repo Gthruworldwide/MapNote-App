@@ -958,6 +958,28 @@ class AppLocalizationsEn extends AppLocalizations {
       'A large list loads slower. Review duplicate or unused places and remove what you no longer need.';
 
   @override
+  String get insightMotionSummaryTitle => 'Your motion today';
+
+  @override
+  String insightMotionSummaryBody(
+    String walking,
+    String running,
+    String vehicle,
+  ) {
+    return 'You covered $walking walking and $running running, plus $vehicle by vehicle.';
+  }
+
+  @override
+  String insightMotionSummaryBodySteps(
+    String walking,
+    String running,
+    String vehicle,
+    int steps,
+  ) {
+    return 'You covered $walking walking and $running running, plus $vehicle by vehicle, on $steps counted steps.';
+  }
+
+  @override
   String get insightActionSyncNow => 'Sync now';
 
   @override
@@ -1216,4 +1238,109 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get suggestedPlaceLinkFailed => 'Couldn\'t link the place';
+
+  @override
+  String get motionHistoryTitle => 'Motion history';
+
+  @override
+  String get motionHistorySubtitle =>
+      'Trips, walks, runs and stops recorded for this day';
+
+  @override
+  String get motionTypeDrive => 'Drive';
+
+  @override
+  String get motionTypeWalk => 'Walk';
+
+  @override
+  String get motionTypeRun => 'Run';
+
+  @override
+  String get motionTypeStopover => 'Stopover';
+
+  @override
+  String get motionHistoryToday => 'Today';
+
+  @override
+  String get motionHistoryYesterday => 'Yesterday';
+
+  @override
+  String get motionHistoryPickDate => 'Pick a day';
+
+  @override
+  String get motionHistoryPreviousDay => 'Previous day';
+
+  @override
+  String get motionHistoryNextDay => 'Next day';
+
+  @override
+  String get motionHistoryViewTimeline => 'Timeline';
+
+  @override
+  String get motionHistoryViewMap => 'Map';
+
+  @override
+  String get motionHistoryTotalDistance => 'Distance';
+
+  @override
+  String get motionHistoryDriveTime => 'Drive time';
+
+  @override
+  String get motionHistoryStopoverTime => 'Idle time';
+
+  @override
+  String get motionHistoryEmptyTitle => 'No motion recorded';
+
+  @override
+  String get motionHistoryEmptyBody =>
+      'Nothing was recorded for this day. Turn on AutoMotion, then drive or walk to build a timeline.';
+
+  @override
+  String get motionHistoryNoRoute => 'No route to draw for this day.';
+
+  @override
+  String get motionHistoryShowOnMap => 'Show on map';
+
+  @override
+  String motionHistoryDriveStats(String distance, String duration) {
+    return '$distance km · $duration';
+  }
+
+  @override
+  String motionHistoryAverageSpeed(String speed) {
+    return 'Avg $speed km/h';
+  }
+
+  @override
+  String motionHistoryStepStats(String distance, int steps) {
+    return '$distance m · $steps steps';
+  }
+
+  @override
+  String get motionHistorySteps => 'Steps';
+
+  @override
+  String get motionHistoryModeBreakdownHint =>
+      'Walk and run distances are measured by the step counter; vehicle distance comes from GPS.';
+
+  @override
+  String motionHistoryStopoverStats(String duration) {
+    return 'Stopped for $duration';
+  }
+
+  @override
+  String durationHoursMinutes(int hours, int minutes) {
+    return '$hours h $minutes min';
+  }
+
+  @override
+  String durationMinutes(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String get durationZero => '0 min';
+
+  @override
+  String get durationLessThanMinute => 'less than a minute';
 }

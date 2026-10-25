@@ -18,6 +18,10 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <!-- Biometric / device-credential verification for locked locations. -->
     <uses-permission android:name="android.permission.USE_BIOMETRIC"/>
+    <!-- Hardware step counter (TYPE_STEP_COUNTER) used to measure walking and
+         running distance. Runtime permission from Android 10 ("Physical
+         activity"), requested the first time AutoMotion starts recording. -->
+    <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION"/>
     <application
         android:label="MapNote"
         android:name="${applicationName}"

@@ -368,7 +368,12 @@ void main() {
 
     test('resumes an in-progress trip after an app restart', () async {
       final GpsDailyDataSource store = await openStore('resume');
-      final DateTime start = DateTime.now();
+      // Anchored to today's midnight, not `now`: the synthetic trip spans seven
+      // minutes, and a wall-clock start near midnight would split it across two
+      // calendar days — which is a *rollover*, not the restart this covers.
+      // Timestamps only drive the gap and the day key, so being ahead of the
+      // real clock is harmless.
+      final DateTime start = DailyGpsSummary.dayOf(DateTime.now());
 
       final GpsTrackerService service = GpsTrackerService(dailyStore: store);
       service.recordPosition(_fix(0, 0, at: start));

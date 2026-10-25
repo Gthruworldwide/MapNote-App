@@ -42,6 +42,10 @@ class GyroscopeSample {
 /// counts as an accelerometer sample. Everything else is ignored, so a
 /// malformed event can never poison a consumer. No location, identity or user
 /// data ever crosses this channel — raw sensor vectors only.
+///
+/// The hardware step counter is deliberately **not** here: the `pedometer`
+/// plugin owns `TYPE_STEP_COUNTER` (see `StepMeter` and `pedometer_steps.dart`),
+/// so the OS has one step-sensor registration rather than one per source.
 class MotionSensorHub {
   MotionSensorHub({
     EventChannel? channel,
@@ -52,7 +56,7 @@ class MotionSensorHub {
   /// Must match `MOTION_CHANNEL` in `MainActivity.kt`.
   static const String channelName = 'com.routenote.routenote/motion';
 
-  /// Payload tag distinguishing the two sensors multiplexed on one channel.
+  /// Payload tag distinguishing the sensors multiplexed on one channel.
   static const int accelerometerTag = 0;
   static const int gyroscopeTag = 1;
 
@@ -108,7 +112,7 @@ class MotionSensorHub {
     await subscription?.cancel();
   }
 
-  /// Cancels the native subscription outright and closes both broadcast feeds.
+  /// Cancels the native subscription outright and closes every broadcast feed.
   /// The hub is unusable afterwards; used from `ref.onDispose`. Closing is what
   /// detaches any listener still attached, so a later `start()` cannot silently
   /// revive a hub that the container already dropped.

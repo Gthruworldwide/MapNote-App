@@ -166,7 +166,11 @@ class GpsTrackerService implements SamplingTarget {
       providerStatus = loc.serviceStatusStream();
       _activeLocations = loc;
       _activeStatus = providerStatus;
-      source = _openFixes(loc);
+      // Open at the FSM's current profile, and a paused profile not at all —
+      // see the same note in `AutoMotionService.start`. The plugin registers a
+      // request asynchronously, so a baseline handle swapped a tick later can
+      // leave a permanent high-accuracy registration behind.
+      source = _streamPaused ? const Stream<Position>.empty() : _openFixes(loc);
     }
 
     await _engine.attach(source, serviceStatus: providerStatus);

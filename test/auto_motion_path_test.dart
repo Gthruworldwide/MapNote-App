@@ -8,6 +8,7 @@ import 'package:hive_ce/hive.dart';
 import 'package:routenote/src/core/config/app_config.dart';
 import 'package:routenote/src/data/local/auto_motion_data_source.dart';
 import 'package:routenote/src/data/models/daily_gps_summary.dart';
+import 'package:routenote/src/data/models/track_point.dart';
 import 'package:routenote/src/services/daily_track_engine.dart';
 import 'package:routenote/src/services/gap_recovery_service.dart';
 import 'package:routenote/src/services/motion_profiler.dart';
@@ -643,6 +644,315 @@ void main() {
       final DailyGpsSummary differentMetrics =
           DailyGpsSummary(date: day, totalKm: 9);
       expect(oneVertex, isNot(equals(differentMetrics)));
+    });
+  });
+
+  group('DailyTrackEngine track points', () {
+    test('an accepted fix is stamped with its motion scalars and persisted',
+        () async {
+      final _RecordingStore store =
+          _RecordingStore(await openBox('_track_points'));
+      final DailyTrackEngine engine = DailyTrackEngine(
+        store: store,
+        activityHint: () => TrackPoint.inVehicle,
+      );
+      final DateTime base = _todayMorning();
+
+      engine.recordPosition(_fix(30.05, 31.25, at: base, speed: 12.5));
+      engine.recordPosition(
+        _fix(
+          30.0501,
+          31.25,
+          at: base.add(const Duration(seconds: 5)),
+          speed: 12.5,
+        ),
+      );
+
+      expect(engine.dayTrackPoints, hasLength(2));
+      final TrackPoint first = engine.dayTrackPoints.first;
+      expect(first.latitude, 30.05);
+      expect(first.longitude, 31.25);
+      expect(first.timestamp, base);
+      expect(first.speed, 12.5);
+      expect(first.hasSpeed, isTrue);
+      expect(first.accuracy, 5);
+      expect(first.detectedActivity, TrackPoint.inVehicle);
+
+      // The persisted summary carries them in the additive key.
+      final List<TrackPoint>? saved = store.saved.last.trackPoints;
+      expect(saved, hasLength(2));
+      expect(saved!.last.detectedActivity, TrackPoint.inVehicle);
+      expect(saved.last.speed, 12.5);
+    });
+
+    test('a tracker without an activity hint records an empty hint', () async {
+      final _RecordingStore store =
+          _RecordingStore(await openBox('_track_points_no_hint'));
+      final DailyTrackEngine engine = DailyTrackEngine(store: store);
+
+      engine.recordPosition(
+        _fix(30.05, 31.25, at: _todayMorning(), speed: 3),
+      );
+
+      expect(engine.dayTrackPoints.single.detectedActivity, isEmpty);
+      expect(engine.dayTrackPoints.single.hasSpeed, isTrue);
+    });
+
+    test('fixes rejected for poor accuracy never reach the track', () async {
+      final _RecordingStore store =
+          _RecordingStore(await openBox('_track_points_reject'));
+      final DailyTrackEngine engine = DailyTrackEngine(store: store);
+
+      engine.recordPosition(
+        _fix(
+          30.05,
+          31.25,
+          at: _todayMorning(),
+          speed: 12,
+          accuracy: 250,
+        ),
+      );
+
+      expect(engine.dayTrackPoints, isEmpty);
+      expect(store.saved, isEmpty);
+    });
+
+    test('a fresh engine restores the stored track points', () async {
+      final AutoMotionDataSource store =
+          AutoMotionDataSource(await openBox('_track_points_restore'));
+      final DateTime today = DailyGpsSummary.dayOf(DateTime.now());
+      final DateTime stamp = today.add(const Duration(hours: 8));
+      final List<TrackPoint> points = <TrackPoint>[
+        for (int i = 0; i < 4; i++)
+          TrackPoint(
+            latitude: 30.0 + i * 0.001,
+            longitude: 31.0,
+            timestamp: stamp.add(Duration(seconds: 5 * i)),
+            speed: 10,
+            hasSpeed: true,
+            accuracy: 5,
+            detectedActivity: TrackPoint.walking,
+          ),
+      ];
+      await store.save(
+        DailyGpsSummary(
+          date: today,
+          totalKm: 1.0,
+          trackPoints: points,
+        ),
+      );
+
+      final DailyTrackEngine fresh = DailyTrackEngine(store: store);
+      expect(fresh.dayTrackPoints, isEmpty);
+      await fresh.resyncFromStore();
+
+      expect(fresh.dayTrackPoints, hasLength(points.length));
+      expect(fresh.dayTrackPoints.first.latitude, 30.0);
+      expect(fresh.dayTrackPoints.first.timestamp, stamp);
+      expect(fresh.dayTrackPoints.first.detectedActivity, TrackPoint.walking);
+
+      // A live fix appends to the restored track instead of replacing it.
+      fresh.recordPosition(
+        _fix(30.004, 31.0, at: today.add(const Duration(hours: 9)), speed: 1.4),
+      );
+      expect(fresh.dayTrackPoints, hasLength(points.length + 1));
+
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+    });
+
+    test('reaching maxTrackPoints halves the track', () async {
+      expect(DailyTrackEngine.maxTrackPoints, 2048);
+      final _RecordingStore store =
+          _RecordingStore(await openBox('_track_points_cap'));
+      final DailyTrackEngine engine = DailyTrackEngine(
+        store: store,
+        smoother: const _PassthroughSmoother(),
+      );
+      final DateTime base = _todayMorning();
+
+      // The 2049th fix lands on a track already at the cap, so the pre-append
+      // halving runs exactly once (2048 → 1024) and the new fix brings it to
+      // 1025. Points are self-contained, so decimation never corrupts them.
+      for (int i = 0; i <= DailyTrackEngine.maxTrackPoints; i++) {
+        engine.recordPosition(
+          _fix(
+            30.0 + i * 0.000009,
+            31.0,
+            at: base.add(Duration(seconds: 3 * i)),
+            speed: 5,
+          ),
+        );
+      }
+
+      expect(engine.dayTrackPoints, hasLength(1025));
+      expect(engine.dayTrackPoints.first.timestamp, base);
+      expect(
+        engine.dayTrackPoints[1].timestamp,
+        base.add(const Duration(seconds: 6)),
+      );
+      expect(
+        engine.dayTrackPoints.last.timestamp,
+        base.add(Duration(seconds: 3 * DailyTrackEngine.maxTrackPoints)),
+      );
+    });
+
+    test('decimation folds dropped step counts into the next survivor',
+        () async {
+      final _RecordingStore store =
+          _RecordingStore(await openBox('_track_points_step_fold'));
+      final DailyTrackEngine engine = DailyTrackEngine(
+        store: store,
+        smoother: const _PassthroughSmoother(),
+        takeSteps: () => 2,
+      );
+      final DateTime base = _todayMorning();
+
+      for (int i = 0; i <= DailyTrackEngine.maxTrackPoints; i++) {
+        engine.recordPosition(
+          _fix(
+            30.0 + i * 0.000009,
+            31.0,
+            at: base.add(Duration(seconds: 3 * i)),
+            speed: 5,
+          ),
+        );
+      }
+
+      // One halving pass: 2048 entries → 1024 survivors, plus the fix that
+      // triggered it. No step may vanish in the fold.
+      final List<TrackPoint> track = engine.dayTrackPoints;
+      expect(track, hasLength(1025));
+      expect(
+        track.fold<int>(0, (int sum, TrackPoint p) => sum + (p.steps ?? 0)),
+        2 * (DailyTrackEngine.maxTrackPoints + 1),
+        reason: 'the day total survives decimation exactly',
+      );
+
+      // The first survivor had nothing before it to absorb, the middle ones
+      // carry their dropped neighbour's steps, and the trailing dropped entry
+      // is folded into the last survivor instead of being lost.
+      expect(track.first.steps, 2);
+      expect(track[1].steps, 4);
+      expect(track[1023].steps, 6);
+      expect(track.last.steps, 2);
+    });
+
+    test('trackBreakdown persists walk, run and vehicle distance and time',
+        () async {
+      final _RecordingStore store =
+          _RecordingStore(await openBox('_breakdown'));
+      // 25 walking fixes at 8 steps each (a 96 steps/min cadence), then 37
+      // driving fixes with a measured zero — exactly what the pedometer
+      // reports for a walk to the car followed by a drive.
+      final List<int> steps = <int>[
+        ...List<int>.filled(25, 8),
+        ...List<int>.filled(37, 0),
+      ];
+      int next = 0;
+      final DailyTrackEngine engine = DailyTrackEngine(
+        store: store,
+        trackBreakdown: true,
+        takeSteps: () => next < steps.length ? steps[next++] : 0,
+      );
+      final DateTime base = _todayMorning();
+      const double metresPerDegreeLat = 111_320;
+      double latitude = 30.0;
+      for (int i = 0; i < 25; i++) {
+        engine.recordPosition(
+          _fix(latitude, 31.0, at: base.add(Duration(seconds: 5 * i)), speed: 1.4),
+        );
+        latitude += 1.4 * 5 / metresPerDegreeLat;
+      }
+      for (int i = 0; i < 37; i++) {
+        engine.recordPosition(
+          _fix(
+            latitude,
+            31.0,
+            at: base.add(Duration(seconds: 125 + 5 * i)),
+            speed: 20,
+          ),
+        );
+        latitude += 20 * 5 / metresPerDegreeLat;
+      }
+
+      final DailyGpsSummary last = store.saved.last;
+      // 25 × 8 = 200 steps × 0.75 m = 150 m of walking.
+      expect(last.walkKm, closeTo(0.15, 0.01));
+      expect(last.runKm, 0);
+      // 36 hops of 100 m at 20 m/s, with no step counted.
+      expect(last.vehicleKm, closeTo(3.6, 0.05));
+      expect(last.walkDurationSeconds, 120);
+      expect(last.runDurationSeconds, 0);
+      expect(last.vehicleDurationSeconds, 180);
+      // The day's step total is persisted alongside the distances it produced.
+      expect(last.stepCount, 200);
+
+      // The steps were drained per accepted fix, so the persisted track still
+      // carries them.
+      expect(last.trackPoints, hasLength(62));
+      expect(last.trackPoints!.first.steps, 8);
+      expect(last.trackPoints!.last.steps, 0);
+    });
+
+    test('a day without a pedometer reports no walking at all', () async {
+      final _RecordingStore store =
+          _RecordingStore(await openBox('_breakdown_no_steps'));
+      final DailyTrackEngine engine = DailyTrackEngine(
+        store: store,
+        trackBreakdown: true,
+        takeSteps: () => null,
+      );
+      final DateTime base = _todayMorning();
+      const double metresPerDegreeLat = 111_320;
+      double latitude = 30.0;
+
+      for (int i = 0; i < 25; i++) {
+        engine.recordPosition(
+          _fix(latitude, 31.0, at: base.add(Duration(seconds: 5 * i)), speed: 1.4),
+        );
+        latitude += 1.4 * 5 / metresPerDegreeLat;
+      }
+
+      final DailyGpsSummary last = store.saved.last;
+      // No step measurement → no gait. 5 km/h with nothing counted is a
+      // stopover (and at two minutes it is not even a long enough one to
+      // survive), never a fabricated walk: the day's walk distance stays 0
+      // rather than being estimated from a GPS polyline.
+      expect(last.walkKm, 0);
+      expect(last.runKm, 0);
+      expect(last.vehicleKm, 0);
+      expect(last.stepCount, 0);
+      expect(last.walkDurationSeconds, 0);
+      expect(last.trackPoints!.every((TrackPoint p) => p.steps == null), isTrue);
+    });
+
+    test('the plain GPS tracker leaves the categories at zero', () async {
+      // `GpsTrackerService` builds its engine without `trackBreakdown`, so its
+      // records stay exactly what they were before the breakdown existed.
+      final _RecordingStore store =
+          _RecordingStore(await openBox('_breakdown_off'));
+      final DailyTrackEngine engine = DailyTrackEngine(
+        store: store,
+        takeSteps: () => 8,
+      );
+      final DateTime base = _todayMorning();
+
+      for (int i = 0; i < 25; i++) {
+        engine.recordPosition(
+          _fix(30.0 + i * 0.000063, 31.0, at: base.add(Duration(seconds: 5 * i)),
+              speed: 1.4),
+        );
+      }
+
+      final DailyGpsSummary last = store.saved.last;
+      expect(last.walkKm, 0);
+      expect(last.runKm, 0);
+      expect(last.vehicleKm, 0);
+      expect(last.stepCount, 0);
+      expect(last.walkDurationSeconds, 0);
+      // The fixes themselves are recorded in full.
+      expect(last.trackPoints, hasLength(25));
+      expect(last.trackPoints!.first.steps, 8);
     });
   });
 }

@@ -8,8 +8,8 @@ import android.hardware.SensorManager
 import io.flutter.plugin.common.EventChannel
 
 /**
- * Streams raw accelerometer and gyroscope samples to Dart while a daily
- * tracker needs an independent "is the device moving?" signal.
+ * Streams raw accelerometer and gyroscope samples to Dart while a daily tracker
+ * needs an independent "how is the device moving?" signal.
  *
  * Rationale: when the GPS signal is lost (tunnel, car park, dense city) the
  * trackers still have to know whether the vehicle kept moving, and the GPS
@@ -19,11 +19,17 @@ import io.flutter.plugin.common.EventChannel
  * reckoning in `lib/src/services/dead_reckoning_service.dart`), which keeps
  * the interesting logic unit-testable.
  *
+ * The hardware step counter (the app's pedometer) is **not** read here: the
+ * `pedometer` plugin owns `TYPE_STEP_COUNTER` on its own `step_count` channel
+ * (see `StepMeter` and `lib/src/services/pedometer_steps.dart`). One sensor, one
+ * registration — a second listener on the same counter would only duplicate
+ * every reading.
+ *
  * No runtime permission is required for `TYPE_ACCELEROMETER` or
  * `TYPE_GYROSCOPE`. Both listeners are registered only while Dart is
  * subscribed, so nothing is sampled while both tracking toggles are off.
  *
- * Channel: `com.routenote.routenote/motion` (see [MotionSensorHub] on the
+ * Channel: `com.routenote.routenote/motion` (see `MotionSensorHub` on the
  * Dart side). Events are `[x, y, z, tag]`, where `tag` is `0` for the
  * accelerometer (m/s², gravity included) and `1` for the gyroscope (rad/s).
  */

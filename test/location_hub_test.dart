@@ -7,22 +7,29 @@ import 'package:routenote/src/services/location_hub.dart';
 import 'package:routenote/src/services/location_service.dart';
 
 /// A [LocationService] that answers every platform call in memory and returns a
-/// controllable broadcast feed, recording each open and whether the returned
-/// stream was cancelled.
+/// controllable feed, recording each open and whether the returned stream was
+/// cancelled.
 ///
-/// This is the instrument that makes the "no OS handle survives" claim
-/// checkable: `openCount` counts how many times a platform stream was
-/// requested, and `liveCount` how many of those are still uncancelled.
+/// It models the **single-client** shape of `geolocator_android`'s position
+/// channel (`StreamHandlerImpl`), because that shape is what decides whether a
+/// profile change leaks an OS registration: `onListen` overwrites the plugin's
+/// one `LocationClient` *without stopping the previous one*, and `onCancel`
+/// stops whichever client is current at that moment — not necessarily the one
+/// that was listened to. `liveCount` therefore counts real surviving OS
+/// handles, and it must reach 0 once every consumer releases.
 class _FakeLocationService extends LocationService {
   _FakeLocationService();
 
-  /// One controller per open, so each subscription's cancellation is
+  /// One controller per open, in order, so each subscription's cancellation is
   /// observable independently of the others.
   final List<StreamController<Position>> _controllers =
       <StreamController<Position>>[];
 
+  /// The plugin's one current client, shared by every open (see the class note).
+  StreamController<Position>? _current;
+
   /// How many times a position stream was handed out.
-  int openCount = 0;
+  int get openCount => _controllers.length;
 
   /// The accuracy each open asked for, in order.
   final List<LocationAccuracy> requestedAccuracies = <LocationAccuracy>[];
@@ -35,6 +42,17 @@ class _FakeLocationService extends LocationService {
   /// consumer releases — that is the OS handle being dropped.
   int get liveCount =>
       _controllers.where((StreamController<Position> c) => !c.isClosed).length;
+
+  /// The settings of the one surviving platform handle, or `null` when the app
+  /// is off the provider entirely.
+  LocationSettings? get liveSettings {
+    for (int i = 0; i < _controllers.length; i++) {
+      if (!_controllers[i].isClosed) {
+        return i < requestedSettings.length ? requestedSettings[i] : null;
+      }
+    }
+    return null;
+  }
 
   @override
   Future<bool> isServiceEnabled() async => true;
@@ -52,16 +70,22 @@ class _FakeLocationService extends LocationService {
     LocationSettings? settings,
     void Function(Object error, StackTrace stackTrace)? onError,
   }) {
-    openCount++;
     requestedAccuracies.add(settings?.accuracy ?? LocationAccuracy.high);
     if (settings != null) requestedSettings.add(settings);
-    final StreamController<Position> controller =
-        StreamController<Position>.broadcast(
+    late final StreamController<Position> controller;
+    controller = StreamController<Position>(
       onCancel: () {
-        // Broadcast streams keep the controller usable after the last listener
-        // leaves, so "cancelled" is modelled explicitly.
+        // `onCancel` stops whichever client is current *now*: this is the exact
+        // behaviour that turns "listen before cancel" into a permanent leak.
+        final StreamController<Position>? current = _current;
+        if (current != null && !current.isClosed) {
+          unawaited(current.close());
+        }
       },
     );
+    // `onListen` overwrites the one client, abandoning the previous controller
+    // (it is never closed, so `liveCount` keeps counting it — the leak).
+    _current = controller;
     _controllers.add(controller);
     return controller.stream;
   }
@@ -188,10 +212,15 @@ void main() {
       expect(hub.openAccuracy, LocationAccuracy.lowest);
 
       hub.acquire(compass, accuracy: LocationAccuracy.high).listen((_) {});
+      // A tier lift replaces the handle, and a replacement can only be
+      // serialized behind the previous platform cancel (see `_syncHandle`), so
+      // the swap settles a turn later.
+      await pumpEventQueue();
       // The handle was lifted to the strongest request — but it is still the
       // same single client, so only one new open ever happened.
       expect(hub.openAccuracy, LocationAccuracy.high);
       expect(locations.openCount, 2);
+      expect(locations.liveCount, 1);
       expect(locations.requestedAccuracies.last, LocationAccuracy.high);
 
       // Dropping the strong consumer falls back to the parked tier, again on
@@ -199,6 +228,7 @@ void main() {
       await hub.release(compass);
       expect(hub.openAccuracy, LocationAccuracy.lowest);
       expect(locations.openCount, 3);
+      expect(locations.liveCount, 1);
     });
 
     test('acquire is idempotent per consumer and does not stack handles',
@@ -287,14 +317,91 @@ void main() {
             interval: const Duration(seconds: 10),
           )
           .listen((_) {});
+      await pumpEventQueue();
 
       // Still a single client — but at the new cadence.
       expect(hub.consumerCount, 1);
       expect(locations.openCount, 2);
+      expect(locations.liveCount, 1);
       final LocationSettings settings = locations.requestedSettings.last;
       if (settings is AndroidSettings) {
         expect(settings.intervalDuration, const Duration(seconds: 10));
       }
+    });
+
+    test('a cadence change never leaves the previous OS registration alive',
+        () async {
+      // Regression: applying the engine profile re-acquires the *same* consumer
+      // at a coarser tier. The hub used to listen to the new handle and only
+      // then cancel the old one, and `geolocator_android` keeps one client per
+      // position channel: `onListen` overwrote it (abandoning the previous
+      // registration, never stopped) and the late `onCancel` then stopped the
+      // new one. On device that left a permanent `@+5s0ms HIGH_ACCURACY` request
+      // in `dumpsys location` for the app's whole life while the hub believed it
+      // was running at 15 s / `medium` — and no idle pause could reach it.
+      final Object tracker = Object();
+      hub
+          .acquire(
+            tracker,
+            accuracy: LocationAccuracy.high,
+            interval: const Duration(seconds: 5),
+            distanceFilter: 10,
+          )
+          .listen((_) {});
+      expect(locations.openCount, 1);
+      expect(locations.liveCount, 1);
+
+      hub
+          .acquire(
+            tracker,
+            accuracy: LocationAccuracy.medium,
+            interval: const Duration(seconds: 15),
+            distanceFilter: 15,
+          )
+          .listen((_) {});
+      await pumpEventQueue();
+
+      // Exactly one OS handle survives, and it is the *profiled* one.
+      expect(locations.openCount, 2);
+      expect(locations.liveCount, 1);
+      expect(locations.liveSettings?.accuracy, LocationAccuracy.medium);
+      final LocationSettings? live = locations.liveSettings;
+      if (live is AndroidSettings) {
+        expect(live.intervalDuration, const Duration(seconds: 15));
+      }
+
+      // And releasing takes the app off the provider entirely: no abandoned
+      // registration is left behind to keep the receiver awake.
+      await hub.release(tracker);
+      expect(hub.isOpen, isFalse);
+      expect(locations.liveCount, 0);
+    });
+
+    test('pausing mid-replacement still ends with no registration', () async {
+      // A `pauseAll` can land while a replacement is waiting for the platform
+      // cancel; the swap must not resurrect a handle afterwards.
+      final Object tracker = Object();
+      hub
+          .acquire(
+            tracker,
+            accuracy: LocationAccuracy.high,
+            interval: const Duration(seconds: 5),
+          )
+          .listen((_) {});
+      hub
+          .acquire(
+            tracker,
+            accuracy: LocationAccuracy.medium,
+            interval: const Duration(seconds: 15),
+          )
+          .listen((_) {});
+
+      await hub.pauseAll();
+      await pumpEventQueue();
+
+      expect(hub.isOpen, isFalse);
+      expect(hub.consumerCount, 0);
+      expect(locations.liveCount, 0);
     });
   });
 }

@@ -230,6 +230,28 @@ class _InsightTile extends ConsumerWidget {
         title: l10n.insightOptimizationTitle,
         body: l10n.insightOptimizationBody,
       );
+    case AgentInsightKind.motionSummary:
+      // The distances are measured numbers, never estimates: the tracker
+      // persists walk / run / vehicle kilometres and the day's step total, and
+      // the card only restates them.
+      String km(String key) =>
+          '${_double(insight, key, 0).toStringAsFixed(1)} ${l10n.kmUnit}';
+      final int steps = _int(insight, 'steps', 0);
+      return (
+        title: l10n.insightMotionSummaryTitle,
+        body: steps > 0
+            ? l10n.insightMotionSummaryBodySteps(
+                km('walkingKm'),
+                km('runningKm'),
+                km('vehicleKm'),
+                steps,
+              )
+            : l10n.insightMotionSummaryBody(
+                km('walkingKm'),
+                km('runningKm'),
+                km('vehicleKm'),
+              ),
+      );
   }
 }
 
@@ -237,6 +259,12 @@ int _int(AgentInsight insight, String key, int fallback) {
   final Object? value = insight.params[key];
   if (value is int) return value;
   if (value is num) return value.toInt();
+  return fallback;
+}
+
+double _double(AgentInsight insight, String key, double fallback) {
+  final Object? value = insight.params[key];
+  if (value is num) return value.toDouble();
   return fallback;
 }
 

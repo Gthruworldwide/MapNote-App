@@ -35,9 +35,12 @@ class MainActivity : FlutterFragmentActivity() {
     // LocationTrackingService and ForegroundTrackingService on the Dart side).
     private var pendingNotificationResult: MethodChannel.Result? = null
     private var pendingBackgroundLocationResult: MethodChannel.Result? = null
+    private var pendingActivityRecognitionResult: MethodChannel.Result? = null
     private lateinit var notificationPermissionLauncher:
         ActivityResultLauncher<String>
     private lateinit var backgroundLocationPermissionLauncher:
+        ActivityResultLauncher<String>
+    private lateinit var activityRecognitionPermissionLauncher:
         ActivityResultLauncher<String>
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -58,6 +61,15 @@ class MainActivity : FlutterFragmentActivity() {
             pendingBackgroundLocationResult?.success(granted)
             pendingBackgroundLocationResult = null
         }
+        activityRecognitionPermissionLauncher = registerForActivityResult(
+            ActivityResultContracts.RequestPermission(),
+        ) { granted ->
+            // Only the answer is forwarded. The hardware step counter belongs to
+            // the `pedometer` plugin, whose Dart-side stream is re-opened when
+            // this reports `true` (see StepMeter.refresh).
+            pendingActivityRecognitionResult?.success(granted)
+            pendingActivityRecognitionResult = null
+        }
 
         addTestCrashButtonIfDebuggable()
     }
@@ -68,6 +80,8 @@ class MainActivity : FlutterFragmentActivity() {
         pendingNotificationResult = null
         pendingBackgroundLocationResult?.success(false)
         pendingBackgroundLocationResult = null
+        pendingActivityRecognitionResult?.success(false)
+        pendingActivityRecognitionResult = null
         super.onDestroy()
     }
 
@@ -138,6 +152,8 @@ class MainActivity : FlutterFragmentActivity() {
                     requestNotificationPermission(result)
                 "requestBackgroundLocationPermission" ->
                     requestBackgroundLocationPermission(result)
+                "requestActivityRecognitionPermission" ->
+                    requestActivityRecognitionPermission(result)
                 "getBatteryLevel" -> result.success(readBatteryLevel())
                 else -> result.notImplemented()
             }
@@ -239,6 +255,29 @@ class MainActivity : FlutterFragmentActivity() {
         pendingBackgroundLocationResult = result
         backgroundLocationPermissionLauncher.launch(
             Manifest.permission.ACCESS_BACKGROUND_LOCATION,
+        )
+    }
+
+    /**
+     * Requests `ACTIVITY_RECOGNITION` (Android 10+), the runtime permission the
+     * hardware step counter needs. Resolves immediately when it is already
+     * granted or the platform is too old to require it. A `true` answer is what
+     * lets the Dart side re-open the pedometer's stream (`StepMeter.refresh`),
+     * which is the point at which the OS actually attaches the sensor.
+     */
+    private fun requestActivityRecognitionPermission(
+        result: MethodChannel.Result,
+    ) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q ||
+            hasPermission(Manifest.permission.ACTIVITY_RECOGNITION)
+        ) {
+            result.success(true)
+            return
+        }
+        pendingActivityRecognitionResult?.success(false)
+        pendingActivityRecognitionResult = result
+        activityRecognitionPermissionLauncher.launch(
+            Manifest.permission.ACTIVITY_RECOGNITION,
         )
     }
 

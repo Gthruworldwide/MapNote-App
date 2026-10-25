@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show ProviderFamily;
 import 'package:geolocator/geolocator.dart';
 
 import '../data/local/hive_database.dart';
@@ -16,7 +17,10 @@ import '../data/local/place_local_data_source.dart';
 import '../data/local/settings_repository.dart';
 import '../data/models/agent_insight.dart';
 import '../data/models/daily_gps_summary.dart';
+import '../data/models/daily_motion_summary.dart';
 import '../data/models/place.dart';
+import '../data/models/track_point.dart';
+import '../data/models/trip_segment.dart';
 import '../data/remote/auth_service.dart';
 import '../data/remote/drive_service.dart';
 import '../data/remote/google_auth_service.dart';
@@ -61,15 +65,19 @@ import '../services/local_insight_engine.dart';
 import '../services/location_hub.dart';
 import '../services/location_service.dart';
 import '../services/milestone_name_resolver.dart';
+import '../services/motion_classifier_service.dart';
 import '../services/motion_profiler.dart';
 import '../services/motion_score.dart';
 import '../services/motion_sensor_hub.dart';
 import '../services/motion_signal.dart';
+import '../services/polyline_smoother.dart';
 import '../services/sampling_target.dart';
 import '../services/navigation_service.dart';
+import '../services/pedometer_steps.dart';
 import '../services/route_milestones.dart';
 import '../services/share_intent_service.dart';
 import '../services/smart_clipboard_service.dart';
+import '../services/step_meter.dart';
 import '../services/transport_classifier.dart';
 
 // ---------------------------------------------------------------------------
@@ -148,6 +156,20 @@ final Provider<MotionSensorHub> motionSensorHubProvider =
       ref.onDispose(hub.dispose);
       return hub;
     });
+
+/// Hardware pedometer bridge (see [StepMeter]) over the `pedometer` plugin.
+///
+/// The plugin is the **only** owner of the OS step counter (`hardwareStepCount`
+/// → Android `TYPE_STEP_COUNTER` / iOS `CMPedometer`), so MapNote holds one
+/// sensor registration rather than one per consumer. One app-wide instance: the
+/// tracker starts and stops it with its own lifecycle (holding the hardware feed
+/// open while a trip records), so the step counter is never sampled while both
+/// tracking toggles are off.
+final Provider<StepMeter> stepMeterProvider = Provider<StepMeter>((Ref ref) {
+  final StepMeter meter = StepMeter(stepCounts: hardwareStepCount);
+  ref.onDispose(meter.dispose);
+  return meter;
+});
 
 /// Movement evidence shared by the two daily trackers: an accelerometer-backed
 /// sensor bridge on Android, inert elsewhere. The trackers refcount it, so the
@@ -320,6 +342,11 @@ final Provider<GpsTrackerService> gpsTrackerProvider =
 /// Phase-1 AutoMotion tracker (distance + max speed while the app is open).
 final Provider<AutoMotionService> autoMotionServiceProvider =
     Provider<AutoMotionService>((Ref ref) {
+      // Resolved once, here: the hint closure may fire long after this build,
+      // and a `ref.read` from inside it would touch a possibly-disposed Ref.
+      final TransportClassifier classifier = ref.watch(
+        transportClassifierProvider,
+      );
       return AutoMotionService(
         dailyStore: ref.watch(autoMotionDataSourceProvider),
         motion: ref.watch(motionSignalProvider),
@@ -329,8 +356,30 @@ final Provider<AutoMotionService> autoMotionServiceProvider =
         fused: ref.watch(fusedLocationServiceProvider),
         hub: ref.watch(locationHubProvider),
         stationaryDetector: ref.watch(stationaryIdleDetectorProvider),
+        // The pedometer: drained once per accepted fix, so every recorded
+        // point carries the steps since the previous one.
+        stepMeter: ref.watch(stepMeterProvider),
+        // Stamps each recorded fix with the shared sensor verdict so
+        // classification can recognise a car crawling at walking speed.
+        activityHint: () => _activityHintOf(classifier.mode),
       );
     });
+
+/// The persisted `detectedActivity` label for a sensor verdict.
+///
+/// A train rides like a vehicle for classification purposes: both are
+/// "not on foot", and the timeline only distinguishes drive / walk / stop.
+String _activityHintOf(TransportMode mode) {
+  switch (mode) {
+    case TransportMode.vehicle:
+    case TransportMode.train:
+      return TrackPoint.inVehicle;
+    case TransportMode.walking:
+      return TrackPoint.walking;
+    case TransportMode.stationary:
+      return TrackPoint.still;
+  }
+}
 
 /// Android foreground service + runtime permissions that keep the daily
 /// trackers alive while MapNote is backgrounded.
@@ -1384,10 +1433,11 @@ class AgentNotifier extends AsyncNotifier<List<AgentInsight>> {
   @override
   FutureOr<List<AgentInsight>> build() {
     // Subscribe to the data the agent reasons about so it re-evaluates when
-    // places, session or language change.
+    // places, session, language — or today's measured motion — change.
     ref.watch(placesProvider);
     ref.watch(settingsRepositoryProvider);
     ref.watch(authProvider);
+    ref.watch(todayMotionSnapshotProvider);
     final Locale? locale = ref.watch(localeControllerProvider);
 
     _timer?.cancel();
@@ -1429,6 +1479,7 @@ class AgentNotifier extends AsyncNotifier<List<AgentInsight>> {
       health: ref.read(appHealthLoggerProvider).summary(),
       lastSynced: settings.lastSynced,
       isSignedIn: user != null,
+      motion: ref.read(todayMotionSnapshotProvider),
     );
   }
 
@@ -1787,6 +1838,16 @@ class GpsTrackingController extends Notifier<GpsTrackingState> {
       enabled ? _startNow(tracker) : _stopNow(tracker);
 
   Future<void> _startNow(GpsTrackerService tracker) async {
+    if (!tracker.isTracking) {
+      // Shape the first platform request with the profile the FSM already
+      // holds, so the tracker never opens at the unprofiled baseline (see the
+      // note in `AutoMotionController._startNow`).
+      await applyEngineProfile(
+        tracker,
+        ref.read(adaptiveEngineOrchestratorProvider).profile,
+      );
+      if (!ref.mounted) return;
+    }
     final bool started = await tracker.start(
       locations: ref.read(locationServiceProvider),
     );
@@ -2215,6 +2276,21 @@ class AutoMotionController extends Notifier<AutoMotionState> {
     // defines a trip: without this check `automotion_trip_started` would fire
     // on every rebuild while AutoMotion is enabled.
     final bool wasTracking = tracker.isTracking;
+    if (!wasTracking) {
+      // Shape the first platform request with the profile the FSM already holds
+      // (AGENT_SKILLS §6: every start path applies the orchestrator's *current*
+      // profile, never waits for an emission). Opening at the unprofiled
+      // baseline and swapping the handle a tick later is not harmless: the
+      // plugin registers a request asynchronously, so a baseline handle closed
+      // before that registration lands still registers afterwards and nothing
+      // remains to remove it — a permanent high-accuracy request on a parked
+      // phone.
+      await applyEngineProfile(
+        tracker,
+        ref.read(adaptiveEngineOrchestratorProvider).profile,
+      );
+      if (!ref.mounted) return;
+    }
     final bool started = await tracker.start(
       locations: ref.read(locationServiceProvider),
     );
@@ -2338,6 +2414,22 @@ class AutoMotionController extends Notifier<AutoMotionState> {
       ref.read(autoMotionServiceProvider),
       ref.read(foregroundTrackingServiceProvider),
     );
+    // The pedometer needs `ACTIVITY_RECOGNITION`; ask here rather than at start
+    // so a dialog can never delay the first fix — this runs after the trip's
+    // state has been published, and only while AutoMotion is actually
+    // recording. The plugin's stream was already opened by then (a tracker
+    // starts its step meter with the trip), so a granted answer has to
+    // **re-open** it: the OS refused `TYPE_STEP_COUNTER` while the permission
+    // was missing and that silent refusal never retries on its own. Until the
+    // feed arrives the tracker records `steps == null` and the classifier falls
+    // back to GPS speed, so a refusal degrades instead of breaking anything.
+    if (ref.read(autoMotionServiceProvider).isTracking) {
+      final bool granted = await ref
+          .read(foregroundTrackingServiceProvider)
+          .requestActivityRecognitionPermission();
+      if (!ref.mounted) return;
+      if (granted) await ref.read(stepMeterProvider).refresh();
+    }
   }
 
   /// Runs the sensor-driven sampling stack for exactly as long as one of the
@@ -2620,3 +2712,289 @@ final Provider<AutoMotionAggregates> autoMotionAggregates30dProvider =
   tracker.maxSpeedKmh;
   return store.last30Days();
 });
+
+/// Today's measured motion, as the Smart Insights agent reports it.
+///
+/// Reads today's day-keyed summary — [dailyMotionSummaryForDayProvider] — so the
+/// insight reports *today* whatever day the Motion history screen is showing,
+/// and re-runs whenever the tracker accepts a fix ([autoMotionFixesProvider]).
+///
+/// The numbers are the tracker's four persisted counters: the pedometer's steps
+/// and their `× 0.75 m` / `× 0.95 m` distances, plus the GPS polyline of the
+/// day's drives. Nothing is estimated from speed here.
+final Provider<MotionSnapshot> todayMotionSnapshotProvider =
+    Provider<MotionSnapshot>((Ref ref) {
+      final DailyMotionSummary today = ref.watch(
+        dailyMotionSummaryForDayProvider(DailyGpsSummary.dayOf(DateTime.now())),
+      );
+      if (today.isEmpty) return MotionSnapshot.none;
+      return MotionSnapshot(
+        walkingKm: today.walkingDistanceKm,
+        runningKm: today.runningDistanceKm,
+        vehicleKm: today.vehicleDistanceKm,
+        steps: today.stepCount,
+      );
+    });
+
+// ---------------------------------------------------------------------------
+// Motion history (route timeline & map)
+// ---------------------------------------------------------------------------
+
+/// The calendar day whose Motion history is on screen, normalised to local
+/// midnight (the same key the daily summaries are stored under).
+final NotifierProvider<SelectedDateController, DateTime> selectedDateProvider =
+    NotifierProvider<SelectedDateController, DateTime>(
+      SelectedDateController.new,
+    );
+
+/// Owns the date shown by the Motion history screen: Today, Yesterday, the
+/// arrows, or a day picked from the calendar.
+///
+/// Selecting a future day is clamped to today — the history has nothing to show
+/// there, and a "day after tomorrow" state would be unreachable from the
+/// calendar picker too.
+class SelectedDateController extends Notifier<DateTime> {
+  @override
+  DateTime build() => DailyGpsSummary.dayOf(DateTime.now());
+
+  /// Shows [day] (clamped to today).
+  void select(DateTime day) {
+    final DateTime today = DailyGpsSummary.dayOf(DateTime.now());
+    final DateTime normalised = DailyGpsSummary.dayOf(day);
+    state = normalised.isAfter(today) ? today : normalised;
+  }
+
+  /// Steps [days] days back (negative) or forward (positive).
+  void shiftDays(int days) => select(state.add(Duration(days: days)));
+
+  /// Jumps back to today.
+  void today() => select(DateTime.now());
+}
+
+/// Which presentation of the selected day is showing.
+enum MotionHistoryViewMode { timeline, map }
+
+/// Timeline ⇄ map toggle for the Motion history screen.
+///
+/// The toggle is the only view state: both surfaces render the *same*
+/// [motionHistoryProvider] result, so switching modes can never disagree about
+/// what happened that day.
+final NotifierProvider<MotionHistoryViewModeController, MotionHistoryViewMode>
+motionHistoryViewModeProvider =
+    NotifierProvider<MotionHistoryViewModeController, MotionHistoryViewMode>(
+      MotionHistoryViewModeController.new,
+    );
+
+/// Owns [MotionHistoryViewMode]; defaults to the timeline.
+class MotionHistoryViewModeController extends Notifier<MotionHistoryViewMode> {
+  @override
+  MotionHistoryViewMode build() => MotionHistoryViewMode.timeline;
+
+  void select(MotionHistoryViewMode mode) => state = mode;
+
+  /// Flips between the two presentations.
+  void toggle() => state = state == MotionHistoryViewMode.timeline
+      ? MotionHistoryViewMode.map
+      : MotionHistoryViewMode.timeline;
+}
+
+/// The fixes recorded for [day], ready for classification.
+///
+/// Reads the day straight from the `auto_motion_box` summary and watches
+/// [autoMotionFixesProvider] so today's list grows with every accepted fix.
+///
+/// A day recorded **before** per-fix speeds were stored only has the smoothed
+/// route: those vertices are lifted back into [TrackPoint]s (no speed, no
+/// accuracy, no steps) and the classifier derives speed from consecutive
+/// fixes. History stays browsable across the upgrade — nothing is migrated and
+/// nothing is lost.
+final ProviderFamily<List<TrackPoint>, DateTime> rawTrackPointsForDayProvider =
+    Provider.family<List<TrackPoint>, DateTime>((Ref ref, DateTime day) {
+      ref.watch(autoMotionFixesProvider);
+      final DailyGpsSummary? summary = ref
+          .watch(autoMotionDataSourceProvider)
+          .summaryFor(DailyGpsSummary.dayOf(day));
+      final List<TrackPoint>? stored = summary?.trackPoints;
+      if (stored != null && stored.isNotEmpty) return stored;
+      return <TrackPoint>[
+        for (final RoutePoint point in summary?.path ?? const <RoutePoint>[])
+          TrackPoint.fromRoutePoint(point),
+      ];
+    });
+
+/// The selected day's raw fixes. A thin alias over
+/// [rawTrackPointsForDayProvider], kept as its own provider so a widget test can
+/// override one day of fixes without standing up a Hive box.
+final Provider<List<TrackPoint>> rawDailyTrackPointsProvider =
+    Provider<List<TrackPoint>>(
+      (Ref ref) => ref.watch(
+        rawTrackPointsForDayProvider(ref.watch(selectedDateProvider)),
+      ),
+    );
+
+/// The tracker's persisted summary for [day], or `null` when nothing was
+/// recorded.
+///
+/// A provider of its own because the classified summary's fallback is an
+/// explicit dependency: a widget test that builds a day from synthetic fixes
+/// overrides this with `null` instead of standing up a Hive box
+/// (AGENT_SKILLS §1.2), and nothing has to guess whether storage exists.
+final ProviderFamily<DailyGpsSummary?, DateTime> dailyGpsRecordForDayProvider =
+    Provider.family<DailyGpsSummary?, DateTime>((Ref ref, DateTime day) {
+      return ref
+          .watch(autoMotionDataSourceProvider)
+          .summaryFor(DailyGpsSummary.dayOf(day));
+    });
+
+/// Classifies one day, preferring the fixes over the persisted totals.
+///
+/// The segments and the four counters are produced together, so the timeline
+/// and the header can never disagree. Only when the day's fixes are gone —
+/// nothing stored, or nothing that survives the accuracy filter — does the
+/// summary fall back to the counters the tracker persisted
+/// (`DailyGpsSummary.walk_km` / `run_km` / `vehicle_km` / `step_count`), because
+/// then they are the only evidence of that day left.
+DailyMotionSummary _motionSummaryOf({
+  required DateTime day,
+  required List<TrackPoint> points,
+  required DailyGpsSummary? record,
+}) {
+  final DailyMotionSummary classified = const MotionClassifierService()
+      .classify(date: day, points: points);
+  if (!classified.isEmpty || record == null) return classified;
+  return DailyMotionSummary.fromRecord(record);
+}
+
+/// The selected day, classified into trips/stopovers/walks plus its totals.
+///
+/// Pure derivation from [rawDailyTrackPointsProvider] — no Hive key, no
+/// persistence: `TripSegment` and `DailyMotionSummary` exist only in memory.
+final Provider<DailyMotionSummary> dailyMotionSummaryProvider =
+    Provider<DailyMotionSummary>((Ref ref) {
+      final DateTime day = ref.watch(selectedDateProvider);
+      return _motionSummaryOf(
+        day: day,
+        points: ref.watch(rawDailyTrackPointsProvider),
+        record: ref.watch(dailyGpsRecordForDayProvider(day)),
+      );
+    });
+
+/// Any day's classified summary, keyed by the day.
+///
+/// Smart Insights reads `dailyMotionSummaryForDayProvider(today)` rather than
+/// [dailyMotionSummaryProvider], so browsing yesterday's route can never make
+/// the home card report yesterday's numbers as today's.
+final ProviderFamily<DailyMotionSummary, DateTime>
+dailyMotionSummaryForDayProvider =
+    Provider.family<DailyMotionSummary, DateTime>((Ref ref, DateTime day) {
+      final DateTime normalized = DailyGpsSummary.dayOf(day);
+      return _motionSummaryOf(
+        day: normalized,
+        points: ref.watch(rawTrackPointsForDayProvider(normalized)),
+        record: ref.watch(dailyGpsRecordForDayProvider(normalized)),
+      );
+    });
+
+/// The selected day's classified segments, in chronological order — the single
+/// source both the timeline cards and the route map render.
+final Provider<List<TripSegment>> motionHistoryProvider =
+    Provider<List<TripSegment>>(
+      (Ref ref) => ref.watch(dailyMotionSummaryProvider).segments,
+    );
+
+/// Resolved place names for the selected day's stopovers, keyed by the
+/// stopover's start time (unique within a day, and stable across rebuilds).
+///
+/// Reuses the dashboard's session-scoped [MilestoneNameResolver], so a place
+/// that is both a route milestone and a stopover is geocoded once. A missing
+/// key — offline, no geocoder, not answered yet — means the card shows the
+/// localized "Stopover" label instead; names upgrade in place when they land.
+///
+/// In-memory only: the resolver caches names for the session, so naming a stop
+/// adds no Hive key and no schema.
+final NotifierProvider<StopoverNames, Map<DateTime, String?>>
+stopoverNamesProvider =
+    NotifierProvider<StopoverNames, Map<DateTime, String?>>(StopoverNames.new);
+
+/// Fills [stopoverNamesProvider] from [MilestoneNameResolver] and kicks off the
+/// lookups that are still missing (deduplicated, serialised, best-effort).
+class StopoverNames extends Notifier<Map<DateTime, String?>> {
+  @override
+  Map<DateTime, String?> build() {
+    final MilestoneNameResolver resolver = ref.read(
+      milestoneNameResolverProvider,
+    );
+    final List<_StopoverSeed> seeds = _seedsOf(
+      ref.watch(motionHistoryProvider),
+    );
+    final Map<DateTime, String?> known = _namesOf(resolver, seeds);
+    final List<RouteMilestone> missing = <RouteMilestone>[
+      for (final _StopoverSeed seed in seeds)
+        if (!known.containsKey(seed.start)) seed.milestone,
+    ];
+    if (missing.isNotEmpty) {
+      unawaited(
+        resolver.resolve(missing).then((_) {
+          if (!ref.mounted) return;
+          // Re-read the *current* segments: the day may have grown while the
+          // geocoder was answering.
+          state = _namesOf(
+            resolver,
+            _seedsOf(ref.read(motionHistoryProvider)),
+          );
+        }),
+      );
+    }
+    return known;
+  }
+
+  /// The parked segments that deserve a name, one per stopover.
+  List<_StopoverSeed> _seedsOf(List<TripSegment> segments) => <_StopoverSeed>[
+    for (final TripSegment segment in segments)
+      if (segment.type == MotionType.stationary && segment.points.isNotEmpty)
+        _StopoverSeed.of(segment),
+  ];
+
+  /// The names the resolver already knows, keyed by stopover start time.
+  Map<DateTime, String?> _namesOf(
+    MilestoneNameResolver resolver,
+    List<_StopoverSeed> seeds,
+  ) {
+    final Map<String, String?> cached = resolver.cached(<RouteMilestone>[
+      for (final _StopoverSeed seed in seeds) seed.milestone,
+    ]);
+    return <DateTime, String?>{
+      for (final _StopoverSeed seed in seeds)
+        if (cached.containsKey(seed.milestone.coordinateKey))
+          seed.start: cached[seed.milestone.coordinateKey],
+    };
+  }
+}
+
+/// A stopover's milestone-shaped coordinate: the centroid of its fixes, which
+/// is exactly where the map drops its pin.
+class _StopoverSeed {
+  const _StopoverSeed({required this.start, required this.milestone});
+
+  factory _StopoverSeed.of(TripSegment segment) {
+    double sumLat = 0;
+    double sumLon = 0;
+    for (final TrackPoint point in segment.points) {
+      sumLat += point.latitude;
+      sumLon += point.longitude;
+    }
+    final int count = segment.points.length;
+    return _StopoverSeed(
+      start: segment.startTime,
+      milestone: RouteMilestone(
+        kind: RouteMilestoneKind.stop,
+        at: segment.startTime,
+        latitude: sumLat / count,
+        longitude: sumLon / count,
+      ),
+    );
+  }
+
+  final DateTime start;
+  final RouteMilestone milestone;
+}

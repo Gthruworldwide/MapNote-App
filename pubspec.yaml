@@ -18,7 +18,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # of the product and file versions while build-number is used as the build suffix.
 # Keep in sync with AppConfig.appVersion in
 # lib/src/core/config/app_config.dart.
-version: 1.0.5+22
+version: 1.0.6+23
 
 environment:
   sdk: ^3.12.2
@@ -101,6 +101,13 @@ dependencies:
   flutter_map: ^8.3.2
   latlong2: ^0.9.1
   animations: ^3.0.0
+  # Hardware pedometer: streams the device's absolute step count (Android
+  # `TYPE_STEP_COUNTER`, iOS `CMPedometer`), which lib/src/services/step_meter.dart
+  # turns into per-fix walking/running distance. Upstream applies the legacy
+  # Kotlin Gradle Plugin unconditionally, which is incompatible with built-in
+  # Kotlin, so it is overridden below with a patched copy in third_party/. See
+  # README > "Android / Kotlin build notes".
+  pedometer: ^4.0.1
 
 dev_dependencies:
   flutter_test:
@@ -125,6 +132,11 @@ dev_dependencies:
 dependency_overrides:
   flutter_dynamic_icon_plus:
     path: third_party/flutter_dynamic_icon_plus
+  # Patched copy of `pedometer` (see its dependency comment above): its Android
+  # Gradle script applies the legacy Kotlin Gradle Plugin unconditionally. The
+  # Dart, Kotlin and Swift sources match the published 4.0.1 release exactly.
+  pedometer:
+    path: third_party/pedometer
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

@@ -65,6 +65,20 @@ class ForegroundTrackingService {
     await _requestPermission('requestBackgroundLocationPermission');
   }
 
+  /// Asks for `ACTIVITY_RECOGNITION` (Android 10+), the runtime permission the
+  /// hardware step counter needs.
+  ///
+  /// Requested separately from [requestPermissions] because only the AutoMotion
+  /// pedometer uses it, and because the sensor can only be attached once the OS
+  /// allows it: the caller re-opens the pedometer's stream on a `true` answer
+  /// (see `StepMeter.refresh`), which is when the `pedometer` plugin's
+  /// `TYPE_STEP_COUNTER` registration can finally succeed. Best-effort like
+  /// every other call here: a refusal simply means walking distance stays
+  /// GPS-derived and the timeline reports "≈" step counts instead of
+  /// measurements.
+  Future<bool> requestActivityRecognitionPermission() =>
+      _requestPermission('requestActivityRecognitionPermission');
+
   /// A permission dialog must never leave Dart awaiting forever (the activity
   /// can be destroyed while it is up), so each request is bounded.
   Future<bool> _requestPermission(String method) async {

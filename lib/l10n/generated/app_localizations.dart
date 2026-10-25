@@ -1814,6 +1814,33 @@ abstract class AppLocalizations {
   /// **'A large list loads slower. Review duplicate or unused places and remove what you no longer need.'**
   String get insightOptimizationBody;
 
+  /// No description provided for @insightMotionSummaryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your motion today'**
+  String get insightMotionSummaryTitle;
+
+  /// Today's measured motion, without a step count (the device has no step sensor).
+  ///
+  /// In en, this message translates to:
+  /// **'You covered {walking} walking and {running} running, plus {vehicle} by vehicle.'**
+  String insightMotionSummaryBody(
+    String walking,
+    String running,
+    String vehicle,
+  );
+
+  /// Today's measured motion, including the step count read from the hardware step counter.
+  ///
+  /// In en, this message translates to:
+  /// **'You covered {walking} walking and {running} running, plus {vehicle} by vehicle, on {steps} counted steps.'**
+  String insightMotionSummaryBodySteps(
+    String walking,
+    String running,
+    String vehicle,
+    int steps,
+  );
+
   /// No description provided for @insightActionSyncNow.
   ///
   /// In en, this message translates to:
@@ -2287,6 +2314,186 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn\'t link the place'**
   String get suggestedPlaceLinkFailed;
+
+  /// No description provided for @motionHistoryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Motion history'**
+  String get motionHistoryTitle;
+
+  /// No description provided for @motionHistorySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Trips, walks, runs and stops recorded for this day'**
+  String get motionHistorySubtitle;
+
+  /// No description provided for @motionTypeDrive.
+  ///
+  /// In en, this message translates to:
+  /// **'Drive'**
+  String get motionTypeDrive;
+
+  /// No description provided for @motionTypeWalk.
+  ///
+  /// In en, this message translates to:
+  /// **'Walk'**
+  String get motionTypeWalk;
+
+  /// No description provided for @motionTypeRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Run'**
+  String get motionTypeRun;
+
+  /// No description provided for @motionTypeStopover.
+  ///
+  /// In en, this message translates to:
+  /// **'Stopover'**
+  String get motionTypeStopover;
+
+  /// No description provided for @motionHistoryToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get motionHistoryToday;
+
+  /// No description provided for @motionHistoryYesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get motionHistoryYesterday;
+
+  /// No description provided for @motionHistoryPickDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a day'**
+  String get motionHistoryPickDate;
+
+  /// No description provided for @motionHistoryPreviousDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous day'**
+  String get motionHistoryPreviousDay;
+
+  /// No description provided for @motionHistoryNextDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Next day'**
+  String get motionHistoryNextDay;
+
+  /// No description provided for @motionHistoryViewTimeline.
+  ///
+  /// In en, this message translates to:
+  /// **'Timeline'**
+  String get motionHistoryViewTimeline;
+
+  /// No description provided for @motionHistoryViewMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Map'**
+  String get motionHistoryViewMap;
+
+  /// No description provided for @motionHistoryTotalDistance.
+  ///
+  /// In en, this message translates to:
+  /// **'Distance'**
+  String get motionHistoryTotalDistance;
+
+  /// No description provided for @motionHistoryDriveTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Drive time'**
+  String get motionHistoryDriveTime;
+
+  /// No description provided for @motionHistoryStopoverTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Idle time'**
+  String get motionHistoryStopoverTime;
+
+  /// No description provided for @motionHistoryEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No motion recorded'**
+  String get motionHistoryEmptyTitle;
+
+  /// No description provided for @motionHistoryEmptyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing was recorded for this day. Turn on AutoMotion, then drive or walk to build a timeline.'**
+  String get motionHistoryEmptyBody;
+
+  /// No description provided for @motionHistoryNoRoute.
+  ///
+  /// In en, this message translates to:
+  /// **'No route to draw for this day.'**
+  String get motionHistoryNoRoute;
+
+  /// No description provided for @motionHistoryShowOnMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Show on map'**
+  String get motionHistoryShowOnMap;
+
+  /// No description provided for @motionHistoryDriveStats.
+  ///
+  /// In en, this message translates to:
+  /// **'{distance} km · {duration}'**
+  String motionHistoryDriveStats(String distance, String duration);
+
+  /// No description provided for @motionHistoryAverageSpeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Avg {speed} km/h'**
+  String motionHistoryAverageSpeed(String speed);
+
+  /// Measured step count, read from the hardware step counter. Never shown with an approximation mark.
+  ///
+  /// In en, this message translates to:
+  /// **'{distance} m · {steps} steps'**
+  String motionHistoryStepStats(String distance, int steps);
+
+  /// No description provided for @motionHistorySteps.
+  ///
+  /// In en, this message translates to:
+  /// **'Steps'**
+  String get motionHistorySteps;
+
+  /// No description provided for @motionHistoryModeBreakdownHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Walk and run distances are measured by the step counter; vehicle distance comes from GPS.'**
+  String get motionHistoryModeBreakdownHint;
+
+  /// No description provided for @motionHistoryStopoverStats.
+  ///
+  /// In en, this message translates to:
+  /// **'Stopped for {duration}'**
+  String motionHistoryStopoverStats(String duration);
+
+  /// No description provided for @durationHoursMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours} h {minutes} min'**
+  String durationHoursMinutes(int hours, int minutes);
+
+  /// No description provided for @durationMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} min'**
+  String durationMinutes(int minutes);
+
+  /// No description provided for @durationZero.
+  ///
+  /// In en, this message translates to:
+  /// **'0 min'**
+  String get durationZero;
+
+  /// No description provided for @durationLessThanMinute.
+  ///
+  /// In en, this message translates to:
+  /// **'less than a minute'**
+  String get durationLessThanMinute;
 }
 
 class _AppLocalizationsDelegate

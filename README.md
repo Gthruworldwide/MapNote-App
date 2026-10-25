@@ -132,7 +132,13 @@ is the operating system's local storage plus the user's own Google Drive.
   very first launch (switch it off in Settings → Location) with a custom
   electric-blue/mint status badge; when paused, the Home card stays visible with
   today's recorded totals. Tapping the card opens an **AutoMotion dashboard**
-  with a live driver-mode speed readout and a trip history of recorded days.
+  with a live driver-mode speed readout, a **motion timeline** (drive / walk /
+  run / stopover segments with times, distances and average speeds) on a
+  colour-coded route map, and a trip history of recorded days. Walking and
+  running distance is **measured from the hardware pedometer** (steps × stride
+  length, with a running cadence threshold) instead of guessed from GPS speed;
+  GPS distance is used only for vehicle trips and as the fallback on devices
+  without a step counter.
 - 🤖 **Smart Insights** — a privacy-first monitoring & recommendation agent that
   watches local app health (lifecycle, sync failures, location-parsing failures,
   UI latency) and the shape of the user's data, then suggests tidy-ups, sync
@@ -699,12 +705,17 @@ Already committed — the notes below explain what is in place.
     `pubspec.yaml`) with a patched `android/build.gradle` that applies KGP only
     when built-in Kotlin is off. The Dart API matches the published release
     exactly; drop the override once upstream ships a built-in-Kotlin release.
+  - `pedometer` (4.0.1, the hardware step counter behind AutoMotion's walking and
+    running distance) has the same problem and the same treatment: vendored under
+    `third_party/pedometer`, patched Gradle only (plus `namespace`, compileSdk 37
+    and JVM 17), with the Dart/Kotlin/Swift sources matching the published release.
+    Drop that override too once upstream ships a built-in-Kotlin release.
   - `android.newDsl=false` stays: the app still uses the legacy AGP DSL types.
   - **Residual notice:** Flutter detects KGP by *textually scanning* each plugin's
     `build.gradle` (see `FlutterPluginUtils.kgpRegex*`), so it still prints
     `plugins that apply Kotlin Gradle Plugin (KGP): firebase_analytics,
-    firebase_core, firebase_crashlytics, flutter_dynamic_icon_plus,
-    workmanager_android` even though all five guard on `android.builtInKotlin`.
+    firebase_core, firebase_crashlytics, flutter_dynamic_icon_plus, pedometer,
+    workmanager_android` even though all six guard on `android.builtInKotlin`.
     That notice is a false positive only the upstream packages can remove; it is
     non-fatal and the build exits `0`.
   See <https://docs.flutter.dev/release/breaking-changes/migrate-to-built-in-kotlin>.

@@ -349,6 +349,26 @@
   "insightPinFavoritesBody": "لديك {count} أماكن محفوظة ولا يوجد أي مكان مثبّت. اضغط مطوّلًا على مكان لتثبيته في الأعلى.",
   "insightOptimizationTitle": "حافظ على ترتيب MapNote",
   "insightOptimizationBody": "القائمة الكبيرة تُحمّل أبطأ. راجع الأماكن المكررة أو غير المستخدمة واحذف ما لا تحتاجه.",
+  "insightMotionSummaryTitle": "حركتك اليوم",
+  "insightMotionSummaryBody": "قطعت اليوم {walking} مشيًا و{running} جريًا، إضافة إلى {vehicle} بالمركبة.",
+  "@insightMotionSummaryBody": {
+    "description": "Today's measured motion, without a step count (the device has no step sensor).",
+    "placeholders": {
+      "walking": { "type": "String" },
+      "running": { "type": "String" },
+      "vehicle": { "type": "String" }
+    }
+  },
+  "insightMotionSummaryBodySteps": "قطعت اليوم {walking} مشيًا و{running} جريًا، إضافة إلى {vehicle} بالمركبة، على {steps} خطوة معدودة.",
+  "@insightMotionSummaryBodySteps": {
+    "description": "Today's measured motion, including the step count read from the hardware step counter.",
+    "placeholders": {
+      "walking": { "type": "String" },
+      "running": { "type": "String" },
+      "vehicle": { "type": "String" },
+      "steps": { "type": "int" }
+    }
+  },
   "insightActionSyncNow": "زامن الآن",
 
   "coordinateDetails": "خط العرض وخط الطول",
@@ -441,5 +461,43 @@
   "suggestedPlaceNoMatch": "لا يوجد مكان محفوظ قريب",
   "suggestedPlaceLinked": "تم الربط بـ {name}",
   "suggestedPlaceSaved": "تم الحفظ في أماكنك",
-  "suggestedPlaceLinkFailed": "تعذّر ربط المكان"
+  "suggestedPlaceLinkFailed": "تعذّر ربط المكان",
+
+  "motionHistoryTitle": "سجل الحركة",
+  "motionHistorySubtitle": "الرحلات والمشي والجري والتوقفات المسجلة في هذا اليوم",
+  "motionTypeDrive": "قيادة",
+  "motionTypeWalk": "مشي",
+  "motionTypeRun": "جري",
+  "motionTypeStopover": "توقف",
+  "motionHistoryToday": "اليوم",
+  "motionHistoryYesterday": "أمس",
+  "motionHistoryPickDate": "اختر يومًا",
+  "motionHistoryPreviousDay": "اليوم السابق",
+  "motionHistoryNextDay": "اليوم التالي",
+  "motionHistoryViewTimeline": "الخط الزمني",
+  "motionHistoryViewMap": "الخريطة",
+  "motionHistoryTotalDistance": "المسافة",
+  "motionHistoryDriveTime": "زمن القيادة",
+  "motionHistoryStopoverTime": "زمن التوقف",
+  "motionHistoryEmptyTitle": "لا توجد حركة مسجلة",
+  "motionHistoryEmptyBody": "لم يُسجَّل شيء في هذا اليوم. شغّل AutoMotion ثم قد أو امشِ لبناء الخط الزمني.",
+  "motionHistoryNoRoute": "لا يوجد مسار لرسمه في هذا اليوم.",
+  "motionHistoryShowOnMap": "اعرض على الخريطة",
+  "motionHistoryDriveStats": "{distance} كم · {duration}",
+  "motionHistoryAverageSpeed": "المتوسط {speed} كم/س",
+  "motionHistoryStepStats": "{distance} م · {steps} خطوة",
+  "@motionHistoryStepStats": {
+    "description": "Measured step count, read from the hardware step counter. Never shown with an approximation mark.",
+    "placeholders": {
+      "distance": { "type": "String" },
+      "steps": { "type": "int" }
+    }
+  },
+  "motionHistorySteps": "خطوات",
+  "motionHistoryModeBreakdownHint": "تُقاس مسافات المشي والجري بالعداد الخطوي، أما مسافة المركبة فتُستمد من GPS.",
+  "motionHistoryStopoverStats": "توقفت لمدة {duration}",
+  "durationHoursMinutes": "{hours} س {minutes} د",
+  "durationMinutes": "{minutes} د",
+  "durationZero": "0 د",
+  "durationLessThanMinute": "أقل من دقيقة"
 }

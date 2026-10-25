@@ -125,6 +125,26 @@ void main() {
       await gyroscopeSubscription.cancel();
     });
 
+    test('step-counter payloads are ignored: the pedometer plugin owns them',
+        () async {
+      final MotionSensorHub hub = MotionSensorHub(clock: () => stamp);
+      final List<AccelerometerSample> accelerometers =
+          <AccelerometerSample>[];
+      final StreamSubscription<AccelerometerSample> accelerometerSubscription =
+          hub.accelerometer.listen(accelerometers.add);
+
+      // A legacy tag-2 sample (the step counter used to ride this channel)
+      // must never be mistaken for a motion vector now that `pedometer` owns
+      // the hardware counter.
+      hub.handlePlatformEvent(<num>[4210, 0, 0, 2]);
+      hub.handlePlatformEvent(<num>[4235, 0, 0, 2]);
+      await pumpEventQueue();
+
+      expect(accelerometers, isEmpty);
+
+      await accelerometerSubscription.cancel();
+    });
+
     test('stamps samples with the injected clock', () async {
       final MotionSensorHub hub = MotionSensorHub(clock: () => stamp);
       final List<AccelerometerSample> accelerometers =
