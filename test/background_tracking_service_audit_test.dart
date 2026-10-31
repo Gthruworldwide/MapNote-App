@@ -20,7 +20,7 @@ void main() {
 
     setUpAll(() {
       kotlin = File(
-        'android/app/src/main/kotlin/com/routenote/routenote/LocationTrackingService.kt',
+        'android/app/src/main/kotlin/com/routenote/routenote/ForegroundTrackingService.kt',
       ).readAsStringSync();
       manifest = File('android/app/src/main/AndroidManifest.xml').readAsStringSync();
     });
@@ -57,7 +57,7 @@ void main() {
     });
 
     test('the manifest declares the location foreground service', () {
-      expect(manifest, contains('.LocationTrackingService'));
+      expect(manifest, contains('.ForegroundTrackingService'));
       expect(manifest, contains('android:foregroundServiceType="location"'));
       expect(manifest, contains('android.permission.FOREGROUND_SERVICE'));
       expect(

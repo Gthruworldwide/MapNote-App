@@ -38,7 +38,7 @@ class AppConfig {
   /// Human-readable version shown in Settings → About.
   ///
   /// Keep in sync with the `version` field in `pubspec.yaml`.
-  static const String appVersion = '1.0.5';
+  static const String appVersion = '1.0.6';
 
   /// Drive scope that grants access to the hidden, app-specific
   /// `appDataFolder` only. The user's other Drive files are never visible.
