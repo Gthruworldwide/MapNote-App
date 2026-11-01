@@ -13,7 +13,8 @@ import '../../core/utils/plus_code.dart';
 ///   "timestamp": "2026-10-09T15:30:00Z",
 ///   "isPinned": false,
 ///   "isHidden": false,
-///   "isLocked": false
+///   "isLocked": false,
+///   "isVaulted": false
 /// }
 /// ```
 class Place {
@@ -27,6 +28,7 @@ class Place {
     this.isPinned = false,
     this.isHidden = false,
     this.isLocked = false,
+    this.isVaulted = false,
   });
 
   final String id;
@@ -59,6 +61,7 @@ class Place {
     bool? isPinned,
     bool? isHidden,
     bool? isLocked,
+    bool? isVaulted,
   }) {
     return Place(
       id: id ?? this.id,
@@ -70,6 +73,7 @@ class Place {
       isPinned: isPinned ?? this.isPinned,
       isHidden: isHidden ?? this.isHidden,
       isLocked: isLocked ?? this.isLocked,
+      isVaulted: isVaulted ?? this.isVaulted,
     );
   }
 
@@ -98,6 +102,7 @@ class Place {
       'isPinned': isPinned,
       'isHidden': isHidden,
       'isLocked': isLocked,
+      'isVaulted': isVaulted,
     };
   }
 
@@ -107,6 +112,7 @@ class Place {
   Map<String, dynamic> toJson() => <String, dynamic>{
     ...toMap(),
     'plusCode': plusCode,
+    'isVaulted': isVaulted,
   };
 
   factory Place.fromMap(Map<String, dynamic> map) {
@@ -120,6 +126,7 @@ class Place {
       isPinned: _toBool(map['isPinned']),
       isHidden: _toBool(map['isHidden']),
       isLocked: _toBool(map['isLocked']),
+      isVaulted: _toBool(map['isVaulted']),
     );
   }
 
@@ -160,7 +167,8 @@ class Place {
       other.timestamp == timestamp &&
       other.isPinned == isPinned &&
       other.isHidden == isHidden &&
-      other.isLocked == isLocked;
+      other.isLocked == isLocked &&
+      other.isVaulted == isVaulted;
 
   @override
   int get hashCode => Object.hash(
@@ -173,10 +181,11 @@ class Place {
     isPinned,
     isHidden,
     isLocked,
+    isVaulted,
   );
 
   @override
   String toString() =>
       'Place($id, $name, $latitude, $longitude, '
-      'pinned: $isPinned, hidden: $isHidden, locked: $isLocked)';
+      'pinned: $isPinned, hidden: $isHidden, locked: $isLocked, vaulted: $isVaulted)';
 }

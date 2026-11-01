@@ -444,8 +444,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ],
       data: (List<Place> allPlaces) {
         // Hidden places live only in the Settings → Hidden Vault.
+        // Vaulted places are also excluded from the main list unless the vault
+        // is explicitly opened via the SavedPlacesVaultScreen.
         final List<Place> places = allPlaces
-            .where((Place place) => !place.isHidden)
+            .where((Place place) => !place.isHidden && !place.isVaulted)
             .toList();
 
         if (places.isEmpty && _query.isEmpty) {
