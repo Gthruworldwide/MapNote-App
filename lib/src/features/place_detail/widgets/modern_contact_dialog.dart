@@ -28,6 +28,8 @@ class _ModernContactDialogState extends State<ModernContactDialog>
   late TabController _tabController;
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
+  final FocusNode _nameFocusNode = FocusNode();
+  final FocusNode _phoneFocusNode = FocusNode();
   String _selectedRole = 'manager';
 
   final List<String> _roles = ['manager', 'supervisor', 'support', 'staff'];
@@ -172,51 +174,115 @@ class _ModernContactDialogState extends State<ModernContactDialog>
     _tabController.dispose();
     _nameController.dispose();
     _phoneController.dispose();
+    _nameFocusNode.dispose();
+    _phoneFocusNode.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickPhoneContact() async {
+    // No native contact-picker plugin is bundled (pubspec). Request permission
+    // and guide the user; the icon provides a discoverable entry point.
+    final status = await Permission.contacts.request();
+    if (!mounted) return;
+    if (status.isGranted) {
+      _tabController.animateTo(1);
+      _phoneFocusNode.requestFocus();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('يرجى إدخال جهة الاتصال يدوياً'),
+        ),
+      );
+    } else if (status.isPermanentlyDenied) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text(
+            'يرجى منح صلاحية الوصول لجهات الاتصال لاستيراد الأرقام تلقائياً',
+          ),
+          action: SnackBarAction(
+            label: 'فتح الإعدادات',
+            onPressed: () => openAppSettings(),
+          ),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text(
+            'يرجى منح صلاحية الوصول لجهات الاتصال لاستيراد الأرقام تلقائياً',
+          ),
+          action: SnackBarAction(
+            label: 'فتح الإعدادات',
+            onPressed: () => openAppSettings(),
+          ),
+        ),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final EdgeInsets viewInsets = MediaQuery.viewInsetsOf(context);
+    final double availableHeight =
+        MediaQuery.sizeOf(context).height - viewInsets.bottom - 96;
+    final double maxBodyHeight =
+        availableHeight.clamp(220.0, MediaQuery.sizeOf(context).height * 0.72);
 
     return AlertDialog(
       title: const Text('إضافة / اقتراح جهة اتصال'),
-      content: SizedBox(
-        width: double.maxFinite,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TabBar(
-              controller: _tabController,
-              tabs: const [
-                Tab(text: 'استيراد من أرقام الفريق'),
-                Tab(text: 'إدخال جديد'),
+      scrollable: false,
+      contentPadding: const EdgeInsets.fromLTRB(24, 12, 24, 8),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+      content: AnimatedPadding(
+        duration: const Duration(milliseconds: 150),
+        curve: Curves.easeOut,
+        padding: EdgeInsets.only(bottom: viewInsets.bottom > 0 ? 0 : 0),
+        child: SizedBox(
+          width: double.maxFinite,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: maxBodyHeight),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TabBar(
+                  controller: _tabController,
+                  tabs: const [
+                    Tab(text: 'استيراد من أرقام الفريق'),
+                    Tab(text: 'إدخال جديد'),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Flexible(
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      _buildImportTab(context),
+                      _buildNewEntryTab(context),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                // Actions pinned at the bottom of the dialog layout.
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(false),
+                      child: Text(l10n.cancel),
+                    ),
+                    const SizedBox(width: 8),
+                    FilledButton(
+                      onPressed: _submitContact,
+                      child: Text(l10n.confirm),
+                    ),
+                  ],
+                ),
               ],
             ),
-            const SizedBox(height: 16),
-            SizedBox(
-              height: 300,
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  _buildImportTab(context),
-                  _buildNewEntryTab(context),
-                ],
-              ),
-            ),
-          ],
+          ),
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(false),
-          child: Text(l10n.cancel),
-        ),
-        FilledButton(
-          onPressed: _submitContact,
-          child: Text(l10n.confirm),
-        ),
-      ],
+      actions: const <Widget>[],
     );
   }
 
@@ -237,53 +303,15 @@ class _ModernContactDialogState extends State<ModernContactDialog>
             child: ElevatedButton.icon(
               icon: const Icon(Icons.contacts),
               label: const Text('اختر من جهات اتصال الهاتف'),
-              onPressed: () async {
-                // Request contacts permission
-                final status = await Permission.contacts.request();
-                if (status.isGranted) {
-                  // NOTE: This app has no flutter_contacts / device contact
-                  // picker plugin (see pubspec.yaml). The permission is
-                  // requested so future native picking can work, but until
-                  // a picker plugin is added, the user enters manually.
-                  if (context.mounted) {
-                    _tabController.animateTo(1);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('يرجى إدخال جهة الاتصال يدوياً'),
-                      ),
-                    );
-                  }
-                } else if (status.isPermanentlyDenied) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: const Text('يرجى منح صلاحية الوصول لجهات الاتصال لاستيراد الأرقام تلقائياً'),
-                        action: SnackBarAction(
-                          label: 'فتح الإعدادات',
-                          onPressed: () => openAppSettings(),
-                        ),
-                      ),
-                    );
-                  }
-                } else {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: const Text('يرجى منح صلاحية الوصول لجهات الاتصال لاستيراد الأرقام تلقائياً'),
-                        action: SnackBarAction(
-                          label: 'فتح الإعدادات',
-                          onPressed: () => openAppSettings(),
-                        ),
-                      ),
-                    );
-                  }
-                }
-              },
+              onPressed: _pickPhoneContact,
             ),
           ),
           const SizedBox(height: 16),
           TextField(
             controller: _nameController,
+            focusNode: _nameFocusNode,
+            textInputAction: TextInputAction.next,
+            onSubmitted: (_) => _phoneFocusNode.requestFocus(),
             decoration: const InputDecoration(
               labelText: 'الاسم الكامل',
               hintText: 'الاسم الكامل',
@@ -292,11 +320,18 @@ class _ModernContactDialogState extends State<ModernContactDialog>
           const SizedBox(height: 12),
           TextField(
             controller: _phoneController,
-            decoration: const InputDecoration(
+            focusNode: _phoneFocusNode,
+            keyboardType: TextInputType.phone,
+            textInputAction: TextInputAction.done,
+            decoration: InputDecoration(
               labelText: 'رقم الهاتف',
               hintText: 'رقم الهاتف',
+              suffixIcon: IconButton(
+                icon: const Icon(Icons.contacts_outlined),
+                tooltip: 'اختر من جهات الاتصال',
+                onPressed: _pickPhoneContact,
+              ),
             ),
-            keyboardType: TextInputType.phone,
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
