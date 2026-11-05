@@ -20,6 +20,7 @@ class LocationSettingsScreen extends ConsumerWidget {
     final AsyncValue<LocationStatus> location = ref.watch(
       locationStatusProvider,
     );
+    final bool isWork = ref.watch(appEditionProvider) == AppEdition.work;
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.sectionLocationTracking)),
@@ -30,10 +31,13 @@ class LocationSettingsScreen extends ConsumerWidget {
             title: l10n.sectionLocationServices,
             child: _buildLocationCard(context, ref, l10n, location),
           ),
-          SettingsSection(
-            title: l10n.autoMotionSection,
-            child: _buildTrackingCard(context, ref, l10n),
-          ),
+          // AutoMotion / GPS tracking is personal-app automation; Work Edition is
+          // no-automation, so this section stays intact only in the personal app.
+          if (!isWork)
+            SettingsSection(
+              title: l10n.autoMotionSection,
+              child: _buildTrackingCard(context, ref, l10n),
+            ),
         ],
       ),
     );

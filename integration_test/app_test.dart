@@ -51,7 +51,11 @@ void main() {
     Hive.init(tempDir.path);
     placesBox = await Hive.openBox<dynamic>('it_places');
     settingsBox = await Hive.openBox<dynamic>('it_settings');
-    database = HiveDatabase(placesBox: placesBox, settingsBox: settingsBox);
+    database = HiveDatabase(
+    placesBox: placesBox,
+    settingsBox: settingsBox,
+    stationBox: await Hive.openBox<dynamic>('it_stations'),
+  );
     dataSource = PlaceLocalDataSource(database);
   });
 

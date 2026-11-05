@@ -4,13 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../core/config/app_config.dart';
 import '../../core/config/preferred_nav_app.dart';
-import '../../data/local/settings_repository.dart';
 import '../../providers/app_providers.dart';
-import '../automotion/widgets/auto_motion_export_sheet.dart';
 import 'settings_shared.dart';
 
-/// Preferences settings: navigation app, language, theme, font scale, haptics,
-/// density, tile cache, offline maps and Smart Insights.
+/// Preferences settings: navigation app, language, theme, and haptics.
 class PreferencesSettingsScreen extends ConsumerWidget {
   const PreferencesSettingsScreen({super.key});
 
@@ -19,7 +16,6 @@ class PreferencesSettingsScreen extends ConsumerWidget {
     final AppLocalizations l10n = AppLocalizations.of(context);
     final Locale? locale = ref.watch(localeControllerProvider);
     final ThemeMode themeMode = ref.watch(themeModeProvider);
-    final FontScalePreset fontScale = ref.watch(fontScaleProvider);
     final PreferredNavApp navApp = ref.watch(preferredNavAppProvider);
 
     return Scaffold(
@@ -36,7 +32,6 @@ class PreferencesSettingsScreen extends ConsumerWidget {
               locale,
               themeMode,
               navApp,
-              fontScale,
             ),
           ),
           SettingsSection(
@@ -55,7 +50,6 @@ class PreferencesSettingsScreen extends ConsumerWidget {
     Locale? locale,
     ThemeMode themeMode,
     PreferredNavApp navApp,
-    FontScalePreset fontScale,
   ) {
     final ThemeData theme = Theme.of(context);
     return Padding(
@@ -160,39 +154,6 @@ class PreferencesSettingsScreen extends ConsumerWidget {
             ],
           ),
           const Divider(height: 24),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Row(
-                  children: <Widget>[
-                    const Icon(Icons.text_fields),
-                    const SizedBox(width: 12),
-                    Text(l10n.fontScale, style: theme.textTheme.titleSmall),
-                  ],
-                ),
-                Slider(
-                  value: fontScale.index.toDouble(),
-                  min: 0,
-                  max: (FontScalePreset.values.length - 1).toDouble(),
-                  divisions: FontScalePreset.values.length - 1,
-                  label: switch (fontScale) {
-                    FontScalePreset.small => l10n.fontScaleSmall,
-                    FontScalePreset.standard => l10n.fontScaleStandard,
-                    FontScalePreset.large => l10n.fontScaleLarge,
-                    FontScalePreset.extraLarge => l10n.fontScaleExtraLarge,
-                  },
-                  onChanged: (double value) {
-                    ref
-                        .read(fontScaleProvider.notifier)
-                        .setFontScale(FontScalePreset.values[value.round()]);
-                  },
-                ),
-              ],
-            ),
-          ),
-          const Divider(height: 24),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
             secondary: const Icon(Icons.vibration),
@@ -200,68 +161,6 @@ class PreferencesSettingsScreen extends ConsumerWidget {
             value: ref.watch(settingsRepositoryProvider).isHapticFeedbackEnabled,
             onChanged: (bool value) =>
                 ref.read(settingsRepositoryProvider).setHapticFeedbackEnabled(value),
-          ),
-          const Divider(height: 24),
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            secondary: const Icon(Icons.density_medium),
-            title: Text(l10n.uiDensityCompact),
-            value: ref.watch(settingsRepositoryProvider).isUiDensityCompact,
-            onChanged: (bool value) =>
-                ref.read(settingsRepositoryProvider).setUiDensityCompact(value),
-          ),
-          const Divider(height: 24),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.file_download_outlined),
-            title: Text(l10n.exportMotionData),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => showModalBottomSheet<void>(
-              context: context,
-              isScrollControlled: true,
-              builder: (_) => const AutoMotionExportBottomSheet(),
-            ),
-          ),
-          const Divider(height: 24),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.storage_outlined),
-            title: Text(l10n.tileCacheSize('0 MB')),
-          ),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.delete_sweep_outlined),
-            title: Text(l10n.clearTileCache),
-            onTap: () => showDialog<void>(
-              context: context,
-              builder: (BuildContext ctx) => AlertDialog(
-                title: Text(l10n.clearTileCache),
-                content: Text(l10n.clearTileCache),
-                actions: <Widget>[
-                  TextButton(
-                    onPressed: () => Navigator.of(ctx).pop(),
-                    child: Text(l10n.cancel),
-                  ),
-                  FilledButton(
-                    onPressed: () {
-                      Navigator.of(ctx).pop();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(l10n.clearTileCache)),
-                      );
-                    },
-                    child: Text(l10n.delete),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.download_outlined),
-            title: Text(l10n.preloadOfflineMaps),
-            onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(l10n.offlineMapDownloaded)),
-            ),
           ),
         ],
       ),

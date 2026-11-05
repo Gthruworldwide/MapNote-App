@@ -56,6 +56,8 @@ dependencies:
   # notes"; iOS SwiftPM/SceneDelegate follow-ups for 1.9.0 are tracked there.
   receive_sharing_intent: ^1.9.0
   local_auth: ^3.0.2
+  permission_handler: ^13.0.2
+  excel: 4.0.6
   # Stores the AES-256 key that encrypts the "saved places" vault box. The key
   # lives in the platform keystore (Android Keystore / iOS Keychain) and is only
   # read after a biometric/device-credential check (see
@@ -85,6 +87,7 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   firebase_core: ^4.15.0
+  cloud_firestore: ^6.10.2
   firebase_crashlytics: ^5.4.0
   firebase_analytics: ^12.6.0
   # Pure-Dart Open Location Code (Plus Code) encode/decode, computed entirely
@@ -137,6 +140,10 @@ dependency_overrides:
   # Dart, Kotlin and Swift sources match the published 4.0.1 release exactly.
   pedometer:
     path: third_party/pedometer
+  # Override permission_handler_android to v12 which supports Built-in Kotlin
+  # and resolves the "cannot find symbol: class Registrar" compilation error.
+  permission_handler_android:
+    ^12.0.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -163,6 +170,7 @@ flutter:
   assets:
     - assets/app_icon_animated.gif
     - assets/brand/
+    - assets/data/stations.json
 
   # Manrope is bundled locally (assets/fonts/) instead of being downloaded at
   # runtime, so MapNote's type is available instantly and fully offline from the

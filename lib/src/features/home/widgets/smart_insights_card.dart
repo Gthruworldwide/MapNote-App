@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../data/models/agent_insight.dart';
 import '../../../providers/app_providers.dart';
+import 'smart_insights_widget.dart';
 
 /// A subtle "Smart Insights" card for the Home screen.
 ///
@@ -16,6 +17,12 @@ class SmartInsightsCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Work Edition surfaces fleet/operations metrics (stations, manager contact
+    // coverage, pending admin approvals) instead of general travel insights.
+    if (ref.watch(appEditionProvider) == AppEdition.work) {
+      return const SmartInsightsWidget();
+    }
+
     final List<AgentInsight> insights =
         ref.watch(agentProvider).value ?? const <AgentInsight>[];
     if (insights.isEmpty && !showWhenEmpty) return const SizedBox.shrink();

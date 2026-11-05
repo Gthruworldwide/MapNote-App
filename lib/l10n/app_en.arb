@@ -1,10 +1,8 @@
 {
   "@@locale": "en",
-
   "appTitle": "MapNote",
   "placesTitle": "My Places",
   "searchHint": "Search by name or notes",
-
   "addPlace": "Save current location",
   "addPlaceTitle": "Save Location",
   "editPlaceTitle": "Edit Location",
@@ -18,7 +16,6 @@
   "currentLocation": "Current location",
   "fetchingLocation": "Getting your location…",
   "nameRequired": "Please enter a name",
-
   "pasteFromClipboard": "Paste location from clipboard",
   "clipboardNoLocation": "No coordinates found in the clipboard",
   "clipboardPasted": "Location pasted from clipboard",
@@ -32,20 +29,17 @@
   "plusCode": "Plus Code",
   "plusCodeHint": "e.g. 8FVC9G8F+6W",
   "shareNoLocation": "No location found in the shared text",
-
   "save": "Save",
   "cancel": "Cancel",
   "delete": "Delete",
   "edit": "Edit",
   "ok": "OK",
   "retry": "Retry",
-
   "navigate": "Navigate",
   "openInGoogleMaps": "Open in Google Maps",
   "openInWaze": "Open in Waze",
   "copyCoordinates": "Copy coordinates",
   "coordinatesCopied": "Coordinates copied to clipboard",
-
   "placeSaved": "Location saved",
   "placeDeleted": "Location deleted",
   "placeDetailsTitle": "Place details",
@@ -53,25 +47,27 @@
   "deletePlaceMessage": "\"{name}\" will be removed from this device and from your next backup.",
   "@deletePlaceMessage": {
     "placeholders": {
-      "name": { "type": "String" }
+      "name": {
+        "type": "String"
+      }
     }
   },
   "createdAt": "Saved {date}",
   "@createdAt": {
     "placeholders": {
-      "date": { "type": "String" }
+      "date": {
+        "type": "String"
+      }
     }
   },
-
   "emptyPlacesTitle": "No saved places yet",
   "emptyPlacesMessage": "Tap + in the top bar to save your current location.",
   "noSearchResults": "No places match your search.",
-
   "settingsTitle": "Settings",
   "sectionLanguage": "Language",
   "languageSystem": "System default",
   "languageEnglish": "English",
-  "languageArabic": "العربية",
+  "languageArabic": "Arabic",
   "selectLanguage": "Select language",
   "preferredNavApp": "Preferred navigation app",
   "preferredNavAppSubtitle": "Which app opens when you tap Navigate",
@@ -91,7 +87,6 @@
   "themeSystem": "System",
   "themeLight": "Light",
   "themeDark": "Dark",
-
   "sectionAccount": "Account",
   "sectionSecurityVault": "Security Vault",
   "signInWithGoogle": "Sign in with Google",
@@ -99,12 +94,13 @@
   "signedInAs": "Signed in as {email}",
   "@signedInAs": {
     "placeholders": {
-      "email": { "type": "String" }
+      "email": {
+        "type": "String"
+      }
     }
   },
   "notSignedIn": "Not signed in",
   "syncSignInRequired": "Sign in with Google to sync",
-
   "sectionSync": "Sync & backup",
   "syncNow": "Sync now",
   "syncInProgress": "Syncing…",
@@ -113,19 +109,25 @@
   "syncFailed": "Sync failed: {error}",
   "@syncFailed": {
     "placeholders": {
-      "error": { "type": "String" }
+      "error": {
+        "type": "String"
+      }
     }
   },
   "signInFailed": "Sign-in failed: {error}",
   "@signInFailed": {
     "placeholders": {
-      "error": { "type": "String" }
+      "error": {
+        "type": "String"
+      }
     }
   },
   "lastSynced": "Last synced: {date}",
   "@lastSynced": {
     "placeholders": {
-      "date": { "type": "String" }
+      "date": {
+        "type": "String"
+      }
     }
   },
   "neverSynced": "Never synced",
@@ -137,16 +139,16 @@
   "restoreFailed": "Restore failed: {error}",
   "@restoreFailed": {
     "placeholders": {
-      "error": { "type": "String" }
+      "error": {
+        "type": "String"
+      }
     }
   },
-
   "locationPermissionTitle": "Location permission needed",
   "locationPermissionMessage": "MapNote needs access to your location to save places.",
   "locationServicesDisabled": "Please enable location services on your device.",
   "locationUnavailable": "Could not determine your location. Please try again.",
   "openAppSettings": "Open settings",
-
   "locationStatusGps": "GPS",
   "locationStatusPermission": "Permission",
   "locationGpsOn": "On",
@@ -156,7 +158,51 @@
   "locationPermissionDeniedForever": "Blocked",
   "locationPermissionUnknown": "Not requested",
   "manageLocation": "Manage location",
-
+  "contactsPermissionTitle": "Contacts permission needed",
+  "contactsPermissionNeeded": "MapNote needs access to your contacts to let you link them to saved places.",
+  "contactsPermissionDeniedPermanently": "Contacts permission was permanently denied. You can change this in your device settings.",
+  "contactPickerFeatureNotReady": "Contact picker feature is not ready yet.",
+  "unlinkContactFeatureNotReady": "Unlink contact feature is not ready yet.",
+  "allow": "Allow",
+  "settings": "Settings",
+  "linkedContact": "Linked contact: {name}",
+  "@linkedContact": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "unlinkContact": "Unlink",
+  "linkContact": "Link contact",
+  "smartBatterySaver": "Smart Battery Saver",
+  "smartBatterySaverDesc": "Reduce GPS updates when stationary.",
+  "exportMotionData": "Export motion data",
+  "tileCacheSize": "Tile cache size: {size}",
+  "clearTileCache": "Clear tile cache",
+  "preloadOfflineMaps": "Preload offline maps",
+  "offlineMapDownloaded": "Offline map downloaded",
+  "offlineMapRegionSelection": "Offline Map Region",
+  "minLatitude": "Min Latitude",
+  "maxLatitude": "Max Latitude",
+  "latitudeHint": "Min latitude (e.g. 30.05)",
+  "minLongitude": "Min Longitude",
+  "maxLongitude": "Max Longitude",
+  "longitudeHint": "Min longitude (e.g. 31.22)",
+  "minZoom": "Min Zoom",
+  "maxZoom": "Max Zoom",
+  "zoomHint": "Zoom level (0-20)",
+  "startDownload": "Start Download",
+  "autoMotionExport": "Export",
+  "autoMotionCustomRange": "Custom range",
+  "autoMotionRangeLabel": "{from} – {to}",
+  "autoMotionSelectRange": "Custom range",
+  "autoMotionExportCopied": "Exported to clipboard",
+  "zeroCoordinatesNotice": "Export does not contain location coordinates",
+  "autoMotionExportCsv": "CSV",
+  "autoMotionExportJson": "JSON",
+  "autoMotionExportCopy": "Copy",
+  "savedPlacesVaultLock": "Vault lock",
   "dailyGpsSection": "Daily GPS tracking",
   "dailyGpsToggle": "Enable daily GPS tracking",
   "dailyGpsToggleSubtitle": "Records distance and max speed while the app is open",
@@ -168,7 +214,6 @@
   "dailyGpsUnavailable": "GPS unavailable — check location settings",
   "kmUnit": "km",
   "kmhUnit": "km/h",
-
   "autoMotionSection": "AutoMotion",
   "autoMotionToggle": "Enable AutoMotion",
   "autoMotionToggleSubtitle": "Automatically records distance and max speed while the app is open",
@@ -194,38 +239,6 @@
   "autoMotionLast7Days": "Last 7 days",
   "autoMotionLast30Days": "Last 30 days",
   "autoMotionDaysRecorded": "{count} days recorded",
-  "autoMotionCustomRange": "Custom range",
-  "customDateRange": "Custom date range",
-  "exportMotionData": "Export motion data",
-  "exportFormatCsv": "CSV",
-  "exportFormatJson": "JSON",
-  "zeroCoordinatesNotice": "Export contains no location coordinates.",
-  "tileCacheSize": "Tile cache: {size}",
-  "@tileCacheSize": {
-    "placeholders": {
-      "size": { "type": "String" }
-    }
-  },
-  "clearTileCache": "Clear tile cache",
-  "preloadOfflineMaps": "Pre-load saved places maps",
-  "offlineMapDownloaded": "Offline maps downloaded",
-  "smartBatterySaver": "Smart battery saver",
-  "smartBatterySaverDesc": "Reduce GPS polling when stationary.",
-  "stationaryModeActive": "Stationary mode active",
-  "autoMotionSelectRange": "Select date range",
-  "autoMotionExport": "Export data",
-  "autoMotionExportCsv": "Export as CSV",
-  "autoMotionExportJson": "Export as JSON",
-  "autoMotionExportCopy": "Copy to clipboard",
-  "autoMotionExportCopied": "Report copied to clipboard",
-  "autoMotionExportEmpty": "No recorded days in this range.",
-  "autoMotionRangeLabel": "{from} – {to}",
-  "@autoMotionRangeLabel": {
-    "placeholders": {
-      "from": { "type": "String" },
-      "to": { "type": "String" }
-    }
-  },
   "@autoMotionDaysRecorded": {
     "placeholders": {
       "count": {
@@ -247,7 +260,9 @@
   "autoMotionEventsMore": "{count} more",
   "@autoMotionEventsMore": {
     "placeholders": {
-      "count": { "type": "int" }
+      "count": {
+        "type": "int"
+      }
     }
   },
   "harshAcceleration": "Harsh acceleration",
@@ -261,13 +276,17 @@
   "motionSummaryScore": "{score} / 100",
   "@motionSummaryScore": {
     "placeholders": {
-      "score": { "type": "int" }
+      "score": {
+        "type": "int"
+      }
     }
   },
   "motionSummaryEvents": "{count} events",
   "@motionSummaryEvents": {
     "placeholders": {
-      "count": { "type": "int" }
+      "count": {
+        "type": "int"
+      }
     }
   },
   "motionSummaryClean": "Clean trip — no harsh maneuvers.",
@@ -280,13 +299,10 @@
   "locationChipServiceOff": "Location off — tap to enable",
   "locationChipPermissionDenied": "Location permission needed — tap to allow",
   "locationChipDeniedForever": "Location blocked — tap to open settings",
-
   "errorGeneric": "Something went wrong",
-
   "about": "About",
   "version": "Version",
   "aboutDescription": "MapNote saves your favourite places offline and syncs them to your private Google Drive. Navigation opens in the maps app you already use.",
-
   "addLocation": "Add location",
   "addCurrentLocation": "Current Location",
   "addCurrentLocationSubtitle": "Use your device's GPS position",
@@ -294,7 +310,6 @@
   "aiSmartPasteSubtitle": "Paste a Google Maps link or coordinates",
   "enterCoordinates": "Enter Coordinates",
   "enterCoordinatesSubtitle": "Type latitude and longitude manually",
-
   "pinnedLabel": "Pinned",
   "lockedLabel": "Locked",
   "pinToTop": "Pin to top",
@@ -302,6 +317,21 @@
   "pinnedToTop": "Pinned to top",
   "unpinnedFromTop": "Removed from top",
   "shareQr": "Share QR code",
+  "shareViaWhatsApp": "Send via WhatsApp",
+  "searchContact": "Search Contact",
+  "proposeManagerUpdateTitle": "Propose Manager Update",
+  "proposeManagerUpdate": "Propose Manager Update",
+  "updateProposalSubmitted": "Update proposal submitted",
+  "managerName": "Manager Name",
+  "managerPhone": "Manager Phone",
+  "confirm": "Confirm",
+  "currentUserName": "Current User",
+  "shareViaSystem": "Share via system",
+  "sendToDriver": "Send to driver",
+  "submitStationUpdate": "Submit Station Update / إرسال تعديل المحطة",
+  "submittingUpdate": "Submitting update...",
+  "updateSuccess": "Update proposal submitted successfully",
+  "updateFailed": "Failed to submit update proposal",
   "addToHomeScreen": "Add shortcut to home screen",
   "lockLocation": "Lock location",
   "unlockLocation": "Unlock location",
@@ -311,7 +341,6 @@
   "unhideLocation": "Unhide location",
   "locationHidden": "Location hidden",
   "locationUnhidden": "Location unhidden",
-
   "unlockToContinue": "Verify your identity to continue",
   "unlockToNavigate": "Verify your identity to navigate",
   "unlockToEdit": "Verify your identity to edit",
@@ -321,26 +350,28 @@
   "authenticationFailed": "Authentication failed",
   "biometricsUnavailable": "Biometric authentication isn't available on this device",
   "noDeviceSecurityWarning": "No lock screen or biometrics on this device, so verification was skipped.",
-
   "sectionPrivacy": "Privacy & security",
   "hiddenVault": "Hidden Vault",
   "hiddenVaultSubtitle": "{count, plural, =0{No hidden locations} =1{1 hidden location} other{{count} hidden locations}}",
   "@hiddenVaultSubtitle": {
     "placeholders": {
-      "count": { "type": "int" }
+      "count": {
+        "type": "int"
+      }
     }
   },
   "hiddenVaultEmpty": "No hidden locations",
   "hiddenVaultEmptyMessage": "Locations you hide will appear here, protected by your device lock.",
-
   "vaultProtectionTitle": "Vault protection",
   "vaultProtectionSubtitle": "How long the Hidden Vault stays unlocked, and whether it locks when the screen does.",
   "sessionTimeoutTitle": "Auto-lock after inactivity",
   "sessionTimeoutSubtitle": "The vault re-locks after this long without use.",
-  "sessionTimeoutMinutes": "{minutes, plural, =1{1 minute} other{{minutes} minutes}}",
+  "sessionTimeoutMinutes": "{minutes, plural, one{1 minute} other{{minutes} minutes}}",
   "@sessionTimeoutMinutes": {
     "placeholders": {
-      "minutes": { "type": "int" }
+      "minutes": {
+        "type": "int"
+      }
     }
   },
   "lockOnDeviceLockTitle": "Lock when the device locks",
@@ -348,17 +379,14 @@
   "vaultDimmingNotice": "For your privacy, the screen dims while the device is resting unattended.",
   "sessionTimeoutUpdated": "Auto-lock timeout updated",
   "lockOnDeviceLockUpdated": "Device-lock protection updated",
-
   "qrCodeTitle": "Share via QR code",
   "qrCodeHint": "Scan to open this location in a maps app",
   "copyLink": "Copy link",
   "linkCopied": "Link copied to clipboard",
   "close": "Close",
-
   "shortcutRequested": "Follow the on-screen prompt to add the shortcut",
   "shortcutUnsupported": "Home screen shortcuts aren't supported on this device",
   "shortcutUnavailable": "Couldn't add the shortcut",
-
   "sectionSmartInsights": "Smart insights",
   "smartInsightsTitle": "Smart Insights",
   "smartInsightsRefresh": "Refresh suggestions",
@@ -369,28 +397,33 @@
   "smartInsightsEnableSubtitle": "Show suggestions on the Home screen",
   "smartInsightsCloudAi": "Cloud AI suggestions",
   "smartInsightsCloudAiSubtitle": "Let Google Gemini add optional tips. Only anonymous counts are sent — never your places, notes or coordinates.",
-
   "insightWelcomeTitle": "Save your first place",
   "insightWelcomeBody": "Tap the + button to save where you are right now.",
   "insightNearbyDuplicatesTitle": "Group nearby places",
   "insightNearbyDuplicatesBody": "{count} saved places are clustered within a few metres of each other. Consider grouping or renaming them.",
   "@insightNearbyDuplicatesBody": {
     "placeholders": {
-      "count": { "type": "int" }
+      "count": {
+        "type": "int"
+      }
     }
   },
   "insightUnorganizedTitle": "Add details to your places",
   "insightUnorganizedBody": "{count} places have no notes. Add a note so you can recognise them later.",
   "@insightUnorganizedBody": {
     "placeholders": {
-      "count": { "type": "int" }
+      "count": {
+        "type": "int"
+      }
     }
   },
   "insightSyncIssuesTitle": "A sync didn't finish",
   "insightSyncIssuesBody": "{count} recent syncs didn't complete. Check your connection and try again.",
   "@insightSyncIssuesBody": {
     "placeholders": {
-      "count": { "type": "int" }
+      "count": {
+        "type": "int"
+      }
     }
   },
   "insightNetworkWarningTitle": "Possible weak network",
@@ -399,14 +432,18 @@
   "insightParseIssuesBody": "{count} pasted locations couldn't be parsed. Try pasting the full Google Maps link.",
   "@insightParseIssuesBody": {
     "placeholders": {
-      "count": { "type": "int" }
+      "count": {
+        "type": "int"
+      }
     }
   },
   "insightStaleBackupTitle": "Back up your places",
   "insightStaleBackupBody": "Your last backup was {days} days ago. Sync now to keep your places safe.",
   "@insightStaleBackupBody": {
     "placeholders": {
-      "days": { "type": "int" }
+      "days": {
+        "type": "int"
+      }
     }
   },
   "insightStaleBackupNeverBody": "You haven't backed up yet. Sync now to keep your places safe.",
@@ -414,7 +451,9 @@
   "insightPinFavoritesBody": "You have {count} saved places and none pinned. Long-press a place to pin it to the top.",
   "@insightPinFavoritesBody": {
     "placeholders": {
-      "count": { "type": "int" }
+      "count": {
+        "type": "int"
+      }
     }
   },
   "insightOptimizationTitle": "Keep MapNote tidy",
@@ -424,23 +463,36 @@
   "@insightMotionSummaryBody": {
     "description": "Today's measured motion, without a step count (the device has no step sensor).",
     "placeholders": {
-      "walking": { "type": "String" },
-      "running": { "type": "String" },
-      "vehicle": { "type": "String" }
+      "walking": {
+        "type": "String"
+      },
+      "running": {
+        "type": "String"
+      },
+      "vehicle": {
+        "type": "String"
+      }
     }
   },
   "insightMotionSummaryBodySteps": "You covered {walking} walking and {running} running, plus {vehicle} by vehicle, on {steps} counted steps.",
   "@insightMotionSummaryBodySteps": {
     "description": "Today's measured motion, including the step count read from the hardware step counter.",
     "placeholders": {
-      "walking": { "type": "String" },
-      "running": { "type": "String" },
-      "vehicle": { "type": "String" },
-      "steps": { "type": "int" }
+      "walking": {
+        "type": "String"
+      },
+      "running": {
+        "type": "String"
+      },
+      "vehicle": {
+        "type": "String"
+      },
+      "steps": {
+        "type": "int"
+      }
     }
   },
   "insightActionSyncNow": "Sync now",
-
   "coordinateDetails": "Latitude & longitude",
   "aiSmartPasteTooltip": "AI Smart Paste",
   "categoryWork": "Work",
@@ -455,7 +507,9 @@
   "foundPlace": "Found: {name}",
   "@foundPlace": {
     "placeholders": {
-      "name": { "type": "String" }
+      "name": {
+        "type": "String"
+      }
     }
   },
   "autoFillNameNotes": "Auto-fill Name & Notes",
@@ -467,7 +521,9 @@
   "distanceAway": "{distance} away",
   "@distanceAway": {
     "placeholders": {
-      "distance": { "type": "String" }
+      "distance": {
+        "type": "String"
+      }
     }
   },
   "accountAndBackup": "Account & Cloud Backup",
@@ -485,13 +541,11 @@
   "compassNorth": "North",
   "headingInstruction": "Adjust phone direction to see Qibla",
   "compassCalculating": "Calculating...",
-
   "savedPlacesVault": "Encrypted Vault",
   "savedPlacesVaultSubtitle": "Biometric-protected places, encrypted with AES-256",
   "savedPlacesVaultLocked": "Vault locked",
   "savedPlacesVaultLockedMessage": "Verify your identity to read the places kept in the encrypted vault.",
   "savedPlacesVaultUnlock": "Unlock vault",
-  "savedPlacesVaultLock": "Lock vault",
   "savedPlacesVaultEmpty": "No encrypted places yet",
   "savedPlacesVaultEmptyMessage": "Move a saved place into the vault to protect it behind your device lock.",
   "savedPlacesVaultUnlocked": "Vault unlocked",
@@ -502,7 +556,6 @@
   "restoreFromEncryptedVaultDone": "Moved back to saved places",
   "unlockToOpenSavedPlacesVault": "Verify to open the encrypted vault",
   "unlockToMoveToEncryptedVault": "Verify to move the place into the encrypted vault",
-
   "enterPin": "Enter PIN",
   "vaultPinLabel": "PIN",
   "vaultPinConfirmLabel": "Confirm PIN",
@@ -521,7 +574,6 @@
   "removeVaultPin": "Remove PIN",
   "biometricVaultEnabled": "Biometric vault",
   "biometricVaultEnabledSubtitle": "Keep places in an AES-256 encrypted vault, behind your biometrics or a PIN.",
-
   "suggestedPlaceLinks": "Places you may want to link",
   "suggestedPlaceLinksSubtitle": "Based on today's stops",
   "suggestedPlaceOpenAction": "Open",
@@ -529,26 +581,33 @@
   "suggestedPlaceStopDetails": "Stopped for {minutes} min",
   "@suggestedPlaceStopDetails": {
     "placeholders": {
-      "minutes": { "type": "int" }
+      "minutes": {
+        "type": "int"
+      }
     }
   },
   "suggestedPlaceNearSaved": "\"{name}\" is {distance} m away",
   "@suggestedPlaceNearSaved": {
     "placeholders": {
-      "name": { "type": "String" },
-      "distance": { "type": "int" }
+      "name": {
+        "type": "String"
+      },
+      "distance": {
+        "type": "int"
+      }
     }
   },
   "suggestedPlaceNoMatch": "No saved place nearby",
   "suggestedPlaceLinked": "Linked to {name}",
   "@suggestedPlaceLinked": {
     "placeholders": {
-      "name": { "type": "String" }
+      "name": {
+        "type": "String"
+      }
     }
   },
   "suggestedPlaceSaved": "Saved to your places",
   "suggestedPlaceLinkFailed": "Couldn't link the place",
-
   "motionHistoryTitle": "Motion history",
   "motionHistorySubtitle": "Trips, walks, runs and stops recorded for this day",
   "motionTypeDrive": "Drive",
@@ -572,22 +631,32 @@
   "motionHistoryDriveStats": "{distance} km · {duration}",
   "@motionHistoryDriveStats": {
     "placeholders": {
-      "distance": { "type": "String" },
-      "duration": { "type": "String" }
+      "distance": {
+        "type": "String"
+      },
+      "duration": {
+        "type": "String"
+      }
     }
   },
   "motionHistoryAverageSpeed": "Avg {speed} km/h",
   "@motionHistoryAverageSpeed": {
     "placeholders": {
-      "speed": { "type": "String" }
+      "speed": {
+        "type": "String"
+      }
     }
   },
   "motionHistoryStepStats": "{distance} m · {steps} steps",
   "@motionHistoryStepStats": {
     "description": "Measured step count, read from the hardware step counter. Never shown with an approximation mark.",
     "placeholders": {
-      "distance": { "type": "String" },
-      "steps": { "type": "int" }
+      "distance": {
+        "type": "String"
+      },
+      "steps": {
+        "type": "int"
+      }
     }
   },
   "motionHistorySteps": "Steps",
@@ -595,22 +664,178 @@
   "motionHistoryStopoverStats": "Stopped for {duration}",
   "@motionHistoryStopoverStats": {
     "placeholders": {
-      "duration": { "type": "String" }
+      "duration": {
+        "type": "String"
+      }
     }
   },
   "durationHoursMinutes": "{hours} h {minutes} min",
   "@durationHoursMinutes": {
     "placeholders": {
-      "hours": { "type": "int" },
-      "minutes": { "type": "int" }
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
     }
   },
   "durationMinutes": "{minutes} min",
   "@durationMinutes": {
     "placeholders": {
-      "minutes": { "type": "int" }
+      "minutes": {
+        "type": "int"
+      }
     }
   },
   "durationZero": "0 min",
-  "durationLessThanMinute": "less than a minute"
+  "durationLessThanMinute": "less than a minute",
+  "stationManagersTitle": "Station manager",
+  "callManager": "Call manager",
+  "messageManagerOnWhatsApp": "Message on WhatsApp",
+  "managerPhoneMissing": "No phone number on file yet",
+  "managerContactUnavailable": "No app on this device can handle that",
+  "managerWhatsAppMessage": "Hello {name}, regarding {station}.",
+  "@managerWhatsAppMessage": {
+    "description": "Pre-filled WhatsApp message sent to a station manager from the place detail screen.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "station": {
+        "type": "String"
+      }
+    }
+  },
+  "adminApprovalTitle": "Admin Approval",
+  "noPendingUpdates": "No pending updates",
+  "proposalForStation": "Proposal for Station {stationId}",
+  "currentManager": "Current Manager: {name}",
+  "currentManagerPhone": "Phone: {phone}",
+  "proposedManager": "Proposed Manager: {name}",
+  "proposedManagerPhone": "Phone: {phone}",
+  "submittedBy": "Submitted by: {name}",
+  "submittedAt": "Submitted on: {date}",
+  "adminPinRequired": "Admin PIN required",
+  "pin": "PIN",
+  "incorrectPin": "Incorrect PIN",
+  "incorrectPinAttempt": "The PIN you entered is incorrect. Please try again.",
+  "logout": "Log out",
+  "wrongPin": "Wrong PIN.",
+  "unlock": "Unlock",
+  "unknownManager": "No manager",
+  "unknownPhone": "No phone",
+  "approve": "Approve",
+  "reject": "Reject",
+  "resetPin": "Reset PIN",
+  "incompleteProposal": "Incomplete proposal",
+  "dismissProposal": "Dismiss",
+  "proposalDismissed": "Proposal dismissed",
+  "dismissFailed": "Failed to dismiss proposal",
+  "incompleteNewStation": "Incomplete new station proposal",
+  "missingStation": "Missing station reference",
+  "proposalApproved": "Proposal approved successfully",
+  "proposalRejected": "Proposal rejected",
+  "approveFailed": "Failed to approve proposal",
+  "rejectFailed": "Failed to reject proposal",
+  "newStationApproved": "New station approved successfully",
+  "adminPinHint": "1991",
+  "newStationTitle": "New station: {name}",
+  "@newStationTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "proposalIdLabel": "Proposal ID: {id}",
+  "@proposalIdLabel": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "proposalRole": "Role: {role}",
+  "@proposalRole": {
+    "placeholders": {
+      "role": {
+        "type": "String"
+      }
+    }
+  },
+  "proposalLocation": "Location: {lat}, {lng}",
+  "@proposalLocation": {
+    "placeholders": {
+      "lat": {
+        "type": "String"
+      },
+      "lng": {
+        "type": "String"
+      }
+    }
+  },
+  "proposalCity": "City: {city}",
+  "@proposalCity": {
+    "placeholders": {
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "unknownStation": "Unknown station",
+  "roleManager": "Manager",
+  "roleSupervisor": "Supervisor",
+  "roleSupport": "Support",
+  "roleStaff": "Staff",
+  "workInsightsStations": "{count, plural, =0{No stations} =1{1 station} other{{count} stations}}",
+  "@workInsightsStations": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "workInsightsManagers": "{count, plural, =0{No manager contacts on file} =1{1 manager contact on file} other{{count} manager contacts on file}}",
+  "@workInsightsManagers": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "workInsightsMissingContacts": "{count, plural, =0{All stations have a phone number} =1{1 station missing a phone number} other{{count} stations missing a phone number}}",
+  "@workInsightsMissingContacts": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "workInsightsWorkTagged": "{count, plural, =0{No #work-tagged places} =1{1 #work-tagged place} other{{count} #work-tagged places}}",
+  "@workInsightsWorkTagged": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "workInsightsTip": "Tag a place with #work in its name or notes to track operations. Submit contact updates from the station screen for admin approval.",
+  "workInsightsNothingMissing": "Every station has a contact on file.",
+  "workInsightsPendingApprovals": "{count, plural, =0{No pending admin approvals} =1{1 pending admin approval} other{{count} pending admin approvals}}",
+  "@workInsightsPendingApprovals": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "workInsightsStationsMissingContactsLabel": "{count, plural, =0{No stations missing manager details} =1{1 station missing manager contact details} other{{count} stations missing manager contact details}}",
+  "@workInsightsStationsMissingContactsLabel": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

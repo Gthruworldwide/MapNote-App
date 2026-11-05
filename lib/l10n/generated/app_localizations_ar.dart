@@ -120,7 +120,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get openInGoogleMaps => 'افتح في خرائط جوجل';
 
   @override
-  String get openInWaze => 'افتح في Waze';
+  String get openInWaze => 'افتح في ويز';
 
   @override
   String get copyCoordinates => 'نسخ الإحداثيات';
@@ -142,7 +142,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String deletePlaceMessage(String name) {
-    return 'سيتم إزالة \"$name\" من هذا الجهاز ومن النسخة الاحتياطية القادمة.';
+    return 'سيتم إزالة \\\"$name\\\" من هذا الجهاز ومن النسخة الاحتياطية القادمة.';
   }
 
   @override
@@ -291,7 +291,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get localOverridesCloud =>
-      'بيانات جهازك تتجاوز دائمًا النسخة الاحتياطية على جوجل درايف.';
+      'بيانات جهازك تتجاوز always النسخة الاحتياطية على جوجل درايف.';
 
   @override
   String get restoreFromDrive => 'الاستعادة من جوجل درايف';
@@ -353,6 +353,129 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get manageLocation => 'إدارة الموقع';
+
+  @override
+  String get contactsPermissionTitle => 'إذنcontacts مطلوب';
+
+  @override
+  String get contactsPermissionNeeded =>
+      'يحتاج MapNote إلى الوصول إلىcontacts لربطها بالمواقع المحفوظة.';
+
+  @override
+  String get contactsPermissionDeniedPermanently =>
+      'تم رفضذنcontacts بشكل دائم. يمكنك تغيير هذا في إعدادات الجهاز.';
+
+  @override
+  String get contactPickerFeatureNotReady =>
+      'ميزة تحديد جهة الاتصال غير جاهزة بعد.';
+
+  @override
+  String get unlinkContactFeatureNotReady => 'ميزة فك الربط غير جاهزة بعد.';
+
+  @override
+  String get allow => 'سماح';
+
+  @override
+  String get settings => 'الإعدادات';
+
+  @override
+  String linkedContact(String name) {
+    return 'جهة اتصال مرتبطة: $name';
+  }
+
+  @override
+  String get unlinkContact => 'فك الربط';
+
+  @override
+  String get linkContact => 'ربط جهة اتصال';
+
+  @override
+  String get smartBatterySaver => 'موفر البطارية الذكي';
+
+  @override
+  String get smartBatterySaverDesc => 'تقليل تحديثات GPS عند الثبات.';
+
+  @override
+  String get exportMotionData => 'تصدير بيانات الحركة';
+
+  @override
+  String tileCacheSize(Object size) {
+    return 'ذاكرة الخرائط: $size';
+  }
+
+  @override
+  String get clearTileCache => 'مسح ذاكرة الخرائط';
+
+  @override
+  String get preloadOfflineMaps => 'تحميل خرائط الأماكن مسبقًا';
+
+  @override
+  String get offlineMapDownloaded => 'تم تحميل الخرائط دون اتصال';
+
+  @override
+  String get offlineMapRegionSelection => 'منطقة الخريطة التحميلية';
+
+  @override
+  String get minLatitude => 'الحد الأدنى للخط العرض';
+
+  @override
+  String get maxLatitude => 'الحد الأقصى للخط العرض';
+
+  @override
+  String get latitudeHint => 'الحد الأدنى للخط العرض (مثال: 30.05)';
+
+  @override
+  String get minLongitude => 'الحد الأدنى للخط الطول';
+
+  @override
+  String get maxLongitude => 'الحد الأقصى للخط الطول';
+
+  @override
+  String get longitudeHint => 'الحد الأدنى للخط الطول (مثال: 31.22)';
+
+  @override
+  String get minZoom => 'أدنى مستوى تكبير';
+
+  @override
+  String get maxZoom => 'أقصى مستوى تكبير';
+
+  @override
+  String get zoomHint => 'مستوى التكبير (0-20)';
+
+  @override
+  String get startDownload => 'بدء التحميل';
+
+  @override
+  String get autoMotionExport => 'تصدير البيانات';
+
+  @override
+  String get autoMotionCustomRange => 'نطاق مخصص';
+
+  @override
+  String autoMotionRangeLabel(Object from, Object to) {
+    return '$from – $to';
+  }
+
+  @override
+  String get autoMotionSelectRange => 'نطاق مخصص';
+
+  @override
+  String get autoMotionExportCopied => 'تم نسخ التقرير';
+
+  @override
+  String get zeroCoordinatesNotice => 'التصدير لا enthältoire محتويات موقع.';
+
+  @override
+  String get autoMotionExportCsv => 'تصدير CSV';
+
+  @override
+  String get autoMotionExportJson => 'تصدير JSON';
+
+  @override
+  String get autoMotionExportCopy => 'نسخ إلى الحافظة';
+
+  @override
+  String get savedPlacesVaultLock => 'قفل الخزنة';
 
   @override
   String get dailyGpsSection => 'تتبع GPS اليومي';
@@ -471,73 +594,6 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get autoMotionCustomRange => 'نطاق مخصص';
-
-  @override
-  String get customDateRange => 'نطاق تاريخ مخصص';
-
-  @override
-  String get exportMotionData => 'تصدير بيانات الحركة';
-
-  @override
-  String get exportFormatCsv => 'CSV';
-
-  @override
-  String get exportFormatJson => 'JSON';
-
-  @override
-  String get zeroCoordinatesNotice => 'التصدير لا يحتوي على إحداثيات موقع.';
-
-  @override
-  String tileCacheSize(String size) {
-    return 'ذاكرة الخرائط: $size';
-  }
-
-  @override
-  String get clearTileCache => 'مسح ذاكرة الخرائط';
-
-  @override
-  String get preloadOfflineMaps => 'تحميل خرائط الأماكن مسبقًا';
-
-  @override
-  String get offlineMapDownloaded => 'تم تحميل الخرائط دون اتصال';
-
-  @override
-  String get smartBatterySaver => 'موفر البطارية الذكي';
-
-  @override
-  String get smartBatterySaverDesc => 'تقليل تحديثات GPS عند الثبات.';
-
-  @override
-  String get stationaryModeActive => 'وضع الثبات نشط';
-
-  @override
-  String get autoMotionSelectRange => 'اختر نطاق التواريخ';
-
-  @override
-  String get autoMotionExport => 'تصدير البيانات';
-
-  @override
-  String get autoMotionExportCsv => 'تصدير CSV';
-
-  @override
-  String get autoMotionExportJson => 'تصدير JSON';
-
-  @override
-  String get autoMotionExportCopy => 'نسخ إلى الحافظة';
-
-  @override
-  String get autoMotionExportCopied => 'تم نسخ التقرير';
-
-  @override
-  String get autoMotionExportEmpty => 'لا توجد أيام مسجّلة في هذا النطاق.';
-
-  @override
-  String autoMotionRangeLabel(String from, String to) {
-    return '$from – $to';
-  }
-
-  @override
   String get autoMotionViewDetails => 'عرض التفاصيل';
 
   @override
@@ -545,7 +601,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get autoMotionRouteEmpty =>
-      'لم يُسجَّل أي مسار بعد — فعّل التتبع ثم قُد أو امشِ ليظهر هنا.';
+      'لم يُسجَّل أي مسار بعد — فعّل التتبع ثم قد أو امشِ ليظهر هنا.';
 
   @override
   String get routeMapAttribution => '© المساهمون في OpenStreetMap';
@@ -697,6 +753,51 @@ class AppLocalizationsAr extends AppLocalizations {
   String get shareQr => 'مشاركة رمز QR';
 
   @override
+  String get shareViaWhatsApp => 'إرسال عبر الواتساب';
+
+  @override
+  String get searchContact => 'بحث';
+
+  @override
+  String get proposeManagerUpdateTitle => 'اقترح تحديث المسؤول';
+
+  @override
+  String get proposeManagerUpdate => 'اقترح تحديث المسؤول';
+
+  @override
+  String get updateProposalSubmitted => 'تم إرسال proposal';
+
+  @override
+  String get managerName => 'اسم المدير';
+
+  @override
+  String get managerPhone => 'رقم المدير';
+
+  @override
+  String get confirm => 'تأكيد';
+
+  @override
+  String get currentUserName => 'اسم المستخدم الحالي';
+
+  @override
+  String get shareViaSystem => 'مشاركة عبر النظام';
+
+  @override
+  String get sendToDriver => 'إرسال للسائق';
+
+  @override
+  String get submitStationUpdate => 'إرسال تعديل للمحطة';
+
+  @override
+  String get submittingUpdate => 'جاري الإرسال...';
+
+  @override
+  String get updateSuccess => 'تم إرسال proposal بنجاح';
+
+  @override
+  String get updateFailed => 'فشل إرسال proposal';
+
+  @override
   String get addToHomeScreen => 'إضافة اختصار إلى الشاشة الرئيسية';
 
   @override
@@ -763,9 +864,8 @@ class AppLocalizationsAr extends AppLocalizations {
       count,
       locale: localeName,
       other: '$count مكان مخفي',
-      many: '$count مكانًا مخفيًا',
+      many: '$count مكان مخفي',
       few: '$count أماكن مخفية',
-      two: 'مكانان مخفيان',
       one: 'مكان مخفي واحد',
       zero: 'لا توجد أماكن مخفية',
     );
@@ -798,10 +898,7 @@ class AppLocalizationsAr extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       minutes,
       locale: localeName,
-      other: '$minutes دقيقة',
-      many: '$minutes دقيقة',
-      few: '$minutes دقائق',
-      two: 'دقيقتان',
+      other: '$minutes دقائق',
       one: 'دقيقة واحدة',
     );
     return '$_temp0';
@@ -900,7 +997,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String insightUnorganizedBody(int count) {
-    return 'يوجد $count أماكن بدون ملاحظات. أضف ملاحظة لتتعرّف عليها لاحقًا.';
+    return 'يوجد $count أماكن بدون ملاحظات. أضف ملاحظة لتتعرف عليها لاحقًا.';
   }
 
   @override
@@ -912,7 +1009,7 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get insightNetworkWarningTitle => 'قد تكون الشبكة ضعيفة';
+  String get insightNetworkWarningTitle => 'احتمال ضعف الشبكة';
 
   @override
   String get insightNetworkWarningBody =>
@@ -936,7 +1033,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get insightStaleBackupNeverBody =>
-      'لم تنشئ نسخة احتياطية بعد. زامن الآن للحفاظ على أماكنك.';
+      'لم تنشئ نسخة احتياطي بعد. زامن الآن للحفاظ على أماكنك.';
 
   @override
   String get insightPinFavoritesTitle => 'ثبّت أماكنك المفضلة';
@@ -947,7 +1044,7 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get insightOptimizationTitle => 'حافظ على ترتيب MapNote';
+  String get insightOptimizationTitle => 'احتفظ بـ MapNote مرتبًا';
 
   @override
   String get insightOptimizationBody =>
@@ -1105,14 +1202,11 @@ class AppLocalizationsAr extends AppLocalizations {
   String get savedPlacesVaultUnlock => 'فتح الخزنة';
 
   @override
-  String get savedPlacesVaultLock => 'قفل الخزنة';
-
-  @override
   String get savedPlacesVaultEmpty => 'لا توجد أماكن مشفّرة بعد';
 
   @override
   String get savedPlacesVaultEmptyMessage =>
-      'انقل مكانًا محفوظًا إلى الخزنة لحمايته بقفل جهازك.';
+      'Move a saved place into the vault to protect it behind your device lock.';
 
   @override
   String get savedPlacesVaultUnlocked => 'تم فتح الخزنة';
@@ -1152,19 +1246,20 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get vaultPinHint =>
-      'استخدم من 4 إلى 12 رقمًا. يفتح الرمز الخزنة المشفّرة عندما لا تتوفر البصمة.';
+      'استخدم من 4 إلى 12 رقماً. يفتح الرمز الخزنة المشفّرة عندما لا تتوفر البصمة.';
 
   @override
   String get vaultPinTooShort => 'استخدم 4 أرقام على الأقل.';
 
   @override
-  String get vaultPinMismatch => 'رمزا PIN غير متطابقين.';
+  String get vaultPinMismatch => 'رمزان PIN غير متطابقين.';
 
   @override
   String get vaultPinRejected => 'رمز PIN غير صحيح.';
 
   @override
-  String get vaultPinLockedOut => 'محاولات كثيرة. حاول مرة أخرى بعد بضع دقائق.';
+  String get vaultPinLockedOut =>
+      'محاولات كثيرة. Versuch wieder nach wenigen Minuten.';
 
   @override
   String get vaultPinSet => 'تم تعيين رمز PIN.';
@@ -1173,7 +1268,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get vaultPinChanged => 'تم تغيير رمز PIN.';
 
   @override
-  String get vaultPinRemoved => 'تمت إزالة رمز PIN.';
+  String get vaultPinRemoved => 'تمت إزالة الرمز';
 
   @override
   String get vaultPinNotSet => 'لا يوجد رمز PIN';
@@ -1196,7 +1291,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get biometricVaultEnabledSubtitle =>
-      'احفظ الأماكن في خزنة مشفّرة بـ AES-256 خلف البصمة أو رمز PIN.';
+      'Keep places in an AES-256 encrypted vault, behind your biometrics or a PIN.';
 
   @override
   String get suggestedPlaceLinks => 'أماكن قد ترغب في ربطها';
@@ -1217,7 +1312,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String suggestedPlaceNearSaved(String name, int distance) {
-    return '\"$name\" على بعد $distance م';
+    return ' \"$name\" على بعد $distance م';
   }
 
   @override
@@ -1338,4 +1433,275 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get durationLessThanMinute => 'أقل من دقيقة';
+
+  @override
+  String get stationManagersTitle => 'مسؤول المحطة';
+
+  @override
+  String get callManager => 'اتصال بالمسؤول';
+
+  @override
+  String get messageManagerOnWhatsApp => 'مراسلة على واتساب';
+
+  @override
+  String get managerPhoneMissing => 'لم يُضف رقم هاتف بعد';
+
+  @override
+  String get managerContactUnavailable =>
+      'لا يوجد تطبيق على هذا الجهاز يمكنه تنفيذ ذلك';
+
+  @override
+  String managerWhatsAppMessage(String name, String station) {
+    return 'مرحبًا $name، بخصوص $station.';
+  }
+
+  @override
+  String get adminApprovalTitle => 'وصول المسؤول';
+
+  @override
+  String get noPendingUpdates => 'لا توجد ترقيعاتpending';
+
+  @override
+  String proposalForStation(Object stationId) {
+    return 'اقتراح للمحطة $stationId';
+  }
+
+  @override
+  String currentManager(Object name) {
+    return 'مسؤول حالي: $name';
+  }
+
+  @override
+  String currentManagerPhone(Object phone) {
+    return 'هاتف: $phone';
+  }
+
+  @override
+  String proposedManager(Object name) {
+    return 'مسؤول مقترح: $name';
+  }
+
+  @override
+  String proposedManagerPhone(Object phone) {
+    return 'هاتف: $phone';
+  }
+
+  @override
+  String submittedBy(Object name) {
+    return 'تم الإرسال بواسطة: $name';
+  }
+
+  @override
+  String submittedAt(Object date) {
+    return 'تم الإرسال في: $date';
+  }
+
+  @override
+  String get adminPinRequired => 'يُطلب رمز المسؤول';
+
+  @override
+  String get pin => 'رمز PIN';
+
+  @override
+  String get incorrectPin => 'رمز غير صحيح';
+
+  @override
+  String get incorrectPinAttempt => 'الرمز المدخل خاطئ، يرجىようとする';
+
+  @override
+  String get logout => 'تسجيل الخروج';
+
+  @override
+  String get wrongPin => 'رمز خاطئ';
+
+  @override
+  String get unlock => 'فتح';
+
+  @override
+  String get unknownManager => 'لا مسئول';
+
+  @override
+  String get unknownPhone => 'لا يوجد هاتف';
+
+  @override
+  String get approve => 'قبول';
+
+  @override
+  String get reject => 'رفض';
+
+  @override
+  String get resetPin => 'إعادة تعيين الرمز';
+
+  @override
+  String get incompleteProposal => 'طلب غير مكتمل';
+
+  @override
+  String get dismissProposal => 'تجاهل';
+
+  @override
+  String get proposalDismissed => 'تم تجاوز الاقتراح';
+
+  @override
+  String get dismissFailed => 'فشل تجاوز الاقتراح';
+
+  @override
+  String get incompleteNewStation => 'اقتراح محطة غير مكتمل';
+
+  @override
+  String get missingStation => 'المرجع للمحطة غير محدد';
+
+  @override
+  String get proposalApproved => 'تم قبول الاقتراح بنجاح';
+
+  @override
+  String get proposalRejected => 'تم رفض الاقتراح';
+
+  @override
+  String get approveFailed => 'فشل قبول الاقتراح';
+
+  @override
+  String get rejectFailed => 'فشل رفض الاقتراح';
+
+  @override
+  String get newStationApproved => 'تم قبول محطة جديدة بنجاح';
+
+  @override
+  String get adminPinHint => '1991';
+
+  @override
+  String newStationTitle(String name) {
+    return 'محطة جديدة: $name';
+  }
+
+  @override
+  String proposalIdLabel(String id) {
+    return 'معرّف الاقتراح: $id';
+  }
+
+  @override
+  String proposalRole(String role) {
+    return 'الدور: $role';
+  }
+
+  @override
+  String proposalLocation(String lat, String lng) {
+    return 'الموقع: $lat، $lng';
+  }
+
+  @override
+  String proposalCity(String city) {
+    return 'المدينة: $city';
+  }
+
+  @override
+  String get unknownStation => 'محطة غير معروفة';
+
+  @override
+  String get roleManager => 'مدير';
+
+  @override
+  String get roleSupervisor => 'مشرف';
+
+  @override
+  String get roleSupport => 'دعم';
+
+  @override
+  String get roleStaff => 'موظف';
+
+  @override
+  String workInsightsStations(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count محطة',
+      many: '$count محطة',
+      few: '$count محطات',
+      two: 'محطتان',
+      one: 'محطة واحدة',
+      zero: 'لا توجد محطات',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String workInsightsManagers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count جهة اتصال لمسؤول',
+      many: '$count جهة اتصال لمسؤول',
+      few: '$count جهات اتصال لمسؤولين',
+      two: 'جهتا اتصال لمسؤولين',
+      one: 'جهة اتصال لمسؤول واحدة',
+      zero: 'لا توجد جهات اتصال لمسؤولين',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String workInsightsMissingContacts(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count محطة بدون رقم هاتف',
+      many: '$count محطة بدون رقم هاتف',
+      few: '$count محطات بدون رقم هاتف',
+      two: 'محطتان بدون رقم هاتف',
+      one: 'محطة واحدة بدون رقم هاتف',
+      zero: 'كل المحطات لديها رقم هاتف',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String workInsightsWorkTagged(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count مكان موسوم بـ #work',
+      many: '$count مكانًا موسومًا بـ #work',
+      few: '$count أماكن موسومة بـ #work',
+      two: 'مكانان موسومان بـ #work',
+      one: 'مكان واحد موسوم بـ #work',
+      zero: 'لا توجد أماكن موسومة بـ #work',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get workInsightsTip =>
+      'أضف الوسم #work إلى اسم المكان أو ملاحظاته لتتبع العمليات. قدّم تحديثات جهات الاتصال من شاشة المحطة لاعتمادها من المسؤول.';
+
+  @override
+  String get workInsightsNothingMissing => 'كل المحطات لديها جهة اتصال مسجلة.';
+
+  @override
+  String workInsightsPendingApprovals(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count موافقة إدارية معلقة',
+      many: '$count موافقة إدارية معلقة',
+      few: '$count موافقات إدارية معلقة',
+      two: 'موافقتان إداريتان معلقتان',
+      one: 'موافقة إدارية معلقة واحدة',
+      zero: 'لا توجد موافقات إدارية معلقة',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String workInsightsStationsMissingContactsLabel(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count محطة ينقصها بيانات مسؤول الاتصال',
+      many: '$count محطة ينقصها بيانات مسؤول الاتصال',
+      few: '$count محطات ينقصها بيانات مسؤول الاتصال',
+      two: 'محطتان ينقصهما بيانات مسؤول الاتصال',
+      one: 'محطة واحدة ينقصها بيانات مسؤول الاتصال',
+      zero: 'لا توجد محطات ينقصها بيانات المسؤول',
+    );
+    return '$_temp0';
+  }
 }

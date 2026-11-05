@@ -72,6 +72,7 @@ import '../services/motion_sensor_hub.dart';
 import '../services/motion_signal.dart';
 import '../services/polyline_smoother.dart';
 import '../services/sampling_target.dart';
+import '../services/manager_contact_service.dart';
 import '../services/navigation_service.dart';
 import '../services/pedometer_steps.dart';
 import '../services/route_milestones.dart';
@@ -482,6 +483,11 @@ final Provider<NavigationService> navigationServiceProvider =
 
 final Provider<ShareIntentService> shareIntentServiceProvider =
     Provider<ShareIntentService>((Ref ref) => const ShareIntentService());
+
+/// Dials / messages a station manager from the place-detail screen.
+final Provider<ManagerContactService> managerContactServiceProvider =
+    Provider<ManagerContactService>(
+        (Ref ref) => const ManagerContactService());
 
 /// Spots raw Plus Codes in the clipboard so the app can offer a one-tap import.
 final Provider<SmartClipboardService> smartClipboardServiceProvider =
@@ -1573,6 +1579,15 @@ class PreferredNavAppController extends Notifier<PreferredNavApp> {
   }
 }
 
+/// Which product flavour is running. Overridden by each entrypoint's
+/// [ProviderScope] (`main.dart` → personal, `main_work.dart` → work). The
+/// default is [AppEdition.personal] so every existing test and the personal app
+/// keep their current behaviour without any override.
+enum AppEdition { personal, work }
+
+final Provider<AppEdition> appEditionProvider =
+    Provider<AppEdition>((Ref ref) => AppEdition.personal);
+
 /// Persists the Smart Insights visibility toggle.
 class SmartInsightsController extends Notifier<bool> {
   @override
@@ -2412,22 +2427,7 @@ class AutoMotionController extends Notifier<AutoMotionState> {
       ref.read(autoMotionServiceProvider),
       ref.read(foregroundTrackingServiceProvider),
     );
-    // The pedometer needs `ACTIVITY_RECOGNITION`; ask here rather than at start
-    // so a dialog can never delay the first fix — this runs after the trip's
-    // state has been published, and only while AutoMotion is actually
-    // recording. The plugin's stream was already opened by then (a tracker
-    // starts its step meter with the trip), so a granted answer has to
-    // **re-open** it: the OS refused `TYPE_STEP_COUNTER` while the permission
-    // was missing and that silent refusal never retries on its own. Until the
-    // feed arrives the tracker records `steps == null` and the classifier falls
-    // back to GPS speed, so a refusal degrades instead of breaking anything.
-    if (ref.read(autoMotionServiceProvider).isTracking) {
-      final bool granted = await ref
-          .read(foregroundTrackingServiceProvider)
-          .requestActivityRecognitionPermission();
-      if (!ref.mounted) return;
-      if (granted) await ref.read(stepMeterProvider).refresh();
-    }
+
   }
 
   /// Runs the sensor-driven sampling stack for exactly as long as one of the

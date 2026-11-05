@@ -11,10 +11,12 @@ import 'src/core/memory/self_diagnostic_monitor.dart';
 import 'src/core/security/device_lock_detector.dart';
 import 'src/core/security/session_guard.dart';
 import 'src/core/theme/app_theme.dart';
+import 'src/core/utils/haversine.dart';
 import 'src/core/utils/haptics.dart';
 import 'src/data/models/place.dart';
 import 'src/features/add_place/add_place_screen.dart';
 import 'src/features/home/home_screen.dart';
+import 'src/features/place_detail/place_detail_screen.dart';
 import 'src/features/saved_places/presentation/providers/saved_places_providers.dart';
 import 'src/features/splash/brand_splash.dart';
 import 'src/providers/app_providers.dart';
@@ -402,20 +404,51 @@ class _MapNoteAppState extends ConsumerState<MapNoteApp>
         longitude: location.longitude,
         name: location.name ?? _parser.guessName(raw),
       ),
+      places: ref.read(placesProvider).value,
     );
   }
 
-  void _openSharedLocation(ParsedLocation location) {
+  void _openSharedLocation(ParsedLocation location, {List<Place>? places}) {
     if (!mounted) return;
     final NavigatorState? navigator = appNavigatorKey.currentState;
     if (navigator == null) {
       // The navigator is not mounted yet (very early cold start); try again on
       // the next frame.
       WidgetsBinding.instance.addPostFrameCallback(
-        (_) => _openSharedLocation(location),
+        (_) => _openSharedLocation(location, places: places),
       );
       return;
     }
+
+    // Check if there's an existing station within 500m
+    if (places != null && places.isNotEmpty) {
+      Place? nearestStation;
+      double nearestDistance = double.infinity;
+      for (final Place place in places) {
+        final double distance = Haversine.distanceKm(
+          location.latitude,
+          location.longitude,
+          place.latitude,
+          place.longitude,
+        );
+        if (distance < nearestDistance && distance <= 0.5) {
+          nearestDistance = distance;
+          nearestStation = place;
+        }
+      }
+
+      if (nearestStation != null) {
+        // Found a nearby station - open PlaceDetailScreen
+        navigator.push(
+          MaterialPageRoute<void>(
+            builder: (_) => PlaceDetailScreen(placeId: nearestStation!.id),
+          ),
+        );
+        return;
+      }
+    }
+
+    // No nearby station found - open AddPlaceScreen with pre-filled data
     navigator.push(
       MaterialPageRoute<void>(
         builder: (_) => AddPlaceScreen(

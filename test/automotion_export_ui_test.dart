@@ -84,9 +84,9 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 100));
 
-    expect(find.text('Export as CSV'), findsOneWidget);
-    expect(find.text('Export as JSON'), findsOneWidget);
-    expect(find.text('Select date range'), findsOneWidget);
+    expect(find.text('CSV'), findsOneWidget);
+    expect(find.text('JSON'), findsOneWidget);
+    expect(find.text('Custom range'), findsOneWidget);
   });
 
   testWidgets('AutoMotion screen shows export action icon', (tester) async {

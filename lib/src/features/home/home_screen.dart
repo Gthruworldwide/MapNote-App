@@ -3,11 +3,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../data/models/place.dart';
 import '../../data/remote/auth_service.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../core/theme/app_motion.dart';
+import '../../core/utils/arabic_normalizer.dart';
+import '../../core/utils/haversine.dart';
 import '../../core/utils/haptics.dart';
 import '../../providers/app_providers.dart';
 import '../../services/analytics_service.dart';
@@ -17,6 +20,8 @@ import '../../services/lock_gate.dart';
 import '../../services/navigation_service.dart';
 import '../../widgets/qibla_indicator.dart';
 import '../add_place/add_place_screen.dart';
+import '../admin/admin_approval_card.dart';
+import '../admin/admin_approval_screen.dart';
 import '../place_detail/place_detail_screen.dart';
 import '../settings/settings_screen.dart';
 import 'widgets/auto_motion_card.dart';
@@ -25,6 +30,7 @@ import 'widgets/place_actions_sheet.dart';
 import 'widgets/place_card.dart';
 import 'widgets/qr_code_dialog.dart';
 import 'widgets/smart_insights_card.dart';
+import 'widgets/smart_insights_widget.dart';
 
 /// The main screen: search, list, add-location menu, sync + settings actions.
 class HomeScreen extends ConsumerStatefulWidget {
@@ -233,20 +239,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
-  /// Opens the long-press context menu, then shows a QR dialog if requested.
+  /// Opens a Quick Actions bottom sheet on long-press.
   ///
-  /// A locked place encodes its raw coordinates into the QR code, so sharing
-  /// one requires identity verification first (same gate as navigate/edit).
-  /// Unlocked places are shared directly, without any prompt.
+  /// Provides quick access to WhatsApp sharing, copy formatted text,
+  /// copy map link, and navigate in Google Maps.
   Future<void> _showPlaceActions(Place place) async {
     Haptics.light();
-    final PlaceActionResult? result = await showPlaceActionsSheet(
-      context,
-      place,
-    );
-    if (result != PlaceActionResult.shareQr || !mounted) return;
 
+    // A locked place is masked everywhere else (title, notes, coordinates), so
+    // its long-press menu must be the gated action strip — the station
+    // quick-share sheet below prints the raw name and coordinates, which would
+    // reveal content without an identity check. Unlocked places keep the
+    // station sharing shortcuts.
     if (place.isLocked) {
+      final PlaceActionResult? result = await showPlaceActionsSheet(
+        context,
+        place,
+      );
+      if (result != PlaceActionResult.shareQr || !mounted) return;
+
       final bool allowed = await ensureUnlocked(
         ref,
         l10n: AppLocalizations.of(context),
@@ -255,9 +266,112 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         allowWhenUnavailable: true,
       );
       if (!allowed || !mounted) return;
+      await showPlaceQrDialog(context, place);
+      return;
     }
 
-    await showPlaceQrDialog(context, place);
+    final AppLocalizations l10n = AppLocalizations.of(context);
+    final ThemeData theme = Theme.of(context);
+
+    final String googleMapsLink =
+        'https://www.google.com/maps/search/?api=1&query=${place.latitude},${place.longitude}';
+    final String formattedText = '''⛽ *بيانات محطة الوقود - Manex*
+📍 *المحطة:* ${place.name} (${place.id})
+🗺️ *رابط الموقع (Google Maps):*
+$googleMapsLink''';
+
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (BuildContext sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                // Header
+                Text(
+                  place.name,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  place.id,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // Option 1: Share via WhatsApp
+                ListTile(
+                  leading: const Icon(Icons.chat_outlined, color: Color(0xFF25D366)),
+                  title: const Text('مشاركة عبر WhatsApp (للسائق)'),
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    _shareViaWhatsAppSheet(context, place, formattedText);
+                  },
+                ),
+                // Option 2: Copy formatted text
+                ListTile(
+                  leading: const Icon(Icons.copy_all_outlined),
+                  title: const Text('نسخ النص المنسق الكامل'),
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    Clipboard.setData(ClipboardData(text: formattedText));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('تم نسخ بيانات المحطة بالنص المنسق')),
+                    );
+                  },
+                ),
+                // Option 3: Copy map link only
+                ListTile(
+                  leading: const Icon(Icons.link_outlined),
+                  title: const Text('نسخ رابط Google Maps فقط'),
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    Clipboard.setData(ClipboardData(text: googleMapsLink));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('تم نسخ رابط Google Maps')),
+                    );
+                  },
+                ),
+                // Option 4: Navigate in Google Maps
+                ListTile(
+                  leading: const Icon(Icons.navigation_outlined),
+                  title: const Text('فتح في خرائط جوجل'),
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    _openInGoogleMaps(context, ref, l10n, place);
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _shareViaWhatsAppSheet(
+    BuildContext context,
+    Place place,
+    String message,
+  ) async {
+    final Uri whatsappUri = Uri.parse(
+      'whatsapp://send?text=${Uri.encodeComponent(message)}',
+    );
+    if (await canLaunchUrl(whatsappUri)) {
+      await launchUrl(whatsappUri);
+    } else {
+      final Uri webUri = Uri.parse(
+        'https://wa.me/?text=${Uri.encodeComponent(message)}',
+      );
+      await launchUrl(webUri, mode: LaunchMode.externalApplication);
+    }
   }
 
   @override
@@ -373,29 +487,64 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             decoration: InputDecoration(
               hintText: l10n.searchHint,
               prefixIcon: const Icon(Icons.search),
-              suffixIcon: _query.isEmpty
-                  ? null
-                  : IconButton(
+              suffixIcon: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  // Clipboard paste button
+                  IconButton(
+                    icon: const Icon(Icons.content_paste, size: 20),
+                    onPressed: () async {
+                      final ClipboardData? data = await Clipboard.getData(Clipboard.kTextPlain);
+                      final String text = data?.text?.trim() ?? '';
+                      if (text.isNotEmpty) {
+                        _searchController.text = text;
+                        setState(() => _query = text.toLowerCase());
+                      }
+                    },
+                    tooltip: 'Paste & Search',
+                  ),
+                  if (_query.isNotEmpty)
+                    IconButton(
                       onPressed: () {
                         _searchController.clear();
                         setState(() => _query = '');
                       },
-                      icon: const Icon(Icons.clear),
+                      icon: const Icon(Icons.clear, size: 20),
                     ),
+                ],
+              ),
             ),
           ),
         ),
         const LocationStatusChip(),
-        // Keep the card on screen while AutoMotion is enabled, or while the
-        // day already has recorded motion, so paused users can still see
-        // today's totals from the Paused badge.
-        if (ref.watch(autoMotionEnabledProvider) ||
-            ref.watch(autoMotionControllerProvider).totalKm > 0)
+        // Admin Approval card for managing pending station updates.
+        // Shown only for the default admin user or when admin session is unlocked.
+        if (_showAdminApprovalCard(ref, l10n))
+          AdminApprovalCard(),
+        // AutoMotion is a personal-app feature; Work Edition is a no-automation,
+        // offline-first build, so the AutoMotion UI must never appear there while
+        // staying intact for the personal app.
+        if (ref.watch(appEditionProvider) == AppEdition.personal &&
+            (ref.watch(autoMotionEnabledProvider) ||
+                ref.watch(autoMotionControllerProvider).totalKm > 0))
           const AutoMotionCard(),
         if (ref.watch(smartInsightsEnabledProvider))
-          const SmartInsightsCard(),
+          ref.watch(appEditionProvider) == AppEdition.work
+              ? const SmartInsightsWidget()
+              : const SmartInsightsCard(),
       ],
     );
+  }
+
+  /// One scroll surface for the header and the saved places.
+
+  /// Whether to show the Admin Approval card.
+  /// Shown only for the default admin user or when admin session is unlocked.
+  bool _showAdminApprovalCard(WidgetRef ref, AppLocalizations l10n) {
+    final authUser = ref.read(authProvider).value;
+    final isDefaultAdmin = authUser?.email == 'nader.adel7777@gmail.com';
+    final isAdminSessionUnlocked = ref.watch(adminSession);
+    return isDefaultAdmin || isAdminSessionUnlocked;
   }
 
   /// One scroll surface for the header and the saved places.
@@ -463,22 +612,71 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ];
         }
 
+        // Try to parse a location from the search query
+        ParsedLocation? parsedLocation;
+        if (_query.isNotEmpty) {
+          parsedLocation = _parser.parse(_query);
+          if (parsedLocation == null && _parser.looksLikeShortMapLink(_query)) {
+            // For short links, we can't resolve synchronously, skip
+          }
+        }
+
         final List<Place> filtered = _query.isEmpty
             ? places
             : places
                   .where(
-                    (Place p) =>
-                        p.name.toLowerCase().contains(_query) ||
-                        p.notes.toLowerCase().contains(_query) ||
-                        p.plusCode.toLowerCase().contains(_query),
+                    (Place p) {
+                      // Tokenized search: split query into individual words
+                      final String normalizedQuery = ArabicNormalizer.normalize(_query);
+                      final List<String> queryTokens = normalizedQuery
+                          .split(RegExp(r'\s+'))
+                          .where((String t) => t.isNotEmpty)
+                          .toList();
+
+                      // If no tokens, match nothing
+                      if (queryTokens.isEmpty) return false;
+
+                      // Normalize station fields
+                      final String normalizedName = ArabicNormalizer.normalize(p.name);
+                      final String normalizedNotes = ArabicNormalizer.normalize(p.notes);
+                      final String normalizedPlusCode = ArabicNormalizer.normalize(p.plusCode);
+                      final String normalizedId = p.id.toLowerCase();
+
+                      // A station matches if ALL query tokens exist anywhere in the fields
+                      return queryTokens.every((String token) =>
+                          normalizedName.contains(token) ||
+                          normalizedNotes.contains(token) ||
+                          normalizedPlusCode.contains(token) ||
+                          normalizedId.contains(token));
+                    },
                   )
                   .toList();
 
-        // Pinned places first, then newest → oldest.
-        filtered.sort((Place a, Place b) {
-          if (a.isPinned != b.isPinned) return a.isPinned ? -1 : 1;
-          return b.timestamp.compareTo(a.timestamp);
-        });
+        // If a location was parsed, sort by distance
+        if (parsedLocation != null && filtered.isNotEmpty) {
+          final ParsedLocation parsed = parsedLocation;
+          filtered.sort((Place a, Place b) {
+            final double distA = Haversine.distanceKm(
+              parsed.latitude,
+              parsed.longitude,
+              a.latitude,
+              a.longitude,
+            );
+            final double distB = Haversine.distanceKm(
+              parsed.latitude,
+              parsed.longitude,
+              b.latitude,
+              b.longitude,
+            );
+            return distA.compareTo(distB);
+          });
+        } else {
+          // Pinned places first, then newest → oldest.
+          filtered.sort((Place a, Place b) {
+            if (a.isPinned != b.isPinned) return a.isPinned ? -1 : 1;
+            return b.timestamp.compareTo(a.timestamp);
+          });
+        }
 
         if (filtered.isEmpty) {
           return <Widget>[
@@ -551,6 +749,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         .syncNow(userInitiated: true);
     if (!mounted) return;
     unawaited(ref.read(agentProvider.notifier).refresh());
+  }
+
+  /// Opens the place in Google Maps.
+  Future<void> _openInGoogleMaps(BuildContext context, WidgetRef ref, AppLocalizations l10n, Place place) async {
+    Haptics.light();
+    final NavigationService nav = ref.read(navigationServiceProvider);
+    await nav.openInGoogleMaps(place.latitude, place.longitude);
   }
 
   /// Records that the Qibla compass became visible to the user. Fired by both

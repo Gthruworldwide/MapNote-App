@@ -13,6 +13,7 @@ import 'src/data/local/hive_database.dart';
 import 'src/providers/app_providers.dart';
 import 'src/services/app_logger.dart';
 import 'src/services/background_sync_scheduler.dart';
+import 'src/services/database_seeder.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -67,8 +68,18 @@ Future<void> main() async {
   final HiveDatabase database = HiveDatabase(
     placesBox: await Hive.openBox<dynamic>(AppConfig.placesBoxName),
     settingsBox: await Hive.openBox<dynamic>(AppConfig.settingsBoxName),
+    stationBox: await Hive.openBox<dynamic>('station_data'),
     gpsDailyBox: await Hive.openBox<dynamic>(AppConfig.gpsDailyBoxName),
     autoMotionBox: await Hive.openBox<dynamic>(AppConfig.autoMotionBoxName),
+  );
+
+  // --- First‑launch seed engine ------------------------------------------------
+  // Merges the bundled station catalogue (names, coordinates, managers) into the
+  // places box. Idempotent and version-gated: existing places are never
+  // overwritten and stations the user deleted are not resurrected.
+  await DatabaseSeeder.maybeSeed(
+    placesBox: database.placesBox,
+    settingsBox: database.settingsBox,
   );
 
   runApp(

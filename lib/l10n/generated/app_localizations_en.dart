@@ -173,7 +173,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get languageEnglish => 'English';
 
   @override
-  String get languageArabic => 'العربية';
+  String get languageArabic => 'Arabic';
 
   @override
   String get selectLanguage => 'Select language';
@@ -356,6 +356,131 @@ class AppLocalizationsEn extends AppLocalizations {
   String get manageLocation => 'Manage location';
 
   @override
+  String get contactsPermissionTitle => 'Contacts permission needed';
+
+  @override
+  String get contactsPermissionNeeded =>
+      'MapNote needs access to your contacts to let you link them to saved places.';
+
+  @override
+  String get contactsPermissionDeniedPermanently =>
+      'Contacts permission was permanently denied. You can change this in your device settings.';
+
+  @override
+  String get contactPickerFeatureNotReady =>
+      'Contact picker feature is not ready yet.';
+
+  @override
+  String get unlinkContactFeatureNotReady =>
+      'Unlink contact feature is not ready yet.';
+
+  @override
+  String get allow => 'Allow';
+
+  @override
+  String get settings => 'Settings';
+
+  @override
+  String linkedContact(String name) {
+    return 'Linked contact: $name';
+  }
+
+  @override
+  String get unlinkContact => 'Unlink';
+
+  @override
+  String get linkContact => 'Link contact';
+
+  @override
+  String get smartBatterySaver => 'Smart Battery Saver';
+
+  @override
+  String get smartBatterySaverDesc => 'Reduce GPS updates when stationary.';
+
+  @override
+  String get exportMotionData => 'Export motion data';
+
+  @override
+  String tileCacheSize(Object size) {
+    return 'Tile cache size: $size';
+  }
+
+  @override
+  String get clearTileCache => 'Clear tile cache';
+
+  @override
+  String get preloadOfflineMaps => 'Preload offline maps';
+
+  @override
+  String get offlineMapDownloaded => 'Offline map downloaded';
+
+  @override
+  String get offlineMapRegionSelection => 'Offline Map Region';
+
+  @override
+  String get minLatitude => 'Min Latitude';
+
+  @override
+  String get maxLatitude => 'Max Latitude';
+
+  @override
+  String get latitudeHint => 'Min latitude (e.g. 30.05)';
+
+  @override
+  String get minLongitude => 'Min Longitude';
+
+  @override
+  String get maxLongitude => 'Max Longitude';
+
+  @override
+  String get longitudeHint => 'Min longitude (e.g. 31.22)';
+
+  @override
+  String get minZoom => 'Min Zoom';
+
+  @override
+  String get maxZoom => 'Max Zoom';
+
+  @override
+  String get zoomHint => 'Zoom level (0-20)';
+
+  @override
+  String get startDownload => 'Start Download';
+
+  @override
+  String get autoMotionExport => 'Export';
+
+  @override
+  String get autoMotionCustomRange => 'Custom range';
+
+  @override
+  String autoMotionRangeLabel(Object from, Object to) {
+    return '$from – $to';
+  }
+
+  @override
+  String get autoMotionSelectRange => 'Custom range';
+
+  @override
+  String get autoMotionExportCopied => 'Exported to clipboard';
+
+  @override
+  String get zeroCoordinatesNotice =>
+      'Export does not contain location coordinates';
+
+  @override
+  String get autoMotionExportCsv => 'CSV';
+
+  @override
+  String get autoMotionExportJson => 'JSON';
+
+  @override
+  String get autoMotionExportCopy => 'Copy';
+
+  @override
+  String get savedPlacesVaultLock => 'Vault lock';
+
+  @override
   String get dailyGpsSection => 'Daily GPS tracking';
 
   @override
@@ -468,74 +593,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String autoMotionDaysRecorded(int count) {
     return '$count days recorded';
-  }
-
-  @override
-  String get autoMotionCustomRange => 'Custom range';
-
-  @override
-  String get customDateRange => 'Custom date range';
-
-  @override
-  String get exportMotionData => 'Export motion data';
-
-  @override
-  String get exportFormatCsv => 'CSV';
-
-  @override
-  String get exportFormatJson => 'JSON';
-
-  @override
-  String get zeroCoordinatesNotice =>
-      'Export contains no location coordinates.';
-
-  @override
-  String tileCacheSize(String size) {
-    return 'Tile cache: $size';
-  }
-
-  @override
-  String get clearTileCache => 'Clear tile cache';
-
-  @override
-  String get preloadOfflineMaps => 'Pre-load saved places maps';
-
-  @override
-  String get offlineMapDownloaded => 'Offline maps downloaded';
-
-  @override
-  String get smartBatterySaver => 'Smart battery saver';
-
-  @override
-  String get smartBatterySaverDesc => 'Reduce GPS polling when stationary.';
-
-  @override
-  String get stationaryModeActive => 'Stationary mode active';
-
-  @override
-  String get autoMotionSelectRange => 'Select date range';
-
-  @override
-  String get autoMotionExport => 'Export data';
-
-  @override
-  String get autoMotionExportCsv => 'Export as CSV';
-
-  @override
-  String get autoMotionExportJson => 'Export as JSON';
-
-  @override
-  String get autoMotionExportCopy => 'Copy to clipboard';
-
-  @override
-  String get autoMotionExportCopied => 'Report copied to clipboard';
-
-  @override
-  String get autoMotionExportEmpty => 'No recorded days in this range.';
-
-  @override
-  String autoMotionRangeLabel(String from, String to) {
-    return '$from – $to';
   }
 
   @override
@@ -699,6 +756,52 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get shareQr => 'Share QR code';
+
+  @override
+  String get shareViaWhatsApp => 'Send via WhatsApp';
+
+  @override
+  String get searchContact => 'Search Contact';
+
+  @override
+  String get proposeManagerUpdateTitle => 'Propose Manager Update';
+
+  @override
+  String get proposeManagerUpdate => 'Propose Manager Update';
+
+  @override
+  String get updateProposalSubmitted => 'Update proposal submitted';
+
+  @override
+  String get managerName => 'Manager Name';
+
+  @override
+  String get managerPhone => 'Manager Phone';
+
+  @override
+  String get confirm => 'Confirm';
+
+  @override
+  String get currentUserName => 'Current User';
+
+  @override
+  String get shareViaSystem => 'Share via system';
+
+  @override
+  String get sendToDriver => 'Send to driver';
+
+  @override
+  String get submitStationUpdate =>
+      'Submit Station Update / إرسال تعديل المحطة';
+
+  @override
+  String get submittingUpdate => 'Submitting update...';
+
+  @override
+  String get updateSuccess => 'Update proposal submitted successfully';
+
+  @override
+  String get updateFailed => 'Failed to submit update proposal';
 
   @override
   String get addToHomeScreen => 'Add shortcut to home screen';
@@ -1109,9 +1212,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get savedPlacesVaultUnlock => 'Unlock vault';
 
   @override
-  String get savedPlacesVaultLock => 'Lock vault';
-
-  @override
   String get savedPlacesVaultEmpty => 'No encrypted places yet';
 
   @override
@@ -1343,4 +1443,259 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get durationLessThanMinute => 'less than a minute';
+
+  @override
+  String get stationManagersTitle => 'Station manager';
+
+  @override
+  String get callManager => 'Call manager';
+
+  @override
+  String get messageManagerOnWhatsApp => 'Message on WhatsApp';
+
+  @override
+  String get managerPhoneMissing => 'No phone number on file yet';
+
+  @override
+  String get managerContactUnavailable =>
+      'No app on this device can handle that';
+
+  @override
+  String managerWhatsAppMessage(String name, String station) {
+    return 'Hello $name, regarding $station.';
+  }
+
+  @override
+  String get adminApprovalTitle => 'Admin Approval';
+
+  @override
+  String get noPendingUpdates => 'No pending updates';
+
+  @override
+  String proposalForStation(Object stationId) {
+    return 'Proposal for Station $stationId';
+  }
+
+  @override
+  String currentManager(Object name) {
+    return 'Current Manager: $name';
+  }
+
+  @override
+  String currentManagerPhone(Object phone) {
+    return 'Phone: $phone';
+  }
+
+  @override
+  String proposedManager(Object name) {
+    return 'Proposed Manager: $name';
+  }
+
+  @override
+  String proposedManagerPhone(Object phone) {
+    return 'Phone: $phone';
+  }
+
+  @override
+  String submittedBy(Object name) {
+    return 'Submitted by: $name';
+  }
+
+  @override
+  String submittedAt(Object date) {
+    return 'Submitted on: $date';
+  }
+
+  @override
+  String get adminPinRequired => 'Admin PIN required';
+
+  @override
+  String get pin => 'PIN';
+
+  @override
+  String get incorrectPin => 'Incorrect PIN';
+
+  @override
+  String get incorrectPinAttempt =>
+      'The PIN you entered is incorrect. Please try again.';
+
+  @override
+  String get logout => 'Log out';
+
+  @override
+  String get wrongPin => 'Wrong PIN.';
+
+  @override
+  String get unlock => 'Unlock';
+
+  @override
+  String get unknownManager => 'No manager';
+
+  @override
+  String get unknownPhone => 'No phone';
+
+  @override
+  String get approve => 'Approve';
+
+  @override
+  String get reject => 'Reject';
+
+  @override
+  String get resetPin => 'Reset PIN';
+
+  @override
+  String get incompleteProposal => 'Incomplete proposal';
+
+  @override
+  String get dismissProposal => 'Dismiss';
+
+  @override
+  String get proposalDismissed => 'Proposal dismissed';
+
+  @override
+  String get dismissFailed => 'Failed to dismiss proposal';
+
+  @override
+  String get incompleteNewStation => 'Incomplete new station proposal';
+
+  @override
+  String get missingStation => 'Missing station reference';
+
+  @override
+  String get proposalApproved => 'Proposal approved successfully';
+
+  @override
+  String get proposalRejected => 'Proposal rejected';
+
+  @override
+  String get approveFailed => 'Failed to approve proposal';
+
+  @override
+  String get rejectFailed => 'Failed to reject proposal';
+
+  @override
+  String get newStationApproved => 'New station approved successfully';
+
+  @override
+  String get adminPinHint => '1991';
+
+  @override
+  String newStationTitle(String name) {
+    return 'New station: $name';
+  }
+
+  @override
+  String proposalIdLabel(String id) {
+    return 'Proposal ID: $id';
+  }
+
+  @override
+  String proposalRole(String role) {
+    return 'Role: $role';
+  }
+
+  @override
+  String proposalLocation(String lat, String lng) {
+    return 'Location: $lat, $lng';
+  }
+
+  @override
+  String proposalCity(String city) {
+    return 'City: $city';
+  }
+
+  @override
+  String get unknownStation => 'Unknown station';
+
+  @override
+  String get roleManager => 'Manager';
+
+  @override
+  String get roleSupervisor => 'Supervisor';
+
+  @override
+  String get roleSupport => 'Support';
+
+  @override
+  String get roleStaff => 'Staff';
+
+  @override
+  String workInsightsStations(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count stations',
+      one: '1 station',
+      zero: 'No stations',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String workInsightsManagers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count manager contacts on file',
+      one: '1 manager contact on file',
+      zero: 'No manager contacts on file',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String workInsightsMissingContacts(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count stations missing a phone number',
+      one: '1 station missing a phone number',
+      zero: 'All stations have a phone number',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String workInsightsWorkTagged(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count #work-tagged places',
+      one: '1 #work-tagged place',
+      zero: 'No #work-tagged places',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get workInsightsTip =>
+      'Tag a place with #work in its name or notes to track operations. Submit contact updates from the station screen for admin approval.';
+
+  @override
+  String get workInsightsNothingMissing =>
+      'Every station has a contact on file.';
+
+  @override
+  String workInsightsPendingApprovals(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count pending admin approvals',
+      one: '1 pending admin approval',
+      zero: 'No pending admin approvals',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String workInsightsStationsMissingContactsLabel(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count stations missing manager contact details',
+      one: '1 station missing manager contact details',
+      zero: 'No stations missing manager details',
+    );
+    return '$_temp0';
+  }
 }

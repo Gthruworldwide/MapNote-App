@@ -11,6 +11,7 @@ import '../../data/models/place.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../providers/app_providers.dart';
 import '../../services/app_logger.dart';
+import '../../services/firebase_station_service.dart';
 import '../../services/geocoding_service.dart';
 import '../../services/location_parser.dart';
 import '../../services/location_service.dart';
@@ -495,7 +496,40 @@ class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
             longitude: resolved.longitude,
           );
 
+    final bool hasWorkTag = _nameController.text.toLowerCase().contains('#work') ||
+        _notesController.text.toLowerCase().contains('#work');
+
     setState(() => _saving = true);
+
+    if (hasWorkTag) {
+      try {
+        final hiveDb = ref.read(hiveDatabaseProvider);
+        final stationService = FirebaseStationService(hiveDatabase: hiveDb);
+        final authUser = ref.read(authProvider).value;
+        final submittedBy = authUser?.email ?? 'unknown';
+
+        await stationService.submitNewStationProposal(
+          name: _nameController.text.trim(),
+          latitude: resolved.latitude,
+          longitude: resolved.longitude,
+          city: '',
+          submittedBy: submittedBy,
+        );
+
+        if (mounted) {
+          messenger.showSnackBar(
+            const SnackBar(content: Text('تم إرسال اقتراح المحطة الجديدة للمراجعة')),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          messenger.showSnackBar(
+            SnackBar(content: Text('Failed to submit station proposal: $e')),
+          );
+        }
+      }
+    }
+
     await ref.read(placesProvider.notifier).save(place);
 
     messenger.showSnackBar(SnackBar(content: Text(l10n.placeSaved)));

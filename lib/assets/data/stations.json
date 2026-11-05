@@ -1,0 +1,24 @@
+[
+  {
+    "id": "stn_001",
+    "name": "محطة الظهران",
+    "category": "gas",
+    "hasDriveThru": false,
+    "city": "الدمام",
+    "area": "الظهران",
+    "latitude": 26.3832,
+    "longitude": 50.1234,
+    "speedLimitZone": 60
+  },
+  {
+    "id": "stn_002",
+    "name": "EV Charging Station",
+    "category": "ev",
+    "hasDriveThru": false,
+    "city": "الرياض",
+    "area": "الملز",
+    "latitude": 24.7136,
+    "longitude": 46.6752,
+    "speedLimitZone": 80
+  }
+]

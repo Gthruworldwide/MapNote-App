@@ -27,6 +27,7 @@ void backgroundSyncDispatcher() {
       final HiveDatabase database = HiveDatabase(
         placesBox: await Hive.openBox<dynamic>(AppConfig.placesBoxName),
         settingsBox: await Hive.openBox<dynamic>(AppConfig.settingsBoxName),
+        stationBox: await Hive.openBox<dynamic>('station_data'),
       );
 
       final AuthService auth = GoogleAuthService();

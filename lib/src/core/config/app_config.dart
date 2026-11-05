@@ -54,9 +54,20 @@ class AppConfig {
 
   /// Hive box names.
   static const String placesBoxName = 'places';
-  static const String settingsBoxName = 'settings';
-  static const String gpsDailyBoxName = 'gps_daily';
+  static const String settingsBoxName = 'settings';  static const String gpsDailyBoxName = 'gps_daily';
   static const String autoMotionBoxName = 'auto_motion_box';
+
+  /// Settings key holding the version of the bundled station catalogue that has
+  /// already been seeded into [placesBoxName].
+  ///
+  /// The seeder is additive and version-gated: a catalogue update (a new
+  /// `assets/data/stations.json`) bumps [stationsSeedVersion], existing places
+  /// keep their ids and are never overwritten, and stations the user deleted
+  /// stay deleted instead of reappearing on every launch.
+  static const String stationsSeedVersionKey = 'stations_seed_version';
+
+  /// Current version of the bundled station catalogue.
+  static const int stationsSeedVersion = 1;
 
   /// AES-256 encrypted box holding the biometric-gated "encrypted vault"
   /// places. Additive: the plain [placesBoxName] box is never touched, so it
