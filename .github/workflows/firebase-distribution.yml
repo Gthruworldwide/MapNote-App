@@ -31,6 +31,9 @@ name: Firebase App Distribution
 on:
   workflow_dispatch:
   push:
+    branches:
+      - main
+      - work-edition
     tags:
       # Bare release tag, e.g. v1.1.0
       - 'v[0-9]+.[0-9]+.[0-9]+'
@@ -69,7 +72,7 @@ jobs:
 
       - name: Build release APK
         run: >
-          flutter build apk --release
+          flutter build apk --release -t lib/main_work.dart
           --dart-define=GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
 
       # The APK is ~67 MB and only needs to outlive the distribute job that
