@@ -1,5 +1,7 @@
 # MapNote
 
+[![XERJ Corpus Hub contributor](https://hub.xerj.org/contributors/Gthruworldwide/badge.svg)](https://hub.xerj.org/contributors/Gthruworldwide)
+
 **Save your favourite places offline. Sync them to your private Google Drive.**
 
 MapNote is an **offline-first, zero-backend** Flutter app for Android and iOS.
