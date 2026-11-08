@@ -10,6 +10,8 @@ A high-performance Flutter package for smoothing GPS polylines and analyzing dri
 
 - **Polyline Smoothing**: Advanced Kalman-filter based smoothing that removes GPS jitter while preserving true path geometry
 - **Motion Behavior Analysis**: Detects harsh acceleration, hard braking, and other driving maneuvers from GPS speed and accelerometer data
+- **Harsh Cornering Detection**: Detects sudden direction changes based on angular rate and lateral acceleration (> 35°/sec or > 0.35g at speeds > 15 km/h)
+- **Heading/Bearing Interpolation**: Circular angle smoothing to prevent 180° flips at low speeds (< 3 km/h)
 - **Offline-First**: All processing runs locally — no network required
 - **Pure Dart**: No platform channels, no method calls, fully testable in isolation
 - **WGS-84 Geometry**: Uses equirectangular projection for local tangent plane calculations
@@ -42,6 +44,25 @@ final smoothed = PolylineSmoother().smooth(rawPoints);
 for (final point in smoothed) {
   print('${point.latitude}, ${point.longitude}');
 }
+```
+
+### Motion Behavior Analysis
+
+```dart
+import 'package:motion_smooth/motion_smooth.dart';
+
+final analyzer = MotionBehaviorAnalyzer();
+
+// Harsh cornering detection (> 35°/sec or > 0.35g at speed > 15 km/h)
+analyzer.observeTransport(VehicleMode.vehicle);
+analyzer.observeSpeed(15, at: DateTime.now);
+
+// New v0.0.2: cornering event triggers
+analyzer.observeCornering();
+
+// Heading/bearing interpolation — prevents 180° flips at low speeds
+final bearing = PolylineSmoother.calculateBearing(startLat, startLng, endLat, endLng);
+final smoothHeading = PolylineSmoother.smoothHeading(currentHeading, targetHeading);
 ```
 
 ### Motion Behavior Analysis
