@@ -66,9 +66,8 @@ class PolylineSmoother {
       double startLat, double startLng, double endLat, double endLng) {
     final double dLon = endLng - startLng;
     final double y = math.sin(dLon) * math.cos(endLat);
-    final double x =
-        math.cos(startLat) * math.sin(endLat) -
-            math.sin(startLat) * math.cos(endLat) * math.cos(dLon);
+    final double x = math.cos(startLat) * math.sin(endLat) -
+        math.sin(startLat) * math.cos(endLat) * math.cos(dLon);
     final double bearing = math.atan2(y, x) * 180 / math.pi;
     return (bearing + 360) % 360; // Normalize to 0-360
   }

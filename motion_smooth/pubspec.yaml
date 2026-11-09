@@ -1,11 +1,20 @@
 name: motion_smooth
 description: A high-performance Flutter package for smoothing GPS polylines and analyzing driver motion behavior.
-version: 0.0.2
+version: 0.0.3
 homepage: https://github.com/Gthruworldwide/RouteNote-App
 repository: https://github.com/Gthruworldwide/RouteNote-App
+
+# Multi-edition configuration for AutoMotion and Work variants
+# These flavors are consumed by the parent MapNote application
 environment:
   sdk: '>=3.0.0 <4.0.0'
   flutter: '>=3.10.0'
+
+# Define flavor dimensions for multi-edition support
+# Product flavors (AutoMotion vs Work Edition) are configured in:
+# - android/app/build.gradle (applicationId, app_name)
+# - ios/Runner (Bundle ID, Display Name)
+# - flutter packages get for asset dependencies
 
 dependencies:
   flutter:
@@ -16,3 +25,4 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.0
+  test: ^1.31.1

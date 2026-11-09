@@ -12,6 +12,11 @@
 - Example project demonstrating core usage
 - Full API documentation with generics and configuration options
 
+## [0.0.3] - 2026-11-09
+
+- Fixed all static analysis warnings in `MotionBehaviorAnalyzer`.
+- Achieved 100% clean static analysis for Pana score optimization (160/160).
+
 ## [0.0.2] - 2026-11-08
 
 ### Added

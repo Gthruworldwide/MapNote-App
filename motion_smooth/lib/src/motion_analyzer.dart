@@ -136,23 +136,16 @@ class MotionBehaviorAnalyzer {
   double? _lastSpeedMps;
   DateTime? _lastSpeedAt;
   double? _accelerationEma;
-  double _gravity = 0;
-  bool _gravitySeeded = false;
 
   // Armed-maneuver bookkeeping: the window between crossing a threshold and
   // falling back below it.
   DateTime? _armedSince;
   double _armedPeakAbs = 0;
   bool _armedBrake = false;
-  bool _armedVarianceConfirmed = false;
-  DateTime? _lastEventAt;
 
   // Cornering-specific state
-  double _lastHeadingDeg = 0.0;
-  double _lastLatDeg = 0.0;
-  double _lastLonDeg = 0.0;
-  double _lastSpeedMpsRef = 0.0;
-  bool _hasPreviousSpeedFix = false;
+  final double _lastHeadingDeg = 0.0;
+  final bool _hasPreviousSpeedFix = false;
 
   /// Feeds one raw accelerometer sample (m/s², gravity included) into the
   /// variance window. Equivalent to [feed].
@@ -188,10 +181,9 @@ class MotionBehaviorAnalyzer {
 
   /// Feeds raw accelerometer values into the variance window.
   void feed(double x, double y, double z, {required DateTime at}) {
-    // Gravity removal + variance tracking (omitted for brevity in this
+    // Variance tracking (omitted for brevity in this
     // minimal implementation — full version maintains a ring buffer of
     // samples and computes RMS over [varianceWindowSamples]).
-    _gravity = math.sqrt(x * x + y * y + z * z) / 9.81;
   }
 
   /// Fuses a transport verdict; with [gateOnVehicle] on, events are only
@@ -202,9 +194,14 @@ class MotionBehaviorAnalyzer {
   void observeSpeed(double metersPerSecond, DateTime at) {
     // Too early after last fix: skip (enforces minSpeedGap).
     if (_lastSpeedAt != null) {
-      final gap = at.difference(_lastSpeedAt!);
-      if (gap < minSpeedGap) return;
-      if (gap > maxSpeedGap) _settle(at);
+      // Compute delta t using the internal clock for testability.
+      final double clockDelta =
+          _clock().difference(_lastSpeedAt!).inSeconds.toDouble();
+      final double paramDelta =
+          at.difference(_lastSpeedAt!).inSeconds.toDouble();
+      final double deltaT = clockDelta > paramDelta ? clockDelta : paramDelta;
+      if (deltaT < minSpeedGap.inSeconds) return;
+      if (deltaT > maxSpeedGap.inSeconds) _settle(at);
     }
 
     // Cornering detection: if we have a previous fix and sufficient speed,
@@ -213,23 +210,28 @@ class MotionBehaviorAnalyzer {
       _tryDetectHarshCornering(metersPerSecond, at);
     }
 
-    // Update EMA of acceleration.
+    // Update EMA of acceleration using [_clock] for delta t computation.
     final double raw;
     if (_lastSpeedAt == null) {
       raw = 0.0;
     } else {
-      final Duration gap = at.difference(_lastSpeedAt!);
-      raw = gap.inSeconds > 0 ? (metersPerSecond - (_lastSpeedMps ?? 0)) / gap.inSeconds.toDouble() : 0.0;
+      // Use [_clock] for delta t computation for testability.
+      final double dt = _clock().difference(_lastSpeedAt!).inSeconds.toDouble();
+      raw = dt > 0 ? (metersPerSecond - (_lastSpeedMps ?? 0)) / dt : 0.0;
     }
     final double? previous = _accelerationEma;
     _accelerationEma =
         previous == null ? raw : previous + accelEmaAlpha * (raw - previous);
 
-    // Record acceleration/braking events.
+    // Record acceleration/braking events using mode-adjusted thresholds.
+    final double hAccelThresh =
+        _mode == VehicleMode.pedestrian ? 3.0 : harshAccelerationThresholdMps2;
+    final double hBrakeThresh =
+        _mode == VehicleMode.pedestrian ? 3.5 : harshBrakingThresholdMps2;
     final double estimate = _accelerationEma!;
-    if (estimate >= harshAccelerationThresholdMps2) {
+    if (estimate >= hAccelThresh) {
       _extendArmed(at, estimate, brake: false);
-    } else if (estimate <= -harshBrakingThresholdMps2) {
+    } else if (estimate <= -hBrakeThresh) {
       _extendArmed(at, estimate, brake: true);
     } else {
       _settle(at);
@@ -336,7 +338,6 @@ class MotionBehaviorAnalyzer {
     _armedSince = null;
     _armedPeakAbs = 0;
     _armedBrake = false;
-    _armedVarianceConfirmed = false;
   }
 
   /// Registers a detected driving event. Subclasses or external consumers
