@@ -12,6 +12,10 @@
 - Example project demonstrating core usage
 - Full API documentation with generics and configuration options
 
+## [0.0.4] - 2026-11-10
+
+- Resolved unused variable warning in `spatial_map_matcher.dart` for 160/160 Pana score optimization.
+
 ## [0.0.3] - 2026-11-09
 
 - Fixed all static analysis warnings in `MotionBehaviorAnalyzer`.

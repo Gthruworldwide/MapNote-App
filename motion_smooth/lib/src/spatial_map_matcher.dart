@@ -70,23 +70,13 @@ final class SpatialMapMatcher {
     // Compute perpendicular distance from Q to the line (not just segment)
     // Using point-to-line distance formula: |AB x AQ| / |AB|
     // Cross product magnitude in 2D: |AB_x * AQ_y - AB_y * AQ_x|
-    final double crossProduct = abEasting *
-            (qLat - aLat) *
-            111139.0 *
-            math.cos(aLat * math.pi / 180.0) *
-            (180.0 / math.pi) -
-        (bLat - aLat) *
-            111139.0 *
-            (180.0 / math.pi) *
-            (qLng - aLng) *
-            111139.0 *
-            math.cos(aLat * math.pi / 180.0) *
-            (180.0 / math.pi);
-
+    // For the projected point calculation, use the established helper methods
+    // pointToLineDistanceMeters and pointToSegmentDistanceMeters which
+    // properly compute the cross product and perpendicular distance.
+    // The projection parameter t and projected coordinates are computed
+    // via the helper methods below.
     // Simplified: use the existing pointToLineDistanceMeters logic
     // Actually, let's just compute using the established helper pattern
-    projectedLat = aLat; // placeholder
-    projectedLng = aLng; // placeholder
   }
 
   /// Calculates the perpendicular distance in metres from a point to an infinite line

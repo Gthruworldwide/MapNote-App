@@ -1,14 +1,23 @@
-import 'dart:math' as math;
+import 'dart:math';
+
 import 'dart:typed_data';
 
+import 'package:meta/meta.dart';
 import 'package:motion_smooth/motion_smooth.dart';
+import 'package:motion_smooth/lib/src/geo_math.dart';
 
 /// Zero-dependency synthetic telemetry generator for headless QA and simulation.
 ///
-/// Generates realistic mock GPS/Telemetry streams representing standard and
-/// edge-case driving conditions. All data uses the package's own types
-/// (RoutePoint, DrivingEventType) and is fully deterministic given a seed
-/// for reproducible testing.
+/// Produces labeled GPS trajectory streams with controlled edge cases:
+/// - Gaussian GPS jitter (simulated sensor noise)
+/// - Tunnel dropout (GPS signal loss for configured durations)
+/// - Harsh braking and acceleration events
+/// - Sharp cornering at varying speeds
+/// - Stationary periods (idle)
+/// - Mixed traffic scenarios
+///
+/// All generated data uses the package's own types (RoutePoint, DrivingEventType)
+/// and is fully deterministic given a seed for reproducible testing.
 @immutable
 class MockTelemetryGenerator {
   /// Random number generator seeded for reproducibility.
@@ -26,9 +35,27 @@ class MockTelemetryGenerator {
     this.gpsNoiseSigmaM = 2.0, // ±2m Gaussian jitter for "normal cruise"
     Duration? dropoutDuration,
   })  : _rng = seed != null ? Random(seed) : Random(),
-        dropoutDuration = dropoutDuration ?? const Duration(seconds: 15);
+        dropoutDuration = dropoutDuration ?? const Duration(seconds: 15) {
+    // Ensure dropoutDuration is never null
+    assert(dropoutDuration != null);
+  }
 
-  /// Generates a straight-line GPS track with Gaussian jitter for "normal cruise".
+  /// Private: Box-Muller transform for generating Gaussian random numbers.
+  double _gaussian() {
+    // Draw two independent uniform [0,1) values
+    double u1 = _rng.nextDouble();
+    double u2 = _rng.nextDouble();
+    // Box-Muller: Z0 = sqrt(-2*ln(u1)) * cos(2*pi*u2)
+    // Avoid log(0) by ensuring u1 > 0 (nextDouble() returns [0,1))
+    if (u1 <= 0.0) return _gaussian();
+    return sqrt(-2.0 * log(u1)) * cos(2.0 * pi * u2);
+  }
+
+  /// Generates a Gaussian random number with mean 0 and variance 1.
+  /// Uses the Box-Muller transform on the internal RNG.
+  double nextGaussian() => _gaussian();
+
+  /// Generates a random point with Gaussian noise for "normal cruise".
   ///
   /// - [startLat], [startLng]: Starting coordinates.
   /// - [numPoints]: Number of points in the track.
@@ -53,10 +80,9 @@ class MockTelemetryGenerator {
       final double northingOffset = 0.0;
 
       // Convert local offsets to lat/lng
-      final pair = geo.localXYToLatLng(
-          eastingOffset, northingOffset, startLat, startLng);
-      final double noiseLat = _rng.nextGaussian() * gpsNoiseSigmaM;
-      final double noiseLng = _rng.nextGaussian() * gpsNoiseSigmaM;
+      final pair = geo.localXYToLatLng(eastingOffset, northingOffset, startLat, startLng);
+      final double noiseLat = nextGaussian() * gpsNoiseSigmaM;
+      final double noiseLng = nextGaussian() * gpsNoiseSigmaM;
 
       final double lat = pair.first + noiseLat;
       final double lng = pair.second + noiseLng;
@@ -151,8 +177,8 @@ class MockTelemetryGenerator {
           eastingOffset, northingOffset, startLat, startLng);
 
       // Add Gaussian noise to simulate GPS jitter during braking
-      final double noiseLat = _rng.nextGaussian() * gpsNoiseSigmaM;
-      final double noiseLng = _rng.nextGaussian() * gpsNoiseSigmaM;
+      final double noiseLat = nextGaussian() * gpsNoiseSigmaM;
+      final double noiseLng = nextGaussian() * gpsNoiseSigmaM;
 
       final double lat = pair.first + noiseLat;
       final double lng = pair.second + noiseLng;
@@ -199,13 +225,12 @@ class MockTelemetryGenerator {
     for (int i = 0; i <= straightPoints; i++) {
       final double frac = i / straightPoints;
       final double latOffset =
-          frac * straightLengthMeters / 111139.0 * (180.0 / math.pi);
-      final double lngOffset = 0.0;
+          frac * straightLengthMeters / 111139.0 * (180.0 / pi);
       final double lat = startLat + latOffset;
       final double lng = startLng;
 
-      final double noiseLat = _rng.nextGaussian() * gpsNoiseSigmaM;
-      final double noiseLng = _rng.nextGaussian() * gpsNoiseSigmaM;
+      final double noiseLat = nextGaussian() * gpsNoiseSigmaM;
+      final double noiseLng = nextGaussian() * gpsNoiseSigmaM;
 
       final RoutePoint point = RoutePoint(
         latitude: lat + noiseLat,
@@ -213,8 +238,8 @@ class MockTelemetryGenerator {
         at: DateTime.now()
             .millisecondsSinceEpoch
             .remainder(86400000)
-            .toDouble()
-            .toFloat(),
+            .toInt()
+            .toDouble(),
       );
       points.add(point);
     }
@@ -223,7 +248,7 @@ class MockTelemetryGenerator {
     // Approximate with waypoints along the arc
     // A right-angle turn: from North (0°) to East (90°) via right-hand arc
     int cornerWaypoints = (turnRadiusMeters / 2.0).ceil();
-    final double totalRadians = math.pi / 2; // 90 degrees in radians
+    final double totalRadians = pi / 2; // 90 degrees in radians
 
     for (int i = 0; i <= cornerWaypoints; i++) {
       final double frac = i / cornerWaypoints;
@@ -232,20 +257,20 @@ class MockTelemetryGenerator {
       // Circular arc coordinates (center at (0, -radius), starting at angle 0 (North))
       // Using: x = r * sin(theta), y = r * (1 - cos(theta))
       // This gives: at theta=0: (0, 0) heading North; at theta=π/2: (r, 0) heading East
-      final double arcX = turnRadiusMeters * math.sin(angle);
-      final double arcY = turnRadiusMeters * (1.0 - math.cos(angle));
+      final double arcX = turnRadiusMeters * sin(angle);
+      final double arcY = turnRadiusMeters * (1.0 - cos(angle));
 
       // Convert arc offsets to lat/lng
-      final double latOffset = arcY / 111139.0 * (180.0 / math.pi);
+      final double latOffset = arcY / 111139.0 * (180.0 / pi);
       final double lngOffset = arcX /
-          (111139.0 * math.cos(startLat * math.pi / 180.0)) *
-          (180.0 / math.pi);
+          (111139.0 * cos(startLat * pi / 180.0)) *
+      (180.0 / pi);
 
       final double lat = startLat + latOffset;
       final double lng = startLng + lngOffset;
 
-      final double noiseLat = _rng.nextGaussian() * gpsNoiseSigmaM;
-      final double noiseLng = _rng.nextGaussian() * gpsNoiseSigmaM;
+      final double noiseLat = nextGaussian() * gpsNoiseSigmaM;
+      final double noiseLng = nextGaussian() * gpsNoiseSigmaM;
 
       final RoutePoint point = RoutePoint(
         latitude: lat + noiseLat,
@@ -253,8 +278,8 @@ class MockTelemetryGenerator {
         at: DateTime.now()
             .millisecondsSinceEpoch
             .remainder(86400000)
-            .toDouble()
-            .toFloat(),
+            .toInt()
+            .toDouble(),
       );
       points.add(point);
     }
@@ -263,15 +288,14 @@ class MockTelemetryGenerator {
     straightPoints = (straightLengthMeters / 5.0).ceil();
     for (int i = 1; i <= straightPoints; i++) {
       final double frac = i / straightPoints;
-      final double latOffset = 0.0;
       final double lngOffset = frac *
           straightLengthMeters /
-          (111139.0 * math.cos(startLat * math.pi / 180.0) * (180.0 / math.pi));
+          (111139.0 * cos(startLat * pi / 180.0) * (180.0 / pi));
       final double lat = startLat;
       final double lng = startLng + lngOffset;
 
-      final double noiseLat = _rng.nextGaussian() * gpsNoiseSigmaM;
-      final double noiseLng = _rng.nextGaussian() * gpsNoiseSigmaM;
+      final double noiseLat = nextGaussian() * gpsNoiseSigmaM;
+      final double noiseLng = nextGaussian() * gpsNoiseSigmaM;
 
       final RoutePoint point = RoutePoint(
         latitude: lat + noiseLat,
@@ -279,8 +303,8 @@ class MockTelemetryGenerator {
         at: DateTime.now()
             .millisecondsSinceEpoch
             .remainder(86400000)
-            .toDouble()
-            .toFloat(),
+            .toInt()
+            .toDouble(),
       );
       points.add(point);
     }
@@ -309,10 +333,10 @@ class MockTelemetryGenerator {
     int sampleCount = (durationSec / sampleIntervalSec).ceil() + 1;
 
     for (int i = 0; i < sampleCount; i++) {
-      final double lat = startLat + _rng.nextGaussian() * gpsNoiseSigmaM;
-      final double lng = startLng + _rng.nextGaussian() * gpsNoiseSigmaM;
+      final double lat = startLat + nextGaussian() * gpsNoiseSigmaM;
+      final double lng = startLng + nextGaussian() * gpsNoiseSigmaM;
       final DateTime timestamp =
-          DateTime.now().add(Duration(seconds: i * sampleIntervalSec));
+          DateTime.now().add(Duration(seconds: roundToInt(i * sampleIntervalSec)));
 
       final RoutePoint point = RoutePoint(
         latitude: lat,

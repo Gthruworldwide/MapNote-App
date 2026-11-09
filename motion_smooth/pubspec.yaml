@@ -1,6 +1,6 @@
 name: motion_smooth
 description: A high-performance Flutter package for smoothing GPS polylines and analyzing driver motion behavior.
-version: 0.0.3
+version: 0.0.4
 homepage: https://github.com/Gthruworldwide/RouteNote-App
 repository: https://github.com/Gthruworldwide/RouteNote-App
 
@@ -20,6 +20,7 @@ dependencies:
   flutter:
     sdk: flutter
   latlong2: '>=0.9.0 <0.11.0'
+  meta: ^1.0.0
 
 dev_dependencies:
   flutter_test:

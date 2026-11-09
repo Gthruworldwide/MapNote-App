@@ -1,7 +1,9 @@
-import 'dart:math' as math;
+import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:meta/meta.dart';
 import 'package:motion_smooth/motion_smooth.dart';
+import 'package:motion_smooth/lib/src/geo_math.dart';
 
 /// Synthetic GPS telemetry generator for AI/ML training and testing.
 ///
