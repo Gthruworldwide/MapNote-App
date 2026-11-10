@@ -108,6 +108,8 @@ dependencies:
   # Kotlin, so it is overridden below with a patched copy in third_party/. See
   # README > "Android / Kotlin build notes".
   pedometer: ^4.0.1
+  motion_smooth:
+    path: ./motion_smooth
 
 dev_dependencies:
   flutter_test:

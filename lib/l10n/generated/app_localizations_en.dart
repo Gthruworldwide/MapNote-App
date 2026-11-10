@@ -1343,4 +1343,32 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get durationLessThanMinute => 'less than a minute';
+
+  @override
+  String get antiGravityTitle => 'Anti-Gravity Engine';
+
+  @override
+  String get antiGravitySubtitle =>
+      'Kinematic force compensation & telemetry visualizer';
+
+  @override
+  String get maneuverHarshBraking => 'Harsh Braking';
+
+  @override
+  String get maneuverHarshAccel => 'Harsh Acceleration';
+
+  @override
+  String get maneuverSharpTurn => 'Sharp Turn';
+
+  @override
+  String get telemetrySpeed => 'Speed';
+
+  @override
+  String get netForce => 'Net Force';
+
+  @override
+  String get apparentWeight => 'Apparent Weight';
+
+  @override
+  String get telemetryGForce => 'Effective G-Force';
 }

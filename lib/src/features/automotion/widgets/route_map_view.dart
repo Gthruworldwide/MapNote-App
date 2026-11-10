@@ -69,6 +69,11 @@ class _RouteMapViewState extends ConsumerState<RouteMapView> {
       _fitToRoute();
     });
 
+    final bool isDark = theme.brightness == Brightness.dark;
+    final String tileUrl = isDark
+        ? 'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+        : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+
     return FlutterMap(
       mapController: controller,
       options: MapOptions(
@@ -90,7 +95,7 @@ class _RouteMapViewState extends ConsumerState<RouteMapView> {
       ),
       children: <Widget>[
         TileLayer(
-          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+          urlTemplate: tileUrl,
           userAgentPackageName: 'com.routenote.routenote',
           tileProvider: ref.watch(routeTileProviderProvider),
         ),

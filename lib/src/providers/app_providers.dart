@@ -29,6 +29,7 @@ import '../data/repositories/sync_repository.dart';
 import '../features/motion_analytics/data/ml_classifier_isolate.dart';
 import '../features/motion_analytics/data/motion_event_mapper.dart';
 import '../features/motion_analytics/domain/entities/motion_event.dart';
+import '../features/automotion/domain/eco_score_model.dart';
 import '../core/config/app_config.dart';
 import '../core/config/preferred_nav_app.dart';
 import '../core/memory/adaptive_profile_key_store.dart';
@@ -2662,6 +2663,40 @@ final Provider<MotionScore> motionScoreProvider = Provider<MotionScore>((
   return MotionScore.from(
     events,
     distanceKm: ref.read(autoMotionServiceProvider).totalDistanceKm,
+  );
+});
+
+/// Live G-force estimate from current motion speed & acceleration.
+final Provider<double> currentGForceProvider = Provider<double>((Ref ref) {
+  final List<DrivingEvent> events = ref.watch(drivingEventsProvider);
+  if (events.isEmpty) return 1.0;
+  final DrivingEvent latest = events.last;
+  return (1.0 + (latest.peakMps2 / 9.81).abs()).clamp(0.5, 3.0);
+});
+
+/// Peak lateral G-force observed in the current trip.
+final Provider<double> maxLateralGForceProvider = Provider<double>((Ref ref) {
+  final List<DrivingEvent> events = ref.watch(drivingEventsProvider);
+  if (events.isEmpty) return 0.0;
+  double maxPeak = 0.0;
+  for (final DrivingEvent e in events) {
+    if (e.peakMps2.abs() > maxPeak) {
+      maxPeak = e.peakMps2.abs();
+    }
+  }
+  return (maxPeak / 9.81).clamp(0.0, 2.0);
+});
+
+/// Provides the computed EcoScoreModel for the current trip.
+final Provider<EcoScoreModel> ecoScoreModelProvider = Provider<EcoScoreModel>((Ref ref) {
+  final MotionScore motionScore = ref.watch(motionScoreProvider);
+  final double currentG = ref.watch(currentGForceProvider);
+  final double maxLatG = ref.watch(maxLateralGForceProvider);
+
+  return EcoScoreModel.fromMotionScore(
+    motionScore,
+    currentG: currentG,
+    maxLatG: maxLatG,
   );
 });
 

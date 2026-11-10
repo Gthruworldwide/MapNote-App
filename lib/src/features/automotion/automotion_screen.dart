@@ -13,6 +13,7 @@ import '../saved_places/presentation/widgets/place_link_suggestions_card.dart';
 import 'route_history_screen.dart';
 import 'widgets/auto_motion_export_sheet.dart';
 import 'widgets/driving_events_card.dart';
+import 'widgets/eco_driving_dashboard_card.dart';
 import 'widgets/motion_summary_sheet.dart';
 import 'widgets/trip_route_card.dart';
 
@@ -65,6 +66,8 @@ class AutoMotionScreen extends ConsumerWidget {
           _DriverModeCard(state: state),
           const SizedBox(height: 16),
           const MotionSummarySheet(),
+          const SizedBox(height: 16),
+          EcoDrivingDashboardCard(ecoScore: ref.watch(ecoScoreModelProvider)),
           const SizedBox(height: 16),
           const TripRouteCard(),
           const SizedBox(height: 16),

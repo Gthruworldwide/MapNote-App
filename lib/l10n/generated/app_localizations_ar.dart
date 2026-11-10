@@ -1338,4 +1338,31 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get durationLessThanMinute => 'أقل من دقيقة';
+
+  @override
+  String get antiGravityTitle => 'محرك Anti-Gravity';
+
+  @override
+  String get antiGravitySubtitle => 'موازن القوة الحركية ومحاكاة المتجهات';
+
+  @override
+  String get maneuverHarshBraking => 'كبح حاد';
+
+  @override
+  String get maneuverHarshAccel => 'تسارع حاد';
+
+  @override
+  String get maneuverSharpTurn => 'انعطاف حاد';
+
+  @override
+  String get telemetrySpeed => 'السرعة';
+
+  @override
+  String get netForce => 'القوة الصافية';
+
+  @override
+  String get apparentWeight => 'الوزن الظاهري';
+
+  @override
+  String get telemetryGForce => 'قوة الجاذبية G';
 }

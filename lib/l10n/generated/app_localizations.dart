@@ -2494,6 +2494,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'less than a minute'**
   String get durationLessThanMinute;
+
+  /// No description provided for @antiGravityTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Anti-Gravity Engine'**
+  String get antiGravityTitle;
+
+  /// No description provided for @antiGravitySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Kinematic force compensation & telemetry visualizer'**
+  String get antiGravitySubtitle;
+
+  /// No description provided for @maneuverHarshBraking.
+  ///
+  /// In en, this message translates to:
+  /// **'Harsh Braking'**
+  String get maneuverHarshBraking;
+
+  /// No description provided for @maneuverHarshAccel.
+  ///
+  /// In en, this message translates to:
+  /// **'Harsh Acceleration'**
+  String get maneuverHarshAccel;
+
+  /// No description provided for @maneuverSharpTurn.
+  ///
+  /// In en, this message translates to:
+  /// **'Sharp Turn'**
+  String get maneuverSharpTurn;
+
+  /// No description provided for @telemetrySpeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed'**
+  String get telemetrySpeed;
+
+  /// No description provided for @netForce.
+  ///
+  /// In en, this message translates to:
+  /// **'Net Force'**
+  String get netForce;
+
+  /// No description provided for @apparentWeight.
+  ///
+  /// In en, this message translates to:
+  /// **'Apparent Weight'**
+  String get apparentWeight;
+
+  /// No description provided for @telemetryGForce.
+  ///
+  /// In en, this message translates to:
+  /// **'Effective G-Force'**
+  String get telemetryGForce;
 }
 
 class _AppLocalizationsDelegate

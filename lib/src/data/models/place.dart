@@ -51,6 +51,9 @@ class Place {
   /// navigating or editing.
   final bool isLocked;
 
+  /// Vaulted places are kept in the encrypted vault store.
+  final bool isVaulted;
+
   Place copyWith({
     String? id,
     String? name,

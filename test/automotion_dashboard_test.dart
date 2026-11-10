@@ -216,6 +216,8 @@ void main() {
     motion.recordPosition(_fix(0, 0));
     await tester.pump();
     await tester.pump();
+    await tester.drag(find.byType(ListView), const Offset(0, -400));
+    await tester.pump();
 
     expect(find.text('No motion recorded yet'), findsNothing);
     expect(find.text('Feb 4, 2026'), findsOneWidget);
@@ -397,6 +399,8 @@ void main() {
       motion.recordPosition(_fix(0, 0, speed: 9));
       motion.recordPosition(_fix(0.009, 0.001, speed: 14));
       await tester.pump();
+      await tester.pump();
+      await tester.drag(find.byType(ListView), const Offset(0, -400));
       await tester.pump();
 
       expect(tester.takeException(), isNull);

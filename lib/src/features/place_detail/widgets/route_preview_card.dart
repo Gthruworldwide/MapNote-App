@@ -466,6 +466,12 @@ class _RoutePreviewMapState extends ConsumerState<_RoutePreviewMap> {
     final AppLocalizations l10n = AppLocalizations.of(context);
     final ColorScheme scheme = Theme.of(context).colorScheme;
 
+    final bool isDark = scheme.brightness == Brightness.dark;
+    final String tileUrl = isDark
+        ? 'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+        : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+    final String attribution = l10n.routeMapAttribution;
+
     return FlutterMap(
       mapController: _controller,
       options: MapOptions(
@@ -488,7 +494,7 @@ class _RoutePreviewMapState extends ConsumerState<_RoutePreviewMap> {
       ),
       children: <Widget>[
         TileLayer(
-          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+          urlTemplate: tileUrl,
           userAgentPackageName: 'com.routenote.routenote',
           tileProvider: ref.watch(routeTileProviderProvider),
         ),
@@ -498,7 +504,7 @@ class _RoutePreviewMapState extends ConsumerState<_RoutePreviewMap> {
           alignment: AlignmentDirectional.bottomEnd,
           child: Padding(
             padding: const EdgeInsetsDirectional.only(end: 6, bottom: 6),
-            child: MapAttributionChip(label: l10n.routeMapAttribution),
+            child: MapAttributionChip(label: attribution),
           ),
         ),
       ],

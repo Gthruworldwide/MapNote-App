@@ -12,6 +12,16 @@ analyzer:
     - build/**
     - android/**
     - ios/**
+    - motion_smooth/**
+    - third_party/**
+    - App/**
+    - station_report_tools/**
+    - tool/**
+    - benchmark/**
+    - scripts/**
+    - windows/**
+    - macos/**
+    - linux/**
 include: package:flutter_lints/flutter.yaml
 
 linter:

@@ -499,5 +499,15 @@
   "durationHoursMinutes": "{hours} س {minutes} د",
   "durationMinutes": "{minutes} د",
   "durationZero": "0 د",
-  "durationLessThanMinute": "أقل من دقيقة"
+  "durationLessThanMinute": "أقل من دقيقة",
+
+  "antiGravityTitle": "محرك Anti-Gravity",
+  "antiGravitySubtitle": "موازن القوة الحركية ومحاكاة المتجهات",
+  "maneuverHarshBraking": "كبح حاد",
+  "maneuverHarshAccel": "تسارع حاد",
+  "maneuverSharpTurn": "انعطاف حاد",
+  "telemetrySpeed": "السرعة",
+  "netForce": "القوة الصافية",
+  "apparentWeight": "الوزن الظاهري",
+  "telemetryGForce": "قوة الجاذبية G"
 }

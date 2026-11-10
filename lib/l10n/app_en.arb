@@ -612,5 +612,15 @@
     }
   },
   "durationZero": "0 min",
-  "durationLessThanMinute": "less than a minute"
+  "durationLessThanMinute": "less than a minute",
+
+  "antiGravityTitle": "Anti-Gravity Engine",
+  "antiGravitySubtitle": "Kinematic force compensation & telemetry visualizer",
+  "maneuverHarshBraking": "Harsh Braking",
+  "maneuverHarshAccel": "Harsh Acceleration",
+  "maneuverSharpTurn": "Sharp Turn",
+  "telemetrySpeed": "Speed",
+  "netForce": "Net Force",
+  "apparentWeight": "Apparent Weight",
+  "telemetryGForce": "Effective G-Force"
 }

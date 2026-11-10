@@ -62,6 +62,13 @@ class RouteMapViewer extends ConsumerWidget {
       );
     }
 
+    final ThemeData theme = Theme.of(context);
+    final bool isDark = theme.brightness == Brightness.dark;
+    final String tileUrl = isDark
+        ? 'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+        : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+    final String attribution = l10n.routeMapAttribution;
+
     return FlutterMap(
       // A new day means a new camera: rebuilding the map state is the simplest
       // way to re-run the one-shot initial fit.
@@ -84,7 +91,7 @@ class RouteMapViewer extends ConsumerWidget {
       ),
       children: <Widget>[
         TileLayer(
-          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+          urlTemplate: tileUrl,
           userAgentPackageName: 'com.routenote.routenote',
           tileProvider: ref.watch(routeTileProviderProvider),
         ),
@@ -101,7 +108,7 @@ class RouteMapViewer extends ConsumerWidget {
           alignment: AlignmentDirectional.bottomEnd,
           child: Padding(
             padding: const EdgeInsetsDirectional.only(end: 6, bottom: 6),
-            child: MapAttributionChip(label: l10n.routeMapAttribution),
+            child: MapAttributionChip(label: attribution),
           ),
         ),
       ],
