@@ -6,16 +6,21 @@ class HiveDatabase {
   HiveDatabase({
     required this.placesBox,
     required this.settingsBox,
+    Box<dynamic>? stationBox,
     Box<dynamic>? gpsDailyBox,
     Box<dynamic>? autoMotionBox,
-  }) : gpsDailyBox = gpsDailyBox ?? settingsBox,
-       autoMotionBox = autoMotionBox ?? settingsBox;
+  })  : gpsDailyBox = gpsDailyBox ?? settingsBox,
+       autoMotionBox = autoMotionBox ?? settingsBox,
+       stationBox = stationBox ?? settingsBox;
 
   /// Box keyed by place id, values are JSON-compatible maps.
   final Box<dynamic> placesBox;
 
   /// Small box for app preferences (locale, last sync timestamp, ...).
   final Box<dynamic> settingsBox;
+
+  /// Box for station data loaded from Drive or local import.
+  final Box<dynamic> stationBox;
 
   /// Per-day GPS tracking summaries. `main()` passes a dedicated box; other
   /// constructors (background isolate, tests) fall back to the settings box so

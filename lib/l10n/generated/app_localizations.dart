@@ -2507,6 +2507,168 @@ abstract class AppLocalizations {
   /// **'Kinematic force compensation & telemetry visualizer'**
   String get antiGravitySubtitle;
 
+  /// No description provided for @antiGravityPlay.
+  ///
+  /// In en, this message translates to:
+  /// **'Play'**
+  String get antiGravityPlay;
+
+  /// No description provided for @antiGravityPause.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause'**
+  String get antiGravityPause;
+
+  /// No description provided for @antiGravityReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset'**
+  String get antiGravityReset;
+
+  /// No description provided for @antiGravityDynamicEquilibrium.
+  ///
+  /// In en, this message translates to:
+  /// **'Dynamic Equilibrium — Trajectory Nominal'**
+  String get antiGravityDynamicEquilibrium;
+
+  /// No description provided for @antiGravityKinematicTransformEquation.
+  ///
+  /// In en, this message translates to:
+  /// **'KINEMATIC TRANSFORM EQUATION'**
+  String get antiGravityKinematicTransformEquation;
+
+  /// No description provided for @antiGravityEquation.
+  ///
+  /// In en, this message translates to:
+  /// **'F_net = m · (a_motion - g_anti)'**
+  String get antiGravityEquation;
+
+  /// No description provided for @antiGravitySimulationControls.
+  ///
+  /// In en, this message translates to:
+  /// **'ANTI-GRAVITY SIMULATION CONTROLS'**
+  String get antiGravitySimulationControls;
+
+  /// No description provided for @antiGravityVehicleMass.
+  ///
+  /// In en, this message translates to:
+  /// **'Vehicle Mass (m):'**
+  String get antiGravityVehicleMass;
+
+  /// No description provided for @antiGravityMotionSmoothAlpha.
+  ///
+  /// In en, this message translates to:
+  /// **'motion_smooth Alpha (α):'**
+  String get antiGravityMotionSmoothAlpha;
+
+  /// No description provided for @antiGravityScenarioUrbanCircuit.
+  ///
+  /// In en, this message translates to:
+  /// **'Urban Circuit'**
+  String get antiGravityScenarioUrbanCircuit;
+
+  /// No description provided for @antiGravityScenarioHighSpeedHighway.
+  ///
+  /// In en, this message translates to:
+  /// **'High-Speed Highway'**
+  String get antiGravityScenarioHighSpeedHighway;
+
+  /// No description provided for @antiGravityScenarioHairpinSlalom.
+  ///
+  /// In en, this message translates to:
+  /// **'Hairpin Slalom'**
+  String get antiGravityScenarioHairpinSlalom;
+
+  /// No description provided for @antiGravityScenarioEmergencyBrake.
+  ///
+  /// In en, this message translates to:
+  /// **'Emergency Stop'**
+  String get antiGravityScenarioEmergencyBrake;
+
+  /// No description provided for @antiGravityModeEarthNormal.
+  ///
+  /// In en, this message translates to:
+  /// **'Earth 1.0G'**
+  String get antiGravityModeEarthNormal;
+
+  /// No description provided for @antiGravityModeMicroGravity.
+  ///
+  /// In en, this message translates to:
+  /// **'Micro-Gravity (0.05G)'**
+  String get antiGravityModeMicroGravity;
+
+  /// No description provided for @antiGravityModeVelocityLift.
+  ///
+  /// In en, this message translates to:
+  /// **'Velocity Lift'**
+  String get antiGravityModeVelocityLift;
+
+  /// No description provided for @antiGravityModeHyperLift.
+  ///
+  /// In en, this message translates to:
+  /// **'Hyper-Lift (-0.3G)'**
+  String get antiGravityModeHyperLift;
+
+  /// No description provided for @antiGravityModeLunar.
+  ///
+  /// In en, this message translates to:
+  /// **'Lunar (0.16G)'**
+  String get antiGravityModeLunar;
+
+  /// No description provided for @antiGravityModeMartian.
+  ///
+  /// In en, this message translates to:
+  /// **'Martian (0.38G)'**
+  String get antiGravityModeMartian;
+
+  /// No description provided for @antiGravityUnitKmh.
+  ///
+  /// In en, this message translates to:
+  /// **'km/h'**
+  String get antiGravityUnitKmh;
+
+  /// No description provided for @antiGravityUnitKn.
+  ///
+  /// In en, this message translates to:
+  /// **'kN'**
+  String get antiGravityUnitKn;
+
+  /// No description provided for @antiGravityUnitKg.
+  ///
+  /// In en, this message translates to:
+  /// **'kg'**
+  String get antiGravityUnitKg;
+
+  /// No description provided for @antiGravityUnitG.
+  ///
+  /// In en, this message translates to:
+  /// **'G'**
+  String get antiGravityUnitG;
+
+  /// No description provided for @antiGravityUnitMetersPerSecond.
+  ///
+  /// In en, this message translates to:
+  /// **'m/s'**
+  String get antiGravityUnitMetersPerSecond;
+
+  /// No description provided for @antiGravityUnitNewton.
+  ///
+  /// In en, this message translates to:
+  /// **'N'**
+  String get antiGravityUnitNewton;
+
+  /// No description provided for @antiGravityPeak.
+  ///
+  /// In en, this message translates to:
+  /// **'Peak: {value} {unit}'**
+  String antiGravityPeak(String value, String unit);
+
+  /// No description provided for @antiGravityPercentBaseMass.
+  ///
+  /// In en, this message translates to:
+  /// **'{percent}% base mass'**
+  String antiGravityPercentBaseMass(String percent);
+
   /// No description provided for @maneuverHarshBraking.
   ///
   /// In en, this message translates to:
@@ -2548,6 +2710,864 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Effective G-Force'**
   String get telemetryGForce;
+
+  /// No description provided for @contactsPermissionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Contacts permission needed'**
+  String get contactsPermissionTitle;
+
+  /// No description provided for @contactsPermissionNeeded.
+  ///
+  /// In en, this message translates to:
+  /// **'MapNote needs access to your contacts to let you link them to saved places.'**
+  String get contactsPermissionNeeded;
+
+  /// No description provided for @contactsPermissionDeniedPermanently.
+  ///
+  /// In en, this message translates to:
+  /// **'Contacts permission was permanently denied. You can change this in your device settings.'**
+  String get contactsPermissionDeniedPermanently;
+
+  /// No description provided for @contactPickerFeatureNotReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact picker feature is not ready yet.'**
+  String get contactPickerFeatureNotReady;
+
+  /// No description provided for @unlinkContactFeatureNotReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlink contact feature is not ready yet.'**
+  String get unlinkContactFeatureNotReady;
+
+  /// No description provided for @allow.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow'**
+  String get allow;
+
+  /// No description provided for @settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get settings;
+
+  /// No description provided for @linkedContact.
+  ///
+  /// In en, this message translates to:
+  /// **'Linked contact: {name}'**
+  String linkedContact(String name);
+
+  /// No description provided for @unlinkContact.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlink'**
+  String get unlinkContact;
+
+  /// No description provided for @linkContact.
+  ///
+  /// In en, this message translates to:
+  /// **'Link contact'**
+  String get linkContact;
+
+  /// No description provided for @offlineMapRegionSelection.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline Map Region'**
+  String get offlineMapRegionSelection;
+
+  /// No description provided for @minLatitude.
+  ///
+  /// In en, this message translates to:
+  /// **'Min Latitude'**
+  String get minLatitude;
+
+  /// No description provided for @maxLatitude.
+  ///
+  /// In en, this message translates to:
+  /// **'Max Latitude'**
+  String get maxLatitude;
+
+  /// No description provided for @latitudeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Min latitude (e.g. 30.05)'**
+  String get latitudeHint;
+
+  /// No description provided for @minLongitude.
+  ///
+  /// In en, this message translates to:
+  /// **'Min Longitude'**
+  String get minLongitude;
+
+  /// No description provided for @maxLongitude.
+  ///
+  /// In en, this message translates to:
+  /// **'Max Longitude'**
+  String get maxLongitude;
+
+  /// No description provided for @longitudeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Min longitude (e.g. 31.22)'**
+  String get longitudeHint;
+
+  /// No description provided for @minZoom.
+  ///
+  /// In en, this message translates to:
+  /// **'Min Zoom'**
+  String get minZoom;
+
+  /// No description provided for @maxZoom.
+  ///
+  /// In en, this message translates to:
+  /// **'Max Zoom'**
+  String get maxZoom;
+
+  /// No description provided for @zoomHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Zoom level (0-20)'**
+  String get zoomHint;
+
+  /// No description provided for @startDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Start Download'**
+  String get startDownload;
+
+  /// No description provided for @shareViaWhatsApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Send via WhatsApp'**
+  String get shareViaWhatsApp;
+
+  /// No description provided for @searchContact.
+  ///
+  /// In en, this message translates to:
+  /// **'Search Contact'**
+  String get searchContact;
+
+  /// No description provided for @proposeManagerUpdateTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Propose Manager Update'**
+  String get proposeManagerUpdateTitle;
+
+  /// No description provided for @proposeManagerUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Propose Manager Update'**
+  String get proposeManagerUpdate;
+
+  /// No description provided for @updateProposalSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Update proposal submitted'**
+  String get updateProposalSubmitted;
+
+  /// No description provided for @managerName.
+  ///
+  /// In en, this message translates to:
+  /// **'Manager Name'**
+  String get managerName;
+
+  /// No description provided for @managerPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Manager Phone'**
+  String get managerPhone;
+
+  /// No description provided for @confirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get confirm;
+
+  /// No description provided for @currentUserName.
+  ///
+  /// In en, this message translates to:
+  /// **'Current User'**
+  String get currentUserName;
+
+  /// No description provided for @shareViaSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'Share via system'**
+  String get shareViaSystem;
+
+  /// No description provided for @sendToDriver.
+  ///
+  /// In en, this message translates to:
+  /// **'Send to driver'**
+  String get sendToDriver;
+
+  /// No description provided for @submitStationUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit station update'**
+  String get submitStationUpdate;
+
+  /// No description provided for @submittingUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Submitting update...'**
+  String get submittingUpdate;
+
+  /// No description provided for @updateSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Update proposal submitted successfully'**
+  String get updateSuccess;
+
+  /// No description provided for @updateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to submit update proposal'**
+  String get updateFailed;
+
+  /// No description provided for @stationManagersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Station manager'**
+  String get stationManagersTitle;
+
+  /// No description provided for @callManager.
+  ///
+  /// In en, this message translates to:
+  /// **'Call manager'**
+  String get callManager;
+
+  /// No description provided for @messageManagerOnWhatsApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Message on WhatsApp'**
+  String get messageManagerOnWhatsApp;
+
+  /// No description provided for @managerPhoneMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'No phone number on file yet'**
+  String get managerPhoneMissing;
+
+  /// No description provided for @managerContactUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No app on this device can handle that'**
+  String get managerContactUnavailable;
+
+  /// Pre-filled WhatsApp message sent to a station manager from the place detail screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Hello {name}, regarding {station}.'**
+  String managerWhatsAppMessage(String name, String station);
+
+  /// No description provided for @adminApprovalTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Admin Approval'**
+  String get adminApprovalTitle;
+
+  /// No description provided for @workEditionCloudUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Online approval is not configured for this Work Edition installation. Local places and insights are still available offline.'**
+  String get workEditionCloudUnavailable;
+
+  /// No description provided for @noPendingUpdates.
+  ///
+  /// In en, this message translates to:
+  /// **'No pending updates'**
+  String get noPendingUpdates;
+
+  /// No description provided for @proposalForStation.
+  ///
+  /// In en, this message translates to:
+  /// **'Proposal for Station {stationId}'**
+  String proposalForStation(Object stationId);
+
+  /// No description provided for @currentManager.
+  ///
+  /// In en, this message translates to:
+  /// **'Current Manager: {name}'**
+  String currentManager(Object name);
+
+  /// No description provided for @currentManagerPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone: {phone}'**
+  String currentManagerPhone(Object phone);
+
+  /// No description provided for @proposedManager.
+  ///
+  /// In en, this message translates to:
+  /// **'Proposed Manager: {name}'**
+  String proposedManager(Object name);
+
+  /// No description provided for @proposedManagerPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone: {phone}'**
+  String proposedManagerPhone(Object phone);
+
+  /// No description provided for @submittedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Submitted by: {name}'**
+  String submittedBy(Object name);
+
+  /// No description provided for @submittedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Submitted on: {date}'**
+  String submittedAt(Object date);
+
+  /// No description provided for @adminPinRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Admin PIN required'**
+  String get adminPinRequired;
+
+  /// No description provided for @pin.
+  ///
+  /// In en, this message translates to:
+  /// **'PIN'**
+  String get pin;
+
+  /// No description provided for @incorrectPin.
+  ///
+  /// In en, this message translates to:
+  /// **'Incorrect PIN'**
+  String get incorrectPin;
+
+  /// No description provided for @incorrectPinAttempt.
+  ///
+  /// In en, this message translates to:
+  /// **'The PIN you entered is incorrect. Please try again.'**
+  String get incorrectPinAttempt;
+
+  /// No description provided for @logout.
+  ///
+  /// In en, this message translates to:
+  /// **'Log out'**
+  String get logout;
+
+  /// No description provided for @wrongPin.
+  ///
+  /// In en, this message translates to:
+  /// **'Wrong PIN.'**
+  String get wrongPin;
+
+  /// No description provided for @unlock.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock'**
+  String get unlock;
+
+  /// No description provided for @unknownManager.
+  ///
+  /// In en, this message translates to:
+  /// **'No manager'**
+  String get unknownManager;
+
+  /// No description provided for @unknownPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'No phone'**
+  String get unknownPhone;
+
+  /// No description provided for @approve.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve'**
+  String get approve;
+
+  /// No description provided for @reject.
+  ///
+  /// In en, this message translates to:
+  /// **'Reject'**
+  String get reject;
+
+  /// No description provided for @resetPin.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset PIN'**
+  String get resetPin;
+
+  /// No description provided for @incompleteProposal.
+  ///
+  /// In en, this message translates to:
+  /// **'Incomplete proposal'**
+  String get incompleteProposal;
+
+  /// No description provided for @dismissProposal.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss'**
+  String get dismissProposal;
+
+  /// No description provided for @proposalDismissed.
+  ///
+  /// In en, this message translates to:
+  /// **'Proposal dismissed'**
+  String get proposalDismissed;
+
+  /// No description provided for @dismissFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to dismiss proposal'**
+  String get dismissFailed;
+
+  /// No description provided for @incompleteNewStation.
+  ///
+  /// In en, this message translates to:
+  /// **'Incomplete new station proposal'**
+  String get incompleteNewStation;
+
+  /// No description provided for @missingStation.
+  ///
+  /// In en, this message translates to:
+  /// **'Missing station reference'**
+  String get missingStation;
+
+  /// No description provided for @proposalApproved.
+  ///
+  /// In en, this message translates to:
+  /// **'Proposal approved successfully'**
+  String get proposalApproved;
+
+  /// No description provided for @proposalRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Proposal rejected'**
+  String get proposalRejected;
+
+  /// No description provided for @approveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to approve proposal'**
+  String get approveFailed;
+
+  /// No description provided for @rejectFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to reject proposal'**
+  String get rejectFailed;
+
+  /// No description provided for @newStationApproved.
+  ///
+  /// In en, this message translates to:
+  /// **'New station approved successfully'**
+  String get newStationApproved;
+
+  /// No description provided for @adminPinHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the admin PIN'**
+  String get adminPinHint;
+
+  /// No description provided for @newStationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New station: {name}'**
+  String newStationTitle(String name);
+
+  /// No description provided for @proposalIdLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Proposal ID: {id}'**
+  String proposalIdLabel(String id);
+
+  /// No description provided for @proposalRole.
+  ///
+  /// In en, this message translates to:
+  /// **'Role: {role}'**
+  String proposalRole(String role);
+
+  /// No description provided for @proposalLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Location: {lat}, {lng}'**
+  String proposalLocation(String lat, String lng);
+
+  /// No description provided for @proposalCity.
+  ///
+  /// In en, this message translates to:
+  /// **'City: {city}'**
+  String proposalCity(String city);
+
+  /// No description provided for @unknownStation.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown station'**
+  String get unknownStation;
+
+  /// No description provided for @roleManager.
+  ///
+  /// In en, this message translates to:
+  /// **'Manager'**
+  String get roleManager;
+
+  /// No description provided for @roleSupervisor.
+  ///
+  /// In en, this message translates to:
+  /// **'Supervisor'**
+  String get roleSupervisor;
+
+  /// No description provided for @roleSupport.
+  ///
+  /// In en, this message translates to:
+  /// **'Support'**
+  String get roleSupport;
+
+  /// No description provided for @roleStaff.
+  ///
+  /// In en, this message translates to:
+  /// **'Staff'**
+  String get roleStaff;
+
+  /// No description provided for @workInsightsStations.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No stations} =1{1 station} other{{count} stations}}'**
+  String workInsightsStations(int count);
+
+  /// No description provided for @workInsightsManagers.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No manager contacts on file} =1{1 manager contact on file} other{{count} manager contacts on file}}'**
+  String workInsightsManagers(int count);
+
+  /// No description provided for @workInsightsMissingContacts.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{All stations have a phone number} =1{1 station missing a phone number} other{{count} stations missing a phone number}}'**
+  String workInsightsMissingContacts(int count);
+
+  /// No description provided for @workInsightsWorkTagged.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No #work-tagged places} =1{1 #work-tagged place} other{{count} #work-tagged places}}'**
+  String workInsightsWorkTagged(int count);
+
+  /// No description provided for @workInsightsTip.
+  ///
+  /// In en, this message translates to:
+  /// **'Tag a place with #work in its name or notes to track operations. Submit contact updates from the station screen for admin approval.'**
+  String get workInsightsTip;
+
+  /// No description provided for @workInsightsNothingMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Every station has a contact on file.'**
+  String get workInsightsNothingMissing;
+
+  /// No description provided for @workInsightsPendingApprovals.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No pending admin approvals} =1{1 pending admin approval} other{{count} pending admin approvals}}'**
+  String workInsightsPendingApprovals(int count);
+
+  /// No description provided for @workInsightsStationsMissingContactsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No stations missing manager details} =1{1 station missing manager contact details} other{{count} stations missing manager contact details}}'**
+  String workInsightsStationsMissingContactsLabel(int count);
+
+  /// No description provided for @stationProposalSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'New station proposal sent for review'**
+  String get stationProposalSubmitted;
+
+  /// No description provided for @stationProposalFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not submit the station proposal.'**
+  String get stationProposalFailed;
+
+  /// No description provided for @stationShareViaWhatsApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Share station details with a driver via WhatsApp'**
+  String get stationShareViaWhatsApp;
+
+  /// No description provided for @copyFormattedStationDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy formatted station details'**
+  String get copyFormattedStationDetails;
+
+  /// No description provided for @stationDetailsCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Station details copied'**
+  String get stationDetailsCopied;
+
+  /// No description provided for @copyGoogleMapsLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy Google Maps link'**
+  String get copyGoogleMapsLink;
+
+  /// No description provided for @googleMapsLinkCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Google Maps link copied'**
+  String get googleMapsLinkCopied;
+
+  /// No description provided for @openGoogleMaps.
+  ///
+  /// In en, this message translates to:
+  /// **'Open in Google Maps'**
+  String get openGoogleMaps;
+
+  /// No description provided for @stationShareHeader.
+  ///
+  /// In en, this message translates to:
+  /// **'Fuel station details - Manex'**
+  String get stationShareHeader;
+
+  /// No description provided for @stationShareNameLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Station: {name} ({id})'**
+  String stationShareNameLine(String name, String id);
+
+  /// No description provided for @stationShareMapLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Location: {url}'**
+  String stationShareMapLink(String url);
+
+  /// No description provided for @stationContactSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Station contacts and managers'**
+  String get stationContactSectionTitle;
+
+  /// No description provided for @addProposeContact.
+  ///
+  /// In en, this message translates to:
+  /// **'+ Add / propose a contact'**
+  String get addProposeContact;
+
+  /// No description provided for @managerRemoved.
+  ///
+  /// In en, this message translates to:
+  /// **'Manager removed successfully'**
+  String get managerRemoved;
+
+  /// No description provided for @stationUpdateSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Update sent for admin approval'**
+  String get stationUpdateSubmitted;
+
+  /// No description provided for @customPlacesPrivate.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom places are private and cannot be submitted.'**
+  String get customPlacesPrivate;
+
+  /// No description provided for @onlyDefaultStationsCanBeSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Only default stations can be submitted for update.'**
+  String get onlyDefaultStationsCanBeSubmitted;
+
+  /// No description provided for @contactDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add / propose a station contact'**
+  String get contactDialogTitle;
+
+  /// No description provided for @importFromTeamContacts.
+  ///
+  /// In en, this message translates to:
+  /// **'Import from team contacts'**
+  String get importFromTeamContacts;
+
+  /// No description provided for @newEntry.
+  ///
+  /// In en, this message translates to:
+  /// **'New entry'**
+  String get newEntry;
+
+  /// No description provided for @noTeamContactsAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No team contacts are available'**
+  String get noTeamContactsAvailable;
+
+  /// No description provided for @choosePhoneContact.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a phone contact'**
+  String get choosePhoneContact;
+
+  /// No description provided for @contactNameAndPhoneRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a name and phone number'**
+  String get contactNameAndPhoneRequired;
+
+  /// No description provided for @contactSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact saved successfully'**
+  String get contactSaved;
+
+  /// No description provided for @contactSubmittedForApproval.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact proposal sent for admin approval'**
+  String get contactSubmittedForApproval;
+
+  /// No description provided for @contactSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save the contact.'**
+  String get contactSaveFailed;
+
+  /// No description provided for @enterContactManually.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the contact details manually'**
+  String get enterContactManually;
+
+  /// No description provided for @openSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Open settings'**
+  String get openSettings;
+
+  /// No description provided for @contactRole.
+  ///
+  /// In en, this message translates to:
+  /// **'Role'**
+  String get contactRole;
+
+  /// No description provided for @offlineMapsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline maps'**
+  String get offlineMapsTitle;
+
+  /// No description provided for @selectOfflineRegion.
+  ///
+  /// In en, this message translates to:
+  /// **'Select region'**
+  String get selectOfflineRegion;
+
+  /// No description provided for @resumeDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume'**
+  String get resumeDownload;
+
+  /// No description provided for @downloadedMaps.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloaded maps'**
+  String get downloadedMaps;
+
+  /// No description provided for @noMapsDownloaded.
+  ///
+  /// In en, this message translates to:
+  /// **'No maps downloaded yet'**
+  String get noMapsDownloaded;
+
+  /// No description provided for @supportDispatchAssistant.
+  ///
+  /// In en, this message translates to:
+  /// **'Support Dispatch Assistant'**
+  String get supportDispatchAssistant;
+
+  /// No description provided for @selectStationForAlternatives.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a station to find alternatives'**
+  String get selectStationForAlternatives;
+
+  /// No description provided for @zoomRangeInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Zoom level must be between 0 and 20'**
+  String get zoomRangeInvalid;
+
+  /// No description provided for @pasteAndSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste and search'**
+  String get pasteAndSearch;
+
+  /// No description provided for @yes.
+  ///
+  /// In en, this message translates to:
+  /// **'Yes'**
+  String get yes;
+
+  /// No description provided for @no.
+  ///
+  /// In en, this message translates to:
+  /// **'No'**
+  String get no;
+
+  /// No description provided for @stationChangeReportHeader.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes:'**
+  String get stationChangeReportHeader;
+
+  /// No description provided for @stationChangeNoChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'No changes detected'**
+  String get stationChangeNoChanges;
+
+  /// No description provided for @stationChangeSubmittedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Submitter: {name}'**
+  String stationChangeSubmittedBy(String name);
+
+  /// No description provided for @stationPhoneChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone changed from \"{oldValue}\" to \"{newValue}\"'**
+  String stationPhoneChanged(String oldValue, String newValue);
+
+  /// No description provided for @stationDisplayNameChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Display name changed from \"{oldValue}\" to \"{newValue}\"'**
+  String stationDisplayNameChanged(String oldValue, String newValue);
+
+  /// No description provided for @stationCategoryChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Category changed from \"{oldValue}\" to \"{newValue}\"'**
+  String stationCategoryChanged(String oldValue, String newValue);
+
+  /// No description provided for @stationDriveThruChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Has drive-through changed from {oldValue} to {newValue}'**
+  String stationDriveThruChanged(String oldValue, String newValue);
+
+  /// No description provided for @stationSpeedLimitChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed limit zone changed from {oldValue} to {newValue}'**
+  String stationSpeedLimitChanged(String oldValue, String newValue);
+
+  /// No description provided for @adminDataUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load station approvals. Please try again.'**
+  String get adminDataUnavailable;
 }
 
 class _AppLocalizationsDelegate

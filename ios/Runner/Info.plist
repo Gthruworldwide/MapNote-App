@@ -59,6 +59,8 @@
 	<string>MapNote records your daily distance and keeps tracking trips in the background while AutoMotion or daily GPS tracking is on.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>MapNote uses your location to save the coordinates of places you capture.</string>
+	<key>NSContactsUsageDescription</key>
+	<string>MapNote needs access to your contacts to let you link them to saved places.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>MapNote uses Face ID to protect locked locations and the Hidden Vault.</string>
 	<key>NSMotionUsageDescription</key>

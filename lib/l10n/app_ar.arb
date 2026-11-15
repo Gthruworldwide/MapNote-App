@@ -1,10 +1,8 @@
 {
   "@@locale": "ar",
-
   "appTitle": "MapNote",
   "placesTitle": "أماكني",
   "searchHint": "ابحث بالاسم أو الملاحظات",
-
   "addPlace": "احفظ الموقع الحالي",
   "addPlaceTitle": "حفظ موقع",
   "editPlaceTitle": "تعديل الموقع",
@@ -18,7 +16,6 @@
   "currentLocation": "الموقع الحالي",
   "fetchingLocation": "جارٍ تحديد موقعك…",
   "nameRequired": "الرجاء إدخال اسم",
-
   "pasteFromClipboard": "لصق موقع من الحافظة",
   "clipboardNoLocation": "لا توجد إحداثيات في الحافظة",
   "clipboardPasted": "تم لصق الموقع من الحافظة",
@@ -32,31 +29,26 @@
   "plusCode": "رمز Plus",
   "plusCodeHint": "مثال: 8FVC9G8F+6W",
   "shareNoLocation": "لم يتم العثور على موقع في النص المُشارَك",
-
   "save": "حفظ",
   "cancel": "إلغاء",
   "delete": "حذف",
   "edit": "تعديل",
   "ok": "حسنًا",
   "retry": "إعادة المحاولة",
-
   "navigate": "التنقل",
   "openInGoogleMaps": "افتح في خرائط جوجل",
   "openInWaze": "افتح في Waze",
   "copyCoordinates": "نسخ الإحداثيات",
   "coordinatesCopied": "تم نسخ الإحداثيات",
-
   "placeSaved": "تم حفظ الموقع",
   "placeDeleted": "تم حذف الموقع",
   "placeDetailsTitle": "تفاصيل المكان",
   "deletePlaceTitle": "حذف المكان؟",
   "deletePlaceMessage": "سيتم إزالة \"{name}\" من هذا الجهاز ومن النسخة الاحتياطية القادمة.",
   "createdAt": "حُفظ بتاريخ {date}",
-
   "emptyPlacesTitle": "لا توجد أماكن محفوظة بعد",
   "emptyPlacesMessage": "اضغط زر + في الشريط العلوي لحفظ موقعك الحالي.",
   "noSearchResults": "لا توجد أماكن مطابقة لبحثك.",
-
   "settingsTitle": "الإعدادات",
   "sectionLanguage": "اللغة",
   "languageSystem": "حسب النظام",
@@ -81,7 +73,6 @@
   "themeSystem": "النظام",
   "themeLight": "فاتح",
   "themeDark": "داكن",
-
   "sectionAccount": "الحساب",
   "sectionSecurityVault": "خزنة الأمان",
   "signInWithGoogle": "تسجيل الدخول بجوجل",
@@ -89,7 +80,6 @@
   "signedInAs": "مسجّل الدخول باسم {email}",
   "notSignedIn": "لم تسجّل الدخول",
   "syncSignInRequired": "سجّل الدخول بجوجل للمزامنة",
-
   "sectionSync": "المزامنة والنسخ الاحتياطي",
   "syncNow": "مزامنة الآن",
   "syncInProgress": "جارٍ المزامنة…",
@@ -105,13 +95,11 @@
   "restoreConfirmMessage": "سيؤدي هذا إلى استبدال جميع الأماكن على هذا الجهاز بالنسخة الاحتياطية من جوجل درايف.",
   "restoreComplete": "تمت الاستعادة",
   "restoreFailed": "فشلت الاستعادة: {error}",
-
   "locationPermissionTitle": "مطلوب إذن الموقع",
   "locationPermissionMessage": "يحتاج MapNote إلى الوصول لموقعك لحفظ الأماكن.",
   "locationServicesDisabled": "يرجى تفعيل خدمات الموقع على جهازك.",
   "locationUnavailable": "تعذّر تحديد موقعك. حاول مرة أخرى.",
   "openAppSettings": "افتح الإعدادات",
-
   "locationStatusGps": "نظام تحديد المواقع",
   "locationStatusPermission": "الإذن",
   "locationGpsOn": "مفعّل",
@@ -121,7 +109,6 @@
   "locationPermissionDeniedForever": "محظور",
   "locationPermissionUnknown": "لم يُطلب",
   "manageLocation": "إدارة الموقع",
-
   "dailyGpsSection": "تتبع GPS اليومي",
   "dailyGpsToggle": "تفعيل تتبع GPS اليومي",
   "dailyGpsToggleSubtitle": "يسجّل المسافة والسرعة القصوى أثناء فتح التطبيق",
@@ -133,7 +120,6 @@
   "dailyGpsUnavailable": "GPS غير متاح — تحقق من إعدادات الموقع",
   "kmUnit": "كم",
   "kmhUnit": "كم/س",
-
   "autoMotionSection": "أوتوموشن",
   "autoMotionToggle": "تفعيل أوتوموشن",
   "autoMotionToggleSubtitle": "يسجّل المسافة والسرعة القصوى تلقائيًا أثناء فتح التطبيق",
@@ -175,7 +161,9 @@
   "tileCacheSize": "ذاكرة الخرائط: {size}",
   "@tileCacheSize": {
     "placeholders": {
-      "size": { "type": "String" }
+      "size": {
+        "type": "String"
+      }
     }
   },
   "clearTileCache": "مسح ذاكرة الخرائط",
@@ -194,8 +182,12 @@
   "autoMotionRangeLabel": "{from} – {to}",
   "@autoMotionRangeLabel": {
     "placeholders": {
-      "from": { "type": "String" },
-      "to": { "type": "String" }
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
     }
   },
   "autoMotionViewDetails": "عرض التفاصيل",
@@ -212,7 +204,9 @@
   "autoMotionEventsMore": "{count} أخرى",
   "@autoMotionEventsMore": {
     "placeholders": {
-      "count": { "type": "int" }
+      "count": {
+        "type": "int"
+      }
     }
   },
   "harshAcceleration": "تسارع حاد",
@@ -226,13 +220,17 @@
   "motionSummaryScore": "{score} / 100",
   "@motionSummaryScore": {
     "placeholders": {
-      "score": { "type": "int" }
+      "score": {
+        "type": "int"
+      }
     }
   },
   "motionSummaryEvents": "{count} حدث",
   "@motionSummaryEvents": {
     "placeholders": {
-      "count": { "type": "int" }
+      "count": {
+        "type": "int"
+      }
     }
   },
   "motionSummaryClean": "رحلة هادئة — لا مناورات قاسية.",
@@ -245,13 +243,10 @@
   "locationChipServiceOff": "الموقع متوقف — اضغط للتفعيل",
   "locationChipPermissionDenied": "إذن الموقع مطلوب — اضغط للسماح",
   "locationChipDeniedForever": "الموقع محظور — اضغط لفتح الإعدادات",
-
   "errorGeneric": "حدث خطأ ما",
-
   "about": "حول",
   "version": "الإصدار",
   "aboutDescription": "يحفظ MapNote أماكنك المفضلة دون اتصال ويزامنها إلى جوجل درايف الخاص بك. يتم فتح التنقل في تطبيق الخرائط الذي تستخدمه بالفعل.",
-
   "addLocation": "إضافة موقع",
   "addCurrentLocation": "الموقع الحالي",
   "addCurrentLocationSubtitle": "استخدم موقع جهازك عبر GPS",
@@ -259,7 +254,6 @@
   "aiSmartPasteSubtitle": "الصق رابط خرائط جوجل أو الإحداثيات",
   "enterCoordinates": "إدخال الإحداثيات",
   "enterCoordinatesSubtitle": "اكتب خط العرض وخط الطول يدويًا",
-
   "pinnedLabel": "مثبّت",
   "lockedLabel": "مقفل",
   "pinToTop": "تثبيت في الأعلى",
@@ -276,7 +270,6 @@
   "unhideLocation": "إظهار الموقع",
   "locationHidden": "تم إخفاء الموقع",
   "locationUnhidden": "تم إظهار الموقع",
-
   "unlockToContinue": "أكّد هويتك للمتابعة",
   "unlockToNavigate": "أكّد هويتك للتنقل",
   "unlockToEdit": "أكّد هويتك للتعديل",
@@ -286,13 +279,11 @@
   "authenticationFailed": "فشل التحقق",
   "biometricsUnavailable": "التحقق الحيوي غير متاح على هذا الجهاز",
   "noDeviceSecurityWarning": "لا توجد شاشة قفل أو تحقق حيوي على هذا الجهاز، لذلك تم تخطي التحقق",
-
   "sectionPrivacy": "الخصوصية والأمان",
   "hiddenVault": "الخزنة المخفية",
   "hiddenVaultSubtitle": "{count, plural, =0{لا توجد أماكن مخفية} =1{مكان مخفي واحد} =2{مكانان مخفيان} few{{count} أماكن مخفية} many{{count} مكانًا مخفيًا} other{{count} مكان مخفي}}",
   "hiddenVaultEmpty": "لا توجد أماكن مخفية",
   "hiddenVaultEmptyMessage": "ستظهر الأماكن التي تخفيها هنا، محمية بقفل جهازك.",
-
   "vaultProtectionTitle": "حماية الخزنة",
   "vaultProtectionSubtitle": "كم تبقى الخزنة المخفية مفتوحة، وما إذا كانت تُقفل عند قفل الشاشة.",
   "sessionTimeoutTitle": "القفل التلقائي عند عدم الاستخدام",
@@ -300,7 +291,9 @@
   "sessionTimeoutMinutes": "{minutes, plural, =1{دقيقة واحدة} =2{دقيقتان} few{{minutes} دقائق} many{{minutes} دقيقة} other{{minutes} دقيقة}}",
   "@sessionTimeoutMinutes": {
     "placeholders": {
-      "minutes": { "type": "int" }
+      "minutes": {
+        "type": "int"
+      }
     }
   },
   "lockOnDeviceLockTitle": "القفل عند قفل الجهاز",
@@ -308,17 +301,14 @@
   "vaultDimmingNotice": "لخصوصيتك، تخفت الشاشة عندما يكون الجهاز في وضع السكون دون مراقبة.",
   "sessionTimeoutUpdated": "تم تحديث مدة القفل التلقائي",
   "lockOnDeviceLockUpdated": "تم تحديث الحماية عند قفل الجهاز",
-
   "qrCodeTitle": "مشاركة عبر رمز QR",
   "qrCodeHint": "امسح الرمز لفتح هذا الموقع في تطبيق الخرائط",
   "copyLink": "نسخ الرابط",
   "linkCopied": "تم نسخ الرابط",
   "close": "إغلاق",
-
   "shortcutRequested": "اتبع التنبيه على الشاشة لإضافة الاختصار",
   "shortcutUnsupported": "اختصارات الشاشة الرئيسية غير مدعومة على هذا الجهاز",
   "shortcutUnavailable": "تعذّرت إضافة الاختصار",
-
   "sectionSmartInsights": "رؤى ذكية",
   "smartInsightsTitle": "رؤى ذكية",
   "smartInsightsRefresh": "تحديث الاقتراحات",
@@ -329,7 +319,6 @@
   "smartInsightsEnableSubtitle": "عرض الاقتراحات في الشاشة الرئيسية",
   "smartInsightsCloudAi": "اقتراحات الذكاء السحابي",
   "smartInsightsCloudAiSubtitle": "اسمح لجوجل Gemini بإضافة نصائح اختيارية. تُرسل أعداد مجهولة فقط — ولا تُرسل أماكنك أو ملاحظاتك أبدًا.",
-
   "insightWelcomeTitle": "احفظ مكانك الأول",
   "insightWelcomeBody": "اضغط زر + لحفظ موقعك الحالي.",
   "insightNearbyDuplicatesTitle": "جمّع الأماكن المتقاربة",
@@ -354,23 +343,36 @@
   "@insightMotionSummaryBody": {
     "description": "Today's measured motion, without a step count (the device has no step sensor).",
     "placeholders": {
-      "walking": { "type": "String" },
-      "running": { "type": "String" },
-      "vehicle": { "type": "String" }
+      "walking": {
+        "type": "String"
+      },
+      "running": {
+        "type": "String"
+      },
+      "vehicle": {
+        "type": "String"
+      }
     }
   },
   "insightMotionSummaryBodySteps": "قطعت اليوم {walking} مشيًا و{running} جريًا، إضافة إلى {vehicle} بالمركبة، على {steps} خطوة معدودة.",
   "@insightMotionSummaryBodySteps": {
     "description": "Today's measured motion, including the step count read from the hardware step counter.",
     "placeholders": {
-      "walking": { "type": "String" },
-      "running": { "type": "String" },
-      "vehicle": { "type": "String" },
-      "steps": { "type": "int" }
+      "walking": {
+        "type": "String"
+      },
+      "running": {
+        "type": "String"
+      },
+      "vehicle": {
+        "type": "String"
+      },
+      "steps": {
+        "type": "int"
+      }
     }
   },
   "insightActionSyncNow": "زامن الآن",
-
   "coordinateDetails": "خط العرض وخط الطول",
   "aiSmartPasteTooltip": "اللصق الذكي",
   "categoryWork": "العمل",
@@ -385,7 +387,9 @@
   "foundPlace": "تم العثور على: {name}",
   "@foundPlace": {
     "placeholders": {
-      "name": { "type": "String" }
+      "name": {
+        "type": "String"
+      }
     }
   },
   "autoFillNameNotes": "تعبئة الاسم والملاحظات تلقائيًا",
@@ -397,7 +401,9 @@
   "distanceAway": "يبعد {distance}",
   "@distanceAway": {
     "placeholders": {
-      "distance": { "type": "String" }
+      "distance": {
+        "type": "String"
+      }
     }
   },
   "accountAndBackup": "الحساب والنسخ السحابي",
@@ -415,7 +421,6 @@
   "compassNorth": "شمال",
   "headingInstruction": "عدل اتجاه الجهاز لرؤية القبلة",
   "compassCalculating": "جاري الحساب...",
-
   "savedPlacesVault": "الخزنة المشفّرة",
   "savedPlacesVaultSubtitle": "أماكن محمية بالمصادقة الحيوية ومشفّرة بـ AES-256",
   "savedPlacesVaultLocked": "الخزنة مقفلة",
@@ -432,7 +437,6 @@
   "restoreFromEncryptedVaultDone": "تمت الإعادة إلى الأماكن المحفوظة",
   "unlockToOpenSavedPlacesVault": "تحقق لفتح الخزنة المشفّرة",
   "unlockToMoveToEncryptedVault": "تحقق لنقل المكان إلى الخزنة المشفّرة",
-
   "enterPin": "أدخل رمز PIN",
   "vaultPinLabel": "رمز PIN",
   "vaultPinConfirmLabel": "تأكيد رمز PIN",
@@ -451,7 +455,6 @@
   "removeVaultPin": "إزالة الرمز",
   "biometricVaultEnabled": "خزنة حيوية",
   "biometricVaultEnabledSubtitle": "احفظ الأماكن في خزنة مشفّرة بـ AES-256 خلف البصمة أو رمز PIN.",
-
   "suggestedPlaceLinks": "أماكن قد ترغب في ربطها",
   "suggestedPlaceLinksSubtitle": "بناءً على توقفات اليوم",
   "suggestedPlaceOpenAction": "فتح",
@@ -462,7 +465,6 @@
   "suggestedPlaceLinked": "تم الربط بـ {name}",
   "suggestedPlaceSaved": "تم الحفظ في أماكنك",
   "suggestedPlaceLinkFailed": "تعذّر ربط المكان",
-
   "motionHistoryTitle": "سجل الحركة",
   "motionHistorySubtitle": "الرحلات والمشي والجري والتوقفات المسجلة في هذا اليوم",
   "motionTypeDrive": "قيادة",
@@ -489,8 +491,12 @@
   "@motionHistoryStepStats": {
     "description": "Measured step count, read from the hardware step counter. Never shown with an approximation mark.",
     "placeholders": {
-      "distance": { "type": "String" },
-      "steps": { "type": "int" }
+      "distance": {
+        "type": "String"
+      },
+      "steps": {
+        "type": "int"
+      }
     }
   },
   "motionHistorySteps": "خطوات",
@@ -500,14 +506,514 @@
   "durationMinutes": "{minutes} د",
   "durationZero": "0 د",
   "durationLessThanMinute": "أقل من دقيقة",
-
   "antiGravityTitle": "محرك Anti-Gravity",
   "antiGravitySubtitle": "موازن القوة الحركية ومحاكاة المتجهات",
+  "antiGravityPlay": "تشغيل",
+  "antiGravityPause": "إيقاف",
+  "antiGravityReset": "إعادة الضبط",
+  "antiGravityDynamicEquilibrium": "التوازن الديناميكي — المسار في وضع ممتاز",
+  "antiGravityKinematicTransformEquation": "معادلة التحويل الحركي",
+  "antiGravityEquation": "F_net = m · (a_motion - g_anti)",
+  "antiGravitySimulationControls": "عناصر التحكم في محاكاة Anti-Gravity",
+  "antiGravityVehicleMass": "كتلة المركبة (m):",
+  "antiGravityMotionSmoothAlpha": "motion_smooth Alpha (α):",
+  "antiGravityScenarioUrbanCircuit": "الدائرة الحضرية",
+  "antiGravityScenarioHighSpeedHighway": "الطريق السريع عالي السرعة",
+  "antiGravityScenarioHairpinSlalom": "سباق المنعطفات الحادة",
+  "antiGravityScenarioEmergencyBrake": "إيقاف طارئ",
+  "antiGravityModeEarthNormal": "الأرض 1.0G",
+  "antiGravityModeMicroGravity": "الجاذبية الدقيقة (0.05G)",
+  "antiGravityModeVelocityLift": "رفع السرعة",
+  "antiGravityModeHyperLift": "رفع فائق (-0.3G)",
+  "antiGravityModeLunar": "القمر (0.16G)",
+  "antiGravityModeMartian": "المريخي (0.38G)",
+  "antiGravityUnitKmh": "كم/س",
+  "antiGravityUnitKn": "ك ن",
+  "antiGravityUnitKg": "كجم",
+  "antiGravityUnitG": "G",
+  "antiGravityUnitMetersPerSecond": "م/س",
+  "antiGravityUnitNewton": "نيوتن",
+  "antiGravityPeak": "الذروة: {value} {unit}",
+  "@antiGravityPeak": {
+    "placeholders": {
+      "value": { "type": "String" },
+      "unit": { "type": "String" }
+    }
+  },
+  "antiGravityPercentBaseMass": "{percent}% من الكتلة الأساسية",
+  "@antiGravityPercentBaseMass": {
+    "placeholders": {
+      "percent": { "type": "String" }
+    }
+  },
   "maneuverHarshBraking": "كبح حاد",
   "maneuverHarshAccel": "تسارع حاد",
   "maneuverSharpTurn": "انعطاف حاد",
   "telemetrySpeed": "السرعة",
   "netForce": "القوة الصافية",
   "apparentWeight": "الوزن الظاهري",
-  "telemetryGForce": "قوة الجاذبية G"
+  "telemetryGForce": "قوة الجاذبية G",
+  "@signedInAs": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "@syncFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "@signInFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "@lastSynced": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "@restoreFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "contactsPermissionTitle": "يلزم منح إذن الوصول إلى جهات الاتصال",
+  "contactsPermissionNeeded": "يحتاج MapNote إلى الوصول إلى جهات الاتصال لربطها بالأماكن المحفوظة.",
+  "contactsPermissionDeniedPermanently": "رُفض إذن الوصول إلى جهات الاتصال نهائيًا. يمكنك تغييره من إعدادات الجهاز.",
+  "contactPickerFeatureNotReady": "ميزة تحديد جهة الاتصال غير جاهزة بعد.",
+  "unlinkContactFeatureNotReady": "ميزة فك الربط غير جاهزة بعد.",
+  "allow": "سماح",
+  "settings": "الإعدادات",
+  "linkedContact": "جهة الاتصال المرتبطة: {name}",
+  "@linkedContact": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "unlinkContact": "فك الربط",
+  "linkContact": "ربط جهة اتصال",
+  "offlineMapRegionSelection": "تحديد منطقة الخريطة غير المتصلة",
+  "minLatitude": "أدنى خط عرض",
+  "maxLatitude": "أقصى خط عرض",
+  "latitudeHint": "أدنى خط عرض (مثال: 30.05)",
+  "minLongitude": "أدنى خط طول",
+  "maxLongitude": "أقصى خط طول",
+  "longitudeHint": "أدنى خط طول (مثال: 31.22)",
+  "minZoom": "أدنى مستوى تكبير",
+  "maxZoom": "أقصى مستوى تكبير",
+  "zoomHint": "مستوى التكبير (0-20)",
+  "startDownload": "بدء التحميل",
+  "shareViaWhatsApp": "مشاركة عبر واتساب",
+  "searchContact": "بحث في جهات الاتصال",
+  "proposeManagerUpdateTitle": "اقترح تحديث المسؤول",
+  "proposeManagerUpdate": "اقترح تحديث المسؤول",
+  "updateProposalSubmitted": "تم إرسال الاقتراح",
+  "managerName": "اسم المسؤول",
+  "managerPhone": "رقم هاتف المسؤول",
+  "confirm": "تأكيد",
+  "currentUserName": "اسم المستخدم",
+  "shareViaSystem": "مشاركة عبر النظام",
+  "sendToDriver": "إرسال إلى السائق",
+  "submitStationUpdate": "إرسال تعديل للمحطة",
+  "submittingUpdate": "جاري الإرسال...",
+  "updateSuccess": "تم إرسال الاقتراح بنجاح",
+  "updateFailed": "تعذّر إرسال الاقتراح",
+  "@hiddenVaultSubtitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@insightNearbyDuplicatesBody": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@insightUnorganizedBody": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@insightSyncIssuesBody": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@insightParseIssuesBody": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@insightStaleBackupBody": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "@insightPinFavoritesBody": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@suggestedPlaceStopDetails": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "@suggestedPlaceNearSaved": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "distance": {
+        "type": "int"
+      }
+    }
+  },
+  "@suggestedPlaceLinked": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@motionHistoryDriveStats": {
+    "placeholders": {
+      "distance": {
+        "type": "String"
+      },
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "@motionHistoryAverageSpeed": {
+    "placeholders": {
+      "speed": {
+        "type": "String"
+      }
+    }
+  },
+  "@motionHistoryStopoverStats": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "@durationHoursMinutes": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "@durationMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "stationManagersTitle": "مسؤولو المحطة",
+  "callManager": "اتصال بالمسؤول",
+  "messageManagerOnWhatsApp": "مراسلة على واتساب",
+  "managerPhoneMissing": "لم يُضف رقم هاتف بعد",
+  "managerContactUnavailable": "لا يوجد تطبيق على هذا الجهاز يمكنه تنفيذ ذلك",
+  "managerWhatsAppMessage": "مرحبًا {name}، بخصوص {station}.",
+  "@managerWhatsAppMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "station": {
+        "type": "String"
+      }
+    }
+  },
+  "adminApprovalTitle": "موافقات المسؤول",
+  "workEditionCloudUnavailable": "لم تتم تهيئة الموافقات عبر الإنترنت لهذا الإصدار العملي. لا تزال الأماكن والإحصاءات المحلية متاحة دون اتصال.",
+  "noPendingUpdates": "لا توجد تحديثات معلّقة",
+  "proposalForStation": "اقتراح للمحطة {stationId}",
+  "currentManager": "مسؤول حالي: {name}",
+  "currentManagerPhone": "هاتف: {phone}",
+  "proposedManager": "مسؤول مقترح: {name}",
+  "proposedManagerPhone": "هاتف: {phone}",
+  "submittedBy": "تم الإرسال بواسطة: {name}",
+  "submittedAt": "تم الإرسال في: {date}",
+  "adminPinRequired": "يُطلب رمز المسؤول",
+  "pin": "رمز PIN",
+  "incorrectPin": "رمز غير صحيح",
+  "incorrectPinAttempt": "رمز PIN الذي أدخلته غير صحيح. يُرجى المحاولة مرة أخرى.",
+  "logout": "تسجيل الخروج",
+  "wrongPin": "رمز خاطئ",
+  "unlock": "فتح",
+  "unknownManager": "لا يوجد مسؤول",
+  "unknownPhone": "لا يوجد هاتف",
+  "approve": "قبول",
+  "reject": "رفض",
+  "resetPin": "إعادة تعيين الرمز",
+  "incompleteProposal": "طلب غير مكتمل",
+  "dismissProposal": "تجاهل",
+  "proposalDismissed": "تم تجاهل الاقتراح",
+  "dismissFailed": "تعذّر تجاهل الاقتراح",
+  "incompleteNewStation": "اقتراح محطة غير مكتمل",
+  "missingStation": "لم يتم تحديد المحطة المرجعية",
+  "proposalApproved": "تم قبول الاقتراح بنجاح",
+  "proposalRejected": "تم رفض الاقتراح",
+  "approveFailed": "فشل قبول الاقتراح",
+  "rejectFailed": "فشل رفض الاقتراح",
+  "newStationApproved": "تم قبول محطة جديدة بنجاح",
+  "adminPinHint": "أدخل رمز PIN للمسؤول",
+  "newStationTitle": "محطة جديدة: {name}",
+  "@newStationTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "proposalIdLabel": "معرّف الاقتراح: {id}",
+  "@proposalIdLabel": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "proposalRole": "الدور: {role}",
+  "@proposalRole": {
+    "placeholders": {
+      "role": {
+        "type": "String"
+      }
+    }
+  },
+  "proposalLocation": "الموقع: {lat}، {lng}",
+  "@proposalLocation": {
+    "placeholders": {
+      "lat": {
+        "type": "String"
+      },
+      "lng": {
+        "type": "String"
+      }
+    }
+  },
+  "proposalCity": "المدينة: {city}",
+  "@proposalCity": {
+    "placeholders": {
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "unknownStation": "محطة غير معروفة",
+  "roleManager": "مدير",
+  "roleSupervisor": "مشرف",
+  "roleSupport": "دعم",
+  "roleStaff": "موظف",
+  "workInsightsStations": "{count, plural, =0{لا توجد محطات} =1{محطة واحدة} =2{محطتان} few{{count} محطات} many{{count} محطة} other{{count} محطة}}",
+  "@workInsightsStations": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "workInsightsManagers": "{count, plural, =0{لا توجد جهات اتصال لمسؤولين} =1{جهة اتصال لمسؤول واحدة} =2{جهتا اتصال لمسؤولين} few{{count} جهات اتصال لمسؤولين} many{{count} جهة اتصال لمسؤول} other{{count} جهة اتصال لمسؤول}}",
+  "@workInsightsManagers": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "workInsightsMissingContacts": "{count, plural, =0{كل المحطات لديها رقم هاتف} =1{محطة واحدة بدون رقم هاتف} =2{محطتان بدون رقم هاتف} few{{count} محطات بدون رقم هاتف} many{{count} محطة بدون رقم هاتف} other{{count} محطة بدون رقم هاتف}}",
+  "@workInsightsMissingContacts": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "workInsightsWorkTagged": "{count, plural, =0{لا توجد أماكن موسومة بـ #work} =1{مكان واحد موسوم بـ #work} =2{مكانان موسومان بـ #work} few{{count} أماكن موسومة بـ #work} many{{count} مكانًا موسومًا بـ #work} other{{count} مكان موسوم بـ #work}}",
+  "@workInsightsWorkTagged": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "workInsightsTip": "أضف الوسم #work إلى اسم المكان أو ملاحظاته لتتبع العمليات. قدّم تحديثات جهات الاتصال من شاشة المحطة لاعتمادها من المسؤول.",
+  "workInsightsNothingMissing": "كل المحطات لديها جهة اتصال مسجلة.",
+  "workInsightsPendingApprovals": "{count, plural, =0{لا توجد موافقات إدارية معلقة} =1{موافقة إدارية معلقة واحدة} =2{موافقتان إداريتان معلقتان} few{{count} موافقات إدارية معلقة} many{{count} موافقة إدارية معلقة} other{{count} موافقة إدارية معلقة}}",
+  "@workInsightsPendingApprovals": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "workInsightsStationsMissingContactsLabel": "{count, plural, =0{لا توجد محطات ينقصها بيانات المسؤول} =1{محطة واحدة ينقصها بيانات مسؤول الاتصال} =2{محطتان ينقصهما بيانات مسؤول الاتصال} few{{count} محطات ينقصها بيانات مسؤول الاتصال} many{{count} محطة ينقصها بيانات مسؤول الاتصال} other{{count} محطة ينقصها بيانات مسؤول الاتصال}}",
+  "@workInsightsStationsMissingContactsLabel": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "stationProposalSubmitted": "تم إرسال اقتراح المحطة الجديدة للمراجعة",
+  "stationProposalFailed": "تعذر إرسال اقتراح المحطة.",
+  "stationShareViaWhatsApp": "مشاركة بيانات المحطة مع سائق عبر WhatsApp",
+  "copyFormattedStationDetails": "نسخ بيانات المحطة المنسقة",
+  "stationDetailsCopied": "تم نسخ بيانات المحطة",
+  "copyGoogleMapsLink": "نسخ رابط Google Maps",
+  "googleMapsLinkCopied": "تم نسخ رابط Google Maps",
+  "openGoogleMaps": "فتح في خرائط Google",
+  "stationShareHeader": "بيانات محطة الوقود - Manex",
+  "stationShareNameLine": "المحطة: {name} ({id})",
+  "@stationShareNameLine": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "stationShareMapLink": "الموقع: {url}",
+  "@stationShareMapLink": {
+    "placeholders": {
+      "url": {
+        "type": "String"
+      }
+    }
+  },
+  "stationContactSectionTitle": "جهات اتصال ومسؤولو المحطة",
+  "addProposeContact": "+ إضافة / اقتراح جهة اتصال",
+  "managerRemoved": "تم حذف المسؤول بنجاح",
+  "stationUpdateSubmitted": "تم إرسال التحديث لموافقة المسؤول",
+  "customPlacesPrivate": "الأماكن المخصصة خاصة ولا يمكن إرسالها.",
+  "onlyDefaultStationsCanBeSubmitted": "يمكن إرسال المحطات الافتراضية فقط للتحديث.",
+  "contactDialogTitle": "إضافة / اقتراح جهة اتصال للمحطة",
+  "importFromTeamContacts": "استيراد من جهات اتصال الفريق",
+  "newEntry": "إدخال جديد",
+  "noTeamContactsAvailable": "لا توجد جهات اتصال متاحة للفريق",
+  "choosePhoneContact": "اختيار جهة اتصال من الهاتف",
+  "contactNameAndPhoneRequired": "يرجى إدخال الاسم ورقم الهاتف",
+  "contactSaved": "تم حفظ جهة الاتصال بنجاح",
+  "contactSubmittedForApproval": "تم إرسال اقتراح جهة الاتصال لموافقة المسؤول",
+  "contactSaveFailed": "تعذر حفظ جهة الاتصال.",
+  "enterContactManually": "أدخل بيانات جهة الاتصال يدويًا",
+  "openSettings": "فتح الإعدادات",
+  "contactRole": "الصفة",
+  "offlineMapsTitle": "الخرائط دون اتصال",
+  "selectOfflineRegion": "تحديد المنطقة",
+  "resumeDownload": "استئناف",
+  "downloadedMaps": "الخرائط التي تم تنزيلها",
+  "noMapsDownloaded": "لم يتم تنزيل خرائط بعد",
+  "supportDispatchAssistant": "مساعد تنسيق الدعم",
+  "selectStationForAlternatives": "اختر محطة للعثور على البدائل",
+  "zoomRangeInvalid": "يجب أن يكون مستوى التكبير بين 0 و20",
+  "pasteAndSearch": "لصق وبحث",
+  "yes": "نعم",
+  "no": "لا",
+  "stationChangeReportHeader": "التغييرات:",
+  "stationChangeNoChanges": "لم يتم اكتشاف تغييرات",
+  "stationChangeSubmittedBy": "مقدم الطلب: {name}",
+  "@stationChangeSubmittedBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "stationPhoneChanged": "تغير الهاتف من \"{oldValue}\" إلى \"{newValue}\"",
+  "@stationPhoneChanged": {
+    "placeholders": {
+      "oldValue": {
+        "type": "String"
+      },
+      "newValue": {
+        "type": "String"
+      }
+    }
+  },
+  "stationDisplayNameChanged": "تغير الاسم المعروض من \"{oldValue}\" إلى \"{newValue}\"",
+  "@stationDisplayNameChanged": {
+    "placeholders": {
+      "oldValue": {
+        "type": "String"
+      },
+      "newValue": {
+        "type": "String"
+      }
+    }
+  },
+  "stationCategoryChanged": "تغير التصنيف من \"{oldValue}\" إلى \"{newValue}\"",
+  "@stationCategoryChanged": {
+    "placeholders": {
+      "oldValue": {
+        "type": "String"
+      },
+      "newValue": {
+        "type": "String"
+      }
+    }
+  },
+  "stationDriveThruChanged": "تغيرت خدمة السيارات من {oldValue} إلى {newValue}",
+  "@stationDriveThruChanged": {
+    "placeholders": {
+      "oldValue": {
+        "type": "String"
+      },
+      "newValue": {
+        "type": "String"
+      }
+    }
+  },
+  "stationSpeedLimitChanged": "تغير نطاق السرعة من {oldValue} إلى {newValue}",
+  "@stationSpeedLimitChanged": {
+    "placeholders": {
+      "oldValue": {
+        "type": "String"
+      },
+      "newValue": {
+        "type": "String"
+      }
+    }
+  },
+  "adminDataUnavailable": "تعذر تحميل موافقات المحطات. يرجى المحاولة مرة أخرى."
 }

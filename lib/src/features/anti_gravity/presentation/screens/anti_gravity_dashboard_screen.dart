@@ -55,12 +55,12 @@ class AntiGravityDashboardScreen extends ConsumerWidget {
               color: const Color(0xFF10B981),
               size: 28,
             ),
-            tooltip: simState.isPlaying ? 'Pause' : 'Play',
+            tooltip: simState.isPlaying ? loc.antiGravityPause : loc.antiGravityPlay,
             onPressed: simNotifier.togglePlay,
           ),
           IconButton(
             icon: const Icon(Icons.refresh, color: Colors.white70),
-            tooltip: 'Reset',
+            tooltip: loc.antiGravityReset,
             onPressed: simNotifier.reset,
           ),
           const SizedBox(width: 8),
@@ -108,11 +108,43 @@ class AntiGravityDashboardScreen extends ConsumerWidget {
     );
   }
 
+  String _scenarioLabel(AppLocalizations loc, AntiGravityScenario scenario) {
+    switch (scenario) {
+      case AntiGravityScenario.urbanCircuit:
+        return loc.antiGravityScenarioUrbanCircuit;
+      case AntiGravityScenario.highSpeedHighway:
+        return loc.antiGravityScenarioHighSpeedHighway;
+      case AntiGravityScenario.hairpinSlalom:
+        return loc.antiGravityScenarioHairpinSlalom;
+      case AntiGravityScenario.emergencyBrake:
+        return loc.antiGravityScenarioEmergencyBrake;
+    }
+  }
+
+  String _modeLabel(AppLocalizations loc, AntiGravityMode mode) {
+    switch (mode) {
+      case AntiGravityMode.earthNormal:
+        return loc.antiGravityModeEarthNormal;
+      case AntiGravityMode.microGravity:
+        return loc.antiGravityModeMicroGravity;
+      case AntiGravityMode.velocityLift:
+        return loc.antiGravityModeVelocityLift;
+      case AntiGravityMode.hyperLift:
+        return loc.antiGravityModeHyperLift;
+      case AntiGravityMode.lunar:
+        return loc.antiGravityModeLunar;
+      case AntiGravityMode.martian:
+        return loc.antiGravityModeMartian;
+    }
+  }
+
   Widget _buildScenarioBar(
     BuildContext context,
     AntiGravitySimulationState state,
     AntiGravitySimulationController notifier,
   ) {
+    final loc = AppLocalizations.of(context);
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
@@ -138,7 +170,7 @@ class AntiGravityDashboardScreen extends ConsumerWidget {
                 items: AntiGravityScenario.values.map((s) {
                   return DropdownMenuItem(
                     value: s,
-                    child: Text(s.title),
+                    child: Text(_scenarioLabel(loc, s)),
                   );
                 }).toList(),
                 onChanged: (val) {
@@ -193,13 +225,13 @@ class AntiGravityDashboardScreen extends ConsumerWidget {
           borderRadius: BorderRadius.circular(10),
           border: Border.all(color: const Color(0xFF059669).withValues(alpha: 0.4)),
         ),
-        child: const Row(
+        child: Row(
           children: [
-            Icon(Icons.check_circle_outline, color: Color(0xFF10B981), size: 16),
-            SizedBox(width: 8),
+            const Icon(Icons.check_circle_outline, color: Color(0xFF10B981), size: 16),
+            const SizedBox(width: 8),
             Text(
-              'Dynamic Equilibrium — Trajectory Nominal',
-              style: TextStyle(
+              loc.antiGravityDynamicEquilibrium,
+              style: const TextStyle(
                 color: Color(0xFF34D399),
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
@@ -290,8 +322,9 @@ class AntiGravityDashboardScreen extends ConsumerWidget {
         _buildMetricCard(
           title: loc.telemetrySpeed,
           value: speedKmh.toStringAsFixed(1),
-          unit: 'km/h',
-          subtext: '${(telemetry?.velocityMps ?? 0).toStringAsFixed(1)} m/s',
+          unit: loc.antiGravityUnitKmh,
+          subtext:
+              '${(telemetry?.velocityMps ?? 0).toStringAsFixed(1)} ${loc.antiGravityUnitMetersPerSecond}',
           accentColor: const Color(0xFF38BDF8),
           icon: Icons.speed,
         ),
@@ -300,8 +333,9 @@ class AntiGravityDashboardScreen extends ConsumerWidget {
         _buildMetricCard(
           title: loc.netForce,
           value: netForceKn.toStringAsFixed(2),
-          unit: 'kN',
-          subtext: '${(telemetry?.netForce.length ?? 0).toStringAsFixed(0)} N',
+          unit: loc.antiGravityUnitKn,
+          subtext:
+              '${(telemetry?.netForce.length ?? 0).toStringAsFixed(0)} ${loc.antiGravityUnitNewton}',
           accentColor: const Color(0xFF10B981),
           icon: Icons.compress,
         ),
@@ -310,8 +344,10 @@ class AntiGravityDashboardScreen extends ConsumerWidget {
         _buildMetricCard(
           title: loc.apparentWeight,
           value: apparentWeightKg.toStringAsFixed(0),
-          unit: 'kg',
-          subtext: '${((apparentWeightKg / config.massKg) * 100).toStringAsFixed(0)}% base mass',
+          unit: loc.antiGravityUnitKg,
+          subtext: loc.antiGravityPercentBaseMass(
+            ((apparentWeightKg / config.massKg) * 100).toStringAsFixed(0),
+          ),
           accentColor: const Color(0xFFA78BFA),
           icon: Icons.fitness_center,
         ),
@@ -320,8 +356,11 @@ class AntiGravityDashboardScreen extends ConsumerWidget {
         _buildMetricCard(
           title: loc.telemetryGForce,
           value: gForce.toStringAsFixed(2),
-          unit: 'G',
-          subtext: 'Peak: ${simState.peakGForce.toStringAsFixed(2)} G',
+          unit: loc.antiGravityUnitG,
+          subtext: loc.antiGravityPeak(
+            simState.peakGForce.toStringAsFixed(2),
+            loc.antiGravityUnitG,
+          ),
           accentColor: gForce > 1.4 ? const Color(0xFFF59E0B) : const Color(0xFF34D399),
           icon: Icons.explore,
         ),
@@ -418,13 +457,13 @@ class AntiGravityDashboardScreen extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.functions, size: 16, color: Color(0xFF10B981)),
-              SizedBox(width: 6),
+              const Icon(Icons.functions, size: 16, color: Color(0xFF10B981)),
+              const SizedBox(width: 6),
               Text(
-                'KINEMATIC TRANSFORM EQUATION',
-                style: TextStyle(
+                AppLocalizations.of(context).antiGravityKinematicTransformEquation,
+                style: const TextStyle(
                   color: Color(0xFF10B981),
                   fontSize: 10,
                   letterSpacing: 1.1,
@@ -434,10 +473,10 @@ class AntiGravityDashboardScreen extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 8),
-          const Center(
+          Center(
             child: Text(
-              'F_net = m · (a_motion - g_anti)',
-              style: TextStyle(
+              AppLocalizations.of(context).antiGravityEquation,
+              style: const TextStyle(
                 color: Colors.white,
                 fontSize: 15,
                 fontWeight: FontWeight.bold,
@@ -449,7 +488,7 @@ class AntiGravityDashboardScreen extends ConsumerWidget {
           const SizedBox(height: 6),
           Center(
             child: Text(
-              '${fNetMag.toStringAsFixed(1)} N = ${config.massKg.toStringAsFixed(0)} kg · (${aMag.toStringAsFixed(2)} - ${gAntiMag.toStringAsFixed(2)}) m/s²',
+              '${fNetMag.toStringAsFixed(1)} ${AppLocalizations.of(context).antiGravityUnitNewton} = ${config.massKg.toStringAsFixed(0)} ${AppLocalizations.of(context).antiGravityUnitKg} · (${aMag.toStringAsFixed(2)} - ${gAntiMag.toStringAsFixed(2)}) ${AppLocalizations.of(context).antiGravityUnitMetersPerSecond}²',
               style: const TextStyle(
                 color: Color(0xFF38BDF8),
                 fontSize: 11,
@@ -477,9 +516,9 @@ class AntiGravityDashboardScreen extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'ANTI-GRAVITY SIMULATION CONTROLS',
-            style: TextStyle(
+          Text(
+            AppLocalizations.of(context).antiGravitySimulationControls,
+            style: const TextStyle(
               color: Colors.white70,
               fontSize: 11,
               letterSpacing: 1.0,
@@ -495,7 +534,7 @@ class AntiGravityDashboardScreen extends ConsumerWidget {
             children: AntiGravityMode.values.map((mode) {
               final isSelected = config.mode == mode;
               return ChoiceChip(
-                label: Text(mode.displayName),
+                label: Text(_modeLabel(AppLocalizations.of(context), mode)),
                 selected: isSelected,
                 selectedColor: const Color(0xFF10B981),
                 backgroundColor: const Color(0xFF0F172A),
@@ -516,12 +555,12 @@ class AntiGravityDashboardScreen extends ConsumerWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Vehicle Mass (m):',
-                style: TextStyle(color: Colors.white70, fontSize: 12),
+              Text(
+                AppLocalizations.of(context).antiGravityVehicleMass,
+                style: const TextStyle(color: Colors.white70, fontSize: 12),
               ),
               Text(
-                '${config.massKg.toStringAsFixed(0)} kg',
+                '${config.massKg.toStringAsFixed(0)} ${AppLocalizations.of(context).antiGravityUnitKg}',
                 style: const TextStyle(
                   color: Color(0xFF10B981),
                   fontSize: 12,
@@ -545,9 +584,9 @@ class AntiGravityDashboardScreen extends ConsumerWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'motion_smooth Alpha (α):',
-                style: TextStyle(color: Colors.white70, fontSize: 12),
+              Text(
+                AppLocalizations.of(context).antiGravityMotionSmoothAlpha,
+                style: const TextStyle(color: Colors.white70, fontSize: 12),
               ),
               Text(
                 config.smoothingAlpha.toStringAsFixed(2),

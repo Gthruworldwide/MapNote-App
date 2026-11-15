@@ -24,9 +24,13 @@ abstract class DriveService {
 /// hidden app-data folder. Only the OAuth scope `drive.appdata` is requested,
 /// so the user's normal Drive files are never touched.
 class GoogleDriveService implements DriveService {
-  GoogleDriveService(this._auth);
+  GoogleDriveService(
+    this._auth, {
+    this.backupFileName = AppConfig.backupFileName,
+  });
 
   final AuthService _auth;
+  final String backupFileName;
 
   late final http.Client _client = _AuthenticatedClient(http.Client(), _auth);
   late final drive.DriveApi _api = drive.DriveApi(_client);
@@ -70,7 +74,7 @@ class GoogleDriveService implements DriveService {
     final String? existingId = (await _findFile())?.id;
     if (existingId == null) {
       final drive.File metadata = drive.File(
-        name: AppConfig.backupFileName,
+        name: backupFileName,
         parents: const <String>['appDataFolder'],
         mimeType: AppConfig.backupMimeType,
       );
@@ -87,7 +91,7 @@ class GoogleDriveService implements DriveService {
 
   Future<drive.File?> _findFile() async {
     final drive.FileList result = await _api.files.list(
-      q: "name = '${AppConfig.backupFileName}' and trashed = false",
+      q: "name = '$backupFileName' and trashed = false",
       spaces: 'appDataFolder',
       $fields: 'files(id, name, modifiedTime)',
     );

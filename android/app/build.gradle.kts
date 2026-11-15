@@ -63,7 +63,8 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
+        // The personal edition keeps the existing id so installed users can
+        // upgrade without losing app data. Work receives a distinct suffix.
         applicationId = "com.routenote.routenote"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
@@ -72,6 +73,17 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+    }
+
+    flavorDimensions += "edition"
+    productFlavors {
+        create("personal") {
+            dimension = "edition"
+        }
+        create("work") {
+            dimension = "edition"
+            applicationIdSuffix = ".work"
+        }
     }
 
     signingConfigs {
@@ -153,4 +165,15 @@ kotlin {
 
 flutter {
     source = "../.."
+}
+
+// The repository's checked-in Firebase Android registration belongs to the
+// personal package id. Work builds stay local/offline until a Work Firebase app
+// is registered and its google-services.json is placed under src/work/.
+if (!file("src/work/google-services.json").exists()) {
+    tasks.configureEach {
+        if (name.startsWith("processWork") && name.endsWith("GoogleServices")) {
+            enabled = false
+        }
+    }
 }

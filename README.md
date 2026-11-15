@@ -520,18 +520,30 @@ Play. `android/app/build.gradle.kts` reads the file at configuration time and
 binds it to `signingConfigs.release`.
 
 ```sh
-# Android
-flutter build apk     --release --dart-define=GOOGLE_SERVER_CLIENT_ID=... --dart-define=GOOGLE_IOS_CLIENT_ID=...
-flutter build appbundle --release --dart-define=GOOGLE_SERVER_CLIENT_ID=... --dart-define=GOOGLE_IOS_CLIENT_ID=...
+# Android: these flavors install side by side. Keep the existing personal
+# application id; Work Edition has the `.work` application-id suffix.
+flutter build apk --release --flavor personal --target lib/main.dart
+flutter build apk --release --flavor work --target lib/main_work.dart
+
+# Play bundles for either edition
+flutter build appbundle --release --flavor personal --target lib/main.dart
+flutter build appbundle --release --flavor work --target lib/main_work.dart
 
 # Obfuscated release bundle with the symbols kept out of the artifact
 # (upload build/app/outputs/symbols to Crashlytics so Dart stack traces
 # can be deobfuscated):
-flutter build appbundle --release --obfuscate --split-debug-info=build/app/outputs/symbols
+flutter build appbundle --release --flavor personal --target lib/main.dart --obfuscate --split-debug-info=build/app/outputs/symbols
 
 # iOS (requires macOS + Xcode)
 flutter build ios      --release --dart-define=GOOGLE_SERVER_CLIENT_ID=... --dart-define=GOOGLE_IOS_CLIENT_ID=...
 ```
+
+Work Edition station proposals and approvals use Firestore and require a
+separately registered Firebase Android app. Place its configuration at
+`android/app/src/work/google-services.json`; without it, local Work Edition
+features remain available while online approvals are unavailable. Firestore
+security rules must enforce administrator authorization—the in-app PIN is only
+a local UI gate and is not a security boundary.
 
 The release build type runs **R8** (`isMinifyEnabled`) and shrinks resources
 (`isShrinkResources`). The ProGuard rules that make that safe live in

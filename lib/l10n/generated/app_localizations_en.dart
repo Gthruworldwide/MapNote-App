@@ -1352,6 +1352,94 @@ class AppLocalizationsEn extends AppLocalizations {
       'Kinematic force compensation & telemetry visualizer';
 
   @override
+  String get antiGravityPlay => 'Play';
+
+  @override
+  String get antiGravityPause => 'Pause';
+
+  @override
+  String get antiGravityReset => 'Reset';
+
+  @override
+  String get antiGravityDynamicEquilibrium =>
+      'Dynamic Equilibrium — Trajectory Nominal';
+
+  @override
+  String get antiGravityKinematicTransformEquation =>
+      'KINEMATIC TRANSFORM EQUATION';
+
+  @override
+  String get antiGravityEquation => 'F_net = m · (a_motion - g_anti)';
+
+  @override
+  String get antiGravitySimulationControls =>
+      'ANTI-GRAVITY SIMULATION CONTROLS';
+
+  @override
+  String get antiGravityVehicleMass => 'Vehicle Mass (m):';
+
+  @override
+  String get antiGravityMotionSmoothAlpha => 'motion_smooth Alpha (α):';
+
+  @override
+  String get antiGravityScenarioUrbanCircuit => 'Urban Circuit';
+
+  @override
+  String get antiGravityScenarioHighSpeedHighway => 'High-Speed Highway';
+
+  @override
+  String get antiGravityScenarioHairpinSlalom => 'Hairpin Slalom';
+
+  @override
+  String get antiGravityScenarioEmergencyBrake => 'Emergency Stop';
+
+  @override
+  String get antiGravityModeEarthNormal => 'Earth 1.0G';
+
+  @override
+  String get antiGravityModeMicroGravity => 'Micro-Gravity (0.05G)';
+
+  @override
+  String get antiGravityModeVelocityLift => 'Velocity Lift';
+
+  @override
+  String get antiGravityModeHyperLift => 'Hyper-Lift (-0.3G)';
+
+  @override
+  String get antiGravityModeLunar => 'Lunar (0.16G)';
+
+  @override
+  String get antiGravityModeMartian => 'Martian (0.38G)';
+
+  @override
+  String get antiGravityUnitKmh => 'km/h';
+
+  @override
+  String get antiGravityUnitKn => 'kN';
+
+  @override
+  String get antiGravityUnitKg => 'kg';
+
+  @override
+  String get antiGravityUnitG => 'G';
+
+  @override
+  String get antiGravityUnitMetersPerSecond => 'm/s';
+
+  @override
+  String get antiGravityUnitNewton => 'N';
+
+  @override
+  String antiGravityPeak(String value, String unit) {
+    return 'Peak: $value $unit';
+  }
+
+  @override
+  String antiGravityPercentBaseMass(String percent) {
+    return '$percent% base mass';
+  }
+
+  @override
   String get maneuverHarshBraking => 'Harsh Braking';
 
   @override
@@ -1371,4 +1459,546 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get telemetryGForce => 'Effective G-Force';
+
+  @override
+  String get contactsPermissionTitle => 'Contacts permission needed';
+
+  @override
+  String get contactsPermissionNeeded =>
+      'MapNote needs access to your contacts to let you link them to saved places.';
+
+  @override
+  String get contactsPermissionDeniedPermanently =>
+      'Contacts permission was permanently denied. You can change this in your device settings.';
+
+  @override
+  String get contactPickerFeatureNotReady =>
+      'Contact picker feature is not ready yet.';
+
+  @override
+  String get unlinkContactFeatureNotReady =>
+      'Unlink contact feature is not ready yet.';
+
+  @override
+  String get allow => 'Allow';
+
+  @override
+  String get settings => 'Settings';
+
+  @override
+  String linkedContact(String name) {
+    return 'Linked contact: $name';
+  }
+
+  @override
+  String get unlinkContact => 'Unlink';
+
+  @override
+  String get linkContact => 'Link contact';
+
+  @override
+  String get offlineMapRegionSelection => 'Offline Map Region';
+
+  @override
+  String get minLatitude => 'Min Latitude';
+
+  @override
+  String get maxLatitude => 'Max Latitude';
+
+  @override
+  String get latitudeHint => 'Min latitude (e.g. 30.05)';
+
+  @override
+  String get minLongitude => 'Min Longitude';
+
+  @override
+  String get maxLongitude => 'Max Longitude';
+
+  @override
+  String get longitudeHint => 'Min longitude (e.g. 31.22)';
+
+  @override
+  String get minZoom => 'Min Zoom';
+
+  @override
+  String get maxZoom => 'Max Zoom';
+
+  @override
+  String get zoomHint => 'Zoom level (0-20)';
+
+  @override
+  String get startDownload => 'Start Download';
+
+  @override
+  String get shareViaWhatsApp => 'Send via WhatsApp';
+
+  @override
+  String get searchContact => 'Search Contact';
+
+  @override
+  String get proposeManagerUpdateTitle => 'Propose Manager Update';
+
+  @override
+  String get proposeManagerUpdate => 'Propose Manager Update';
+
+  @override
+  String get updateProposalSubmitted => 'Update proposal submitted';
+
+  @override
+  String get managerName => 'Manager Name';
+
+  @override
+  String get managerPhone => 'Manager Phone';
+
+  @override
+  String get confirm => 'Confirm';
+
+  @override
+  String get currentUserName => 'Current User';
+
+  @override
+  String get shareViaSystem => 'Share via system';
+
+  @override
+  String get sendToDriver => 'Send to driver';
+
+  @override
+  String get submitStationUpdate => 'Submit station update';
+
+  @override
+  String get submittingUpdate => 'Submitting update...';
+
+  @override
+  String get updateSuccess => 'Update proposal submitted successfully';
+
+  @override
+  String get updateFailed => 'Failed to submit update proposal';
+
+  @override
+  String get stationManagersTitle => 'Station manager';
+
+  @override
+  String get callManager => 'Call manager';
+
+  @override
+  String get messageManagerOnWhatsApp => 'Message on WhatsApp';
+
+  @override
+  String get managerPhoneMissing => 'No phone number on file yet';
+
+  @override
+  String get managerContactUnavailable =>
+      'No app on this device can handle that';
+
+  @override
+  String managerWhatsAppMessage(String name, String station) {
+    return 'Hello $name, regarding $station.';
+  }
+
+  @override
+  String get adminApprovalTitle => 'Admin Approval';
+
+  @override
+  String get workEditionCloudUnavailable =>
+      'Online approval is not configured for this Work Edition installation. Local places and insights are still available offline.';
+
+  @override
+  String get noPendingUpdates => 'No pending updates';
+
+  @override
+  String proposalForStation(Object stationId) {
+    return 'Proposal for Station $stationId';
+  }
+
+  @override
+  String currentManager(Object name) {
+    return 'Current Manager: $name';
+  }
+
+  @override
+  String currentManagerPhone(Object phone) {
+    return 'Phone: $phone';
+  }
+
+  @override
+  String proposedManager(Object name) {
+    return 'Proposed Manager: $name';
+  }
+
+  @override
+  String proposedManagerPhone(Object phone) {
+    return 'Phone: $phone';
+  }
+
+  @override
+  String submittedBy(Object name) {
+    return 'Submitted by: $name';
+  }
+
+  @override
+  String submittedAt(Object date) {
+    return 'Submitted on: $date';
+  }
+
+  @override
+  String get adminPinRequired => 'Admin PIN required';
+
+  @override
+  String get pin => 'PIN';
+
+  @override
+  String get incorrectPin => 'Incorrect PIN';
+
+  @override
+  String get incorrectPinAttempt =>
+      'The PIN you entered is incorrect. Please try again.';
+
+  @override
+  String get logout => 'Log out';
+
+  @override
+  String get wrongPin => 'Wrong PIN.';
+
+  @override
+  String get unlock => 'Unlock';
+
+  @override
+  String get unknownManager => 'No manager';
+
+  @override
+  String get unknownPhone => 'No phone';
+
+  @override
+  String get approve => 'Approve';
+
+  @override
+  String get reject => 'Reject';
+
+  @override
+  String get resetPin => 'Reset PIN';
+
+  @override
+  String get incompleteProposal => 'Incomplete proposal';
+
+  @override
+  String get dismissProposal => 'Dismiss';
+
+  @override
+  String get proposalDismissed => 'Proposal dismissed';
+
+  @override
+  String get dismissFailed => 'Failed to dismiss proposal';
+
+  @override
+  String get incompleteNewStation => 'Incomplete new station proposal';
+
+  @override
+  String get missingStation => 'Missing station reference';
+
+  @override
+  String get proposalApproved => 'Proposal approved successfully';
+
+  @override
+  String get proposalRejected => 'Proposal rejected';
+
+  @override
+  String get approveFailed => 'Failed to approve proposal';
+
+  @override
+  String get rejectFailed => 'Failed to reject proposal';
+
+  @override
+  String get newStationApproved => 'New station approved successfully';
+
+  @override
+  String get adminPinHint => 'Enter the admin PIN';
+
+  @override
+  String newStationTitle(String name) {
+    return 'New station: $name';
+  }
+
+  @override
+  String proposalIdLabel(String id) {
+    return 'Proposal ID: $id';
+  }
+
+  @override
+  String proposalRole(String role) {
+    return 'Role: $role';
+  }
+
+  @override
+  String proposalLocation(String lat, String lng) {
+    return 'Location: $lat, $lng';
+  }
+
+  @override
+  String proposalCity(String city) {
+    return 'City: $city';
+  }
+
+  @override
+  String get unknownStation => 'Unknown station';
+
+  @override
+  String get roleManager => 'Manager';
+
+  @override
+  String get roleSupervisor => 'Supervisor';
+
+  @override
+  String get roleSupport => 'Support';
+
+  @override
+  String get roleStaff => 'Staff';
+
+  @override
+  String workInsightsStations(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count stations',
+      one: '1 station',
+      zero: 'No stations',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String workInsightsManagers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count manager contacts on file',
+      one: '1 manager contact on file',
+      zero: 'No manager contacts on file',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String workInsightsMissingContacts(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count stations missing a phone number',
+      one: '1 station missing a phone number',
+      zero: 'All stations have a phone number',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String workInsightsWorkTagged(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count #work-tagged places',
+      one: '1 #work-tagged place',
+      zero: 'No #work-tagged places',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get workInsightsTip =>
+      'Tag a place with #work in its name or notes to track operations. Submit contact updates from the station screen for admin approval.';
+
+  @override
+  String get workInsightsNothingMissing =>
+      'Every station has a contact on file.';
+
+  @override
+  String workInsightsPendingApprovals(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count pending admin approvals',
+      one: '1 pending admin approval',
+      zero: 'No pending admin approvals',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String workInsightsStationsMissingContactsLabel(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count stations missing manager contact details',
+      one: '1 station missing manager contact details',
+      zero: 'No stations missing manager details',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get stationProposalSubmitted => 'New station proposal sent for review';
+
+  @override
+  String get stationProposalFailed => 'Could not submit the station proposal.';
+
+  @override
+  String get stationShareViaWhatsApp =>
+      'Share station details with a driver via WhatsApp';
+
+  @override
+  String get copyFormattedStationDetails => 'Copy formatted station details';
+
+  @override
+  String get stationDetailsCopied => 'Station details copied';
+
+  @override
+  String get copyGoogleMapsLink => 'Copy Google Maps link';
+
+  @override
+  String get googleMapsLinkCopied => 'Google Maps link copied';
+
+  @override
+  String get openGoogleMaps => 'Open in Google Maps';
+
+  @override
+  String get stationShareHeader => 'Fuel station details - Manex';
+
+  @override
+  String stationShareNameLine(String name, String id) {
+    return 'Station: $name ($id)';
+  }
+
+  @override
+  String stationShareMapLink(String url) {
+    return 'Location: $url';
+  }
+
+  @override
+  String get stationContactSectionTitle => 'Station contacts and managers';
+
+  @override
+  String get addProposeContact => '+ Add / propose a contact';
+
+  @override
+  String get managerRemoved => 'Manager removed successfully';
+
+  @override
+  String get stationUpdateSubmitted => 'Update sent for admin approval';
+
+  @override
+  String get customPlacesPrivate =>
+      'Custom places are private and cannot be submitted.';
+
+  @override
+  String get onlyDefaultStationsCanBeSubmitted =>
+      'Only default stations can be submitted for update.';
+
+  @override
+  String get contactDialogTitle => 'Add / propose a station contact';
+
+  @override
+  String get importFromTeamContacts => 'Import from team contacts';
+
+  @override
+  String get newEntry => 'New entry';
+
+  @override
+  String get noTeamContactsAvailable => 'No team contacts are available';
+
+  @override
+  String get choosePhoneContact => 'Choose a phone contact';
+
+  @override
+  String get contactNameAndPhoneRequired => 'Enter a name and phone number';
+
+  @override
+  String get contactSaved => 'Contact saved successfully';
+
+  @override
+  String get contactSubmittedForApproval =>
+      'Contact proposal sent for admin approval';
+
+  @override
+  String get contactSaveFailed => 'Could not save the contact.';
+
+  @override
+  String get enterContactManually => 'Enter the contact details manually';
+
+  @override
+  String get openSettings => 'Open settings';
+
+  @override
+  String get contactRole => 'Role';
+
+  @override
+  String get offlineMapsTitle => 'Offline maps';
+
+  @override
+  String get selectOfflineRegion => 'Select region';
+
+  @override
+  String get resumeDownload => 'Resume';
+
+  @override
+  String get downloadedMaps => 'Downloaded maps';
+
+  @override
+  String get noMapsDownloaded => 'No maps downloaded yet';
+
+  @override
+  String get supportDispatchAssistant => 'Support Dispatch Assistant';
+
+  @override
+  String get selectStationForAlternatives =>
+      'Select a station to find alternatives';
+
+  @override
+  String get zoomRangeInvalid => 'Zoom level must be between 0 and 20';
+
+  @override
+  String get pasteAndSearch => 'Paste and search';
+
+  @override
+  String get yes => 'Yes';
+
+  @override
+  String get no => 'No';
+
+  @override
+  String get stationChangeReportHeader => 'Changes:';
+
+  @override
+  String get stationChangeNoChanges => 'No changes detected';
+
+  @override
+  String stationChangeSubmittedBy(String name) {
+    return 'Submitter: $name';
+  }
+
+  @override
+  String stationPhoneChanged(String oldValue, String newValue) {
+    return 'Phone changed from \"$oldValue\" to \"$newValue\"';
+  }
+
+  @override
+  String stationDisplayNameChanged(String oldValue, String newValue) {
+    return 'Display name changed from \"$oldValue\" to \"$newValue\"';
+  }
+
+  @override
+  String stationCategoryChanged(String oldValue, String newValue) {
+    return 'Category changed from \"$oldValue\" to \"$newValue\"';
+  }
+
+  @override
+  String stationDriveThruChanged(String oldValue, String newValue) {
+    return 'Has drive-through changed from $oldValue to $newValue';
+  }
+
+  @override
+  String stationSpeedLimitChanged(String oldValue, String newValue) {
+    return 'Speed limit zone changed from $oldValue to $newValue';
+  }
+
+  @override
+  String get adminDataUnavailable =>
+      'Could not load station approvals. Please try again.';
 }

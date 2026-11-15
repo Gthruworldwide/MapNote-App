@@ -1,0 +1,18 @@
+{
+  "_note": "إحداثيات مستخرجة من متصفح حقيقي (تحميل صفحة المكان في خرائط جوجل) للروابط التي لا تحتوي إحداثيات صريحة.",
+  "https://maps.app.goo.gl/ko3QxkpTRCmvFyWj7": {"lat": 27.442607, "lng": 30.809954, "place": "27°26'33.4\"N 30°48'35.8\"E (دبوس إحداثيات)"},
+  "https://maps.app.goo.gl/C3QQS6QEyxEi2sNSA": {"lat": 31.4178009, "lng": 31.8146114, "place": "محطة بنزين موبيل - دمياط"},
+  "https://maps.app.goo.gl/cFf5gyrJt2qEUYyN8": {"lat": 31.1705552, "lng": 31.8952199, "place": "TotalEnergies El Basrat Service Station - البصراط"},
+  "https://maps.app.goo.gl/VTQWbgX8EV2mnyE79?g_st=awb": {"lat": 30.4470009, "lng": 29.5371484, "place": "محطة وقود وطنية الضبعة ٦ - محور الضبعة"},
+  "https://maps.app.goo.gl/B8xsZx3MgU553NNAA?g_st=awb": {"lat": 28.3505007, "lng": 33.0489349, "place": "Wataneya gas station - رأس غارب"},
+  "https://maps.app.goo.gl/xRZU3Z7V34TwiUuM7?g_st=awb": {"lat": 27.9033864, "lng": 34.3004875, "place": "Watanya - شرم الشيخ"},
+  "https://maps.app.goo.gl/xmC7JG8vNHTr2Am77?g_st=awb": {"lat": 28.2405312, "lng": 33.7180643, "place": "Watanya gas station - الطور"},
+  "https://maps.app.goo.gl/xN5iVN5QPrzNGXou6?g_st=awb": {"lat": 29.1542173, "lng": 33.1438741, "place": "محطه بنزين وطنية - أبو زنيمة"},
+  "https://maps.app.goo.gl/H3QVoQeB7VCZQmnc6?g_st=awb": {"lat": 29.5938363, "lng": 32.7872827, "place": "محطة وقود وطنية رأس سدر 1"},
+  "https://maps.app.goo.gl/oRBoQBfLxAvtmWEk8?g_st=awb": {"lat": 30.8872604, "lng": 32.3598691, "place": "محطة وقود وطنيه - القنطرة شرق"},
+  "https://maps.app.goo.gl/SaTxXsCqadKe1Xaw7?g_st=awb": {"lat": 26.4355681, "lng": 31.4576316, "place": "وطنية جهينة"},
+  "https://maps.app.goo.gl/FtuYYR2TnyeThsi17?g_st=awb": {"lat": 23.9704432, "lng": 32.7595313, "place": "بنزينه وطنيه - Wataneya Gas Station (كركر)"},
+  "https://maps.app.goo.gl/GtZX3HFj4VFYdZiGA?g_st=awb": {"lat": 30.1727883, "lng": 31.2876275, "place": "محطه وقود مصر البترول اولاد طه - بلقس"},
+  "https://maps.app.goo.gl/diJU5x9Dajp41k8MA?g_st=awb": {"lat": 25.6977911, "lng": 32.6754011, "place": "محطة بنزين محمد حسام العماري - الأقصر"},
+  "https://maps.app.goo.gl/B5qeufGwiiupY8Nd8": {"lat": 30.394768, "lng": 31.0391645, "place": "Total Energies Elbagor - الباجور"}
+}

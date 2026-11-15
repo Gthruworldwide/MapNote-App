@@ -1346,6 +1346,93 @@ class AppLocalizationsAr extends AppLocalizations {
   String get antiGravitySubtitle => 'موازن القوة الحركية ومحاكاة المتجهات';
 
   @override
+  String get antiGravityPlay => 'تشغيل';
+
+  @override
+  String get antiGravityPause => 'إيقاف';
+
+  @override
+  String get antiGravityReset => 'إعادة الضبط';
+
+  @override
+  String get antiGravityDynamicEquilibrium =>
+      'التوازن الديناميكي — المسار في وضع ممتاز';
+
+  @override
+  String get antiGravityKinematicTransformEquation => 'معادلة التحويل الحركي';
+
+  @override
+  String get antiGravityEquation => 'F_net = m · (a_motion - g_anti)';
+
+  @override
+  String get antiGravitySimulationControls =>
+      'عناصر التحكم في محاكاة Anti-Gravity';
+
+  @override
+  String get antiGravityVehicleMass => 'كتلة المركبة (m):';
+
+  @override
+  String get antiGravityMotionSmoothAlpha => 'motion_smooth Alpha (α):';
+
+  @override
+  String get antiGravityScenarioUrbanCircuit => 'الدائرة الحضرية';
+
+  @override
+  String get antiGravityScenarioHighSpeedHighway => 'الطريق السريع عالي السرعة';
+
+  @override
+  String get antiGravityScenarioHairpinSlalom => 'سباق المنعطفات الحادة';
+
+  @override
+  String get antiGravityScenarioEmergencyBrake => 'إيقاف طارئ';
+
+  @override
+  String get antiGravityModeEarthNormal => 'الأرض 1.0G';
+
+  @override
+  String get antiGravityModeMicroGravity => 'الجاذبية الدقيقة (0.05G)';
+
+  @override
+  String get antiGravityModeVelocityLift => 'رفع السرعة';
+
+  @override
+  String get antiGravityModeHyperLift => 'رفع فائق (-0.3G)';
+
+  @override
+  String get antiGravityModeLunar => 'القمر (0.16G)';
+
+  @override
+  String get antiGravityModeMartian => 'المريخي (0.38G)';
+
+  @override
+  String get antiGravityUnitKmh => 'كم/س';
+
+  @override
+  String get antiGravityUnitKn => 'ك ن';
+
+  @override
+  String get antiGravityUnitKg => 'كجم';
+
+  @override
+  String get antiGravityUnitG => 'G';
+
+  @override
+  String get antiGravityUnitMetersPerSecond => 'م/س';
+
+  @override
+  String get antiGravityUnitNewton => 'نيوتن';
+
+  @override
+  String antiGravityPeak(String value, String unit) {
+    return 'الذروة: $value $unit';
+  }
+
+  @override
+  String antiGravityPercentBaseMass(String percent) {
+    return '$percent% من الكتلة الأساسية';
+  }
+
+  @override
   String get maneuverHarshBraking => 'كبح حاد';
 
   @override
@@ -1365,4 +1452,561 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get telemetryGForce => 'قوة الجاذبية G';
+
+  @override
+  String get contactsPermissionTitle => 'يلزم منح إذن الوصول إلى جهات الاتصال';
+
+  @override
+  String get contactsPermissionNeeded =>
+      'يحتاج MapNote إلى الوصول إلى جهات الاتصال لربطها بالأماكن المحفوظة.';
+
+  @override
+  String get contactsPermissionDeniedPermanently =>
+      'رُفض إذن الوصول إلى جهات الاتصال نهائيًا. يمكنك تغييره من إعدادات الجهاز.';
+
+  @override
+  String get contactPickerFeatureNotReady =>
+      'ميزة تحديد جهة الاتصال غير جاهزة بعد.';
+
+  @override
+  String get unlinkContactFeatureNotReady => 'ميزة فك الربط غير جاهزة بعد.';
+
+  @override
+  String get allow => 'سماح';
+
+  @override
+  String get settings => 'الإعدادات';
+
+  @override
+  String linkedContact(String name) {
+    return 'جهة الاتصال المرتبطة: $name';
+  }
+
+  @override
+  String get unlinkContact => 'فك الربط';
+
+  @override
+  String get linkContact => 'ربط جهة اتصال';
+
+  @override
+  String get offlineMapRegionSelection => 'تحديد منطقة الخريطة غير المتصلة';
+
+  @override
+  String get minLatitude => 'أدنى خط عرض';
+
+  @override
+  String get maxLatitude => 'أقصى خط عرض';
+
+  @override
+  String get latitudeHint => 'أدنى خط عرض (مثال: 30.05)';
+
+  @override
+  String get minLongitude => 'أدنى خط طول';
+
+  @override
+  String get maxLongitude => 'أقصى خط طول';
+
+  @override
+  String get longitudeHint => 'أدنى خط طول (مثال: 31.22)';
+
+  @override
+  String get minZoom => 'أدنى مستوى تكبير';
+
+  @override
+  String get maxZoom => 'أقصى مستوى تكبير';
+
+  @override
+  String get zoomHint => 'مستوى التكبير (0-20)';
+
+  @override
+  String get startDownload => 'بدء التحميل';
+
+  @override
+  String get shareViaWhatsApp => 'مشاركة عبر واتساب';
+
+  @override
+  String get searchContact => 'بحث في جهات الاتصال';
+
+  @override
+  String get proposeManagerUpdateTitle => 'اقترح تحديث المسؤول';
+
+  @override
+  String get proposeManagerUpdate => 'اقترح تحديث المسؤول';
+
+  @override
+  String get updateProposalSubmitted => 'تم إرسال الاقتراح';
+
+  @override
+  String get managerName => 'اسم المسؤول';
+
+  @override
+  String get managerPhone => 'رقم هاتف المسؤول';
+
+  @override
+  String get confirm => 'تأكيد';
+
+  @override
+  String get currentUserName => 'اسم المستخدم';
+
+  @override
+  String get shareViaSystem => 'مشاركة عبر النظام';
+
+  @override
+  String get sendToDriver => 'إرسال إلى السائق';
+
+  @override
+  String get submitStationUpdate => 'إرسال تعديل للمحطة';
+
+  @override
+  String get submittingUpdate => 'جاري الإرسال...';
+
+  @override
+  String get updateSuccess => 'تم إرسال الاقتراح بنجاح';
+
+  @override
+  String get updateFailed => 'تعذّر إرسال الاقتراح';
+
+  @override
+  String get stationManagersTitle => 'مسؤولو المحطة';
+
+  @override
+  String get callManager => 'اتصال بالمسؤول';
+
+  @override
+  String get messageManagerOnWhatsApp => 'مراسلة على واتساب';
+
+  @override
+  String get managerPhoneMissing => 'لم يُضف رقم هاتف بعد';
+
+  @override
+  String get managerContactUnavailable =>
+      'لا يوجد تطبيق على هذا الجهاز يمكنه تنفيذ ذلك';
+
+  @override
+  String managerWhatsAppMessage(String name, String station) {
+    return 'مرحبًا $name، بخصوص $station.';
+  }
+
+  @override
+  String get adminApprovalTitle => 'موافقات المسؤول';
+
+  @override
+  String get workEditionCloudUnavailable =>
+      'لم تتم تهيئة الموافقات عبر الإنترنت لهذا الإصدار العملي. لا تزال الأماكن والإحصاءات المحلية متاحة دون اتصال.';
+
+  @override
+  String get noPendingUpdates => 'لا توجد تحديثات معلّقة';
+
+  @override
+  String proposalForStation(Object stationId) {
+    return 'اقتراح للمحطة $stationId';
+  }
+
+  @override
+  String currentManager(Object name) {
+    return 'مسؤول حالي: $name';
+  }
+
+  @override
+  String currentManagerPhone(Object phone) {
+    return 'هاتف: $phone';
+  }
+
+  @override
+  String proposedManager(Object name) {
+    return 'مسؤول مقترح: $name';
+  }
+
+  @override
+  String proposedManagerPhone(Object phone) {
+    return 'هاتف: $phone';
+  }
+
+  @override
+  String submittedBy(Object name) {
+    return 'تم الإرسال بواسطة: $name';
+  }
+
+  @override
+  String submittedAt(Object date) {
+    return 'تم الإرسال في: $date';
+  }
+
+  @override
+  String get adminPinRequired => 'يُطلب رمز المسؤول';
+
+  @override
+  String get pin => 'رمز PIN';
+
+  @override
+  String get incorrectPin => 'رمز غير صحيح';
+
+  @override
+  String get incorrectPinAttempt =>
+      'رمز PIN الذي أدخلته غير صحيح. يُرجى المحاولة مرة أخرى.';
+
+  @override
+  String get logout => 'تسجيل الخروج';
+
+  @override
+  String get wrongPin => 'رمز خاطئ';
+
+  @override
+  String get unlock => 'فتح';
+
+  @override
+  String get unknownManager => 'لا يوجد مسؤول';
+
+  @override
+  String get unknownPhone => 'لا يوجد هاتف';
+
+  @override
+  String get approve => 'قبول';
+
+  @override
+  String get reject => 'رفض';
+
+  @override
+  String get resetPin => 'إعادة تعيين الرمز';
+
+  @override
+  String get incompleteProposal => 'طلب غير مكتمل';
+
+  @override
+  String get dismissProposal => 'تجاهل';
+
+  @override
+  String get proposalDismissed => 'تم تجاهل الاقتراح';
+
+  @override
+  String get dismissFailed => 'تعذّر تجاهل الاقتراح';
+
+  @override
+  String get incompleteNewStation => 'اقتراح محطة غير مكتمل';
+
+  @override
+  String get missingStation => 'لم يتم تحديد المحطة المرجعية';
+
+  @override
+  String get proposalApproved => 'تم قبول الاقتراح بنجاح';
+
+  @override
+  String get proposalRejected => 'تم رفض الاقتراح';
+
+  @override
+  String get approveFailed => 'فشل قبول الاقتراح';
+
+  @override
+  String get rejectFailed => 'فشل رفض الاقتراح';
+
+  @override
+  String get newStationApproved => 'تم قبول محطة جديدة بنجاح';
+
+  @override
+  String get adminPinHint => 'أدخل رمز PIN للمسؤول';
+
+  @override
+  String newStationTitle(String name) {
+    return 'محطة جديدة: $name';
+  }
+
+  @override
+  String proposalIdLabel(String id) {
+    return 'معرّف الاقتراح: $id';
+  }
+
+  @override
+  String proposalRole(String role) {
+    return 'الدور: $role';
+  }
+
+  @override
+  String proposalLocation(String lat, String lng) {
+    return 'الموقع: $lat، $lng';
+  }
+
+  @override
+  String proposalCity(String city) {
+    return 'المدينة: $city';
+  }
+
+  @override
+  String get unknownStation => 'محطة غير معروفة';
+
+  @override
+  String get roleManager => 'مدير';
+
+  @override
+  String get roleSupervisor => 'مشرف';
+
+  @override
+  String get roleSupport => 'دعم';
+
+  @override
+  String get roleStaff => 'موظف';
+
+  @override
+  String workInsightsStations(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count محطة',
+      many: '$count محطة',
+      few: '$count محطات',
+      two: 'محطتان',
+      one: 'محطة واحدة',
+      zero: 'لا توجد محطات',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String workInsightsManagers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count جهة اتصال لمسؤول',
+      many: '$count جهة اتصال لمسؤول',
+      few: '$count جهات اتصال لمسؤولين',
+      two: 'جهتا اتصال لمسؤولين',
+      one: 'جهة اتصال لمسؤول واحدة',
+      zero: 'لا توجد جهات اتصال لمسؤولين',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String workInsightsMissingContacts(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count محطة بدون رقم هاتف',
+      many: '$count محطة بدون رقم هاتف',
+      few: '$count محطات بدون رقم هاتف',
+      two: 'محطتان بدون رقم هاتف',
+      one: 'محطة واحدة بدون رقم هاتف',
+      zero: 'كل المحطات لديها رقم هاتف',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String workInsightsWorkTagged(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count مكان موسوم بـ #work',
+      many: '$count مكانًا موسومًا بـ #work',
+      few: '$count أماكن موسومة بـ #work',
+      two: 'مكانان موسومان بـ #work',
+      one: 'مكان واحد موسوم بـ #work',
+      zero: 'لا توجد أماكن موسومة بـ #work',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get workInsightsTip =>
+      'أضف الوسم #work إلى اسم المكان أو ملاحظاته لتتبع العمليات. قدّم تحديثات جهات الاتصال من شاشة المحطة لاعتمادها من المسؤول.';
+
+  @override
+  String get workInsightsNothingMissing => 'كل المحطات لديها جهة اتصال مسجلة.';
+
+  @override
+  String workInsightsPendingApprovals(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count موافقة إدارية معلقة',
+      many: '$count موافقة إدارية معلقة',
+      few: '$count موافقات إدارية معلقة',
+      two: 'موافقتان إداريتان معلقتان',
+      one: 'موافقة إدارية معلقة واحدة',
+      zero: 'لا توجد موافقات إدارية معلقة',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String workInsightsStationsMissingContactsLabel(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count محطة ينقصها بيانات مسؤول الاتصال',
+      many: '$count محطة ينقصها بيانات مسؤول الاتصال',
+      few: '$count محطات ينقصها بيانات مسؤول الاتصال',
+      two: 'محطتان ينقصهما بيانات مسؤول الاتصال',
+      one: 'محطة واحدة ينقصها بيانات مسؤول الاتصال',
+      zero: 'لا توجد محطات ينقصها بيانات المسؤول',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get stationProposalSubmitted =>
+      'تم إرسال اقتراح المحطة الجديدة للمراجعة';
+
+  @override
+  String get stationProposalFailed => 'تعذر إرسال اقتراح المحطة.';
+
+  @override
+  String get stationShareViaWhatsApp =>
+      'مشاركة بيانات المحطة مع سائق عبر WhatsApp';
+
+  @override
+  String get copyFormattedStationDetails => 'نسخ بيانات المحطة المنسقة';
+
+  @override
+  String get stationDetailsCopied => 'تم نسخ بيانات المحطة';
+
+  @override
+  String get copyGoogleMapsLink => 'نسخ رابط Google Maps';
+
+  @override
+  String get googleMapsLinkCopied => 'تم نسخ رابط Google Maps';
+
+  @override
+  String get openGoogleMaps => 'فتح في خرائط Google';
+
+  @override
+  String get stationShareHeader => 'بيانات محطة الوقود - Manex';
+
+  @override
+  String stationShareNameLine(String name, String id) {
+    return 'المحطة: $name ($id)';
+  }
+
+  @override
+  String stationShareMapLink(String url) {
+    return 'الموقع: $url';
+  }
+
+  @override
+  String get stationContactSectionTitle => 'جهات اتصال ومسؤولو المحطة';
+
+  @override
+  String get addProposeContact => '+ إضافة / اقتراح جهة اتصال';
+
+  @override
+  String get managerRemoved => 'تم حذف المسؤول بنجاح';
+
+  @override
+  String get stationUpdateSubmitted => 'تم إرسال التحديث لموافقة المسؤول';
+
+  @override
+  String get customPlacesPrivate => 'الأماكن المخصصة خاصة ولا يمكن إرسالها.';
+
+  @override
+  String get onlyDefaultStationsCanBeSubmitted =>
+      'يمكن إرسال المحطات الافتراضية فقط للتحديث.';
+
+  @override
+  String get contactDialogTitle => 'إضافة / اقتراح جهة اتصال للمحطة';
+
+  @override
+  String get importFromTeamContacts => 'استيراد من جهات اتصال الفريق';
+
+  @override
+  String get newEntry => 'إدخال جديد';
+
+  @override
+  String get noTeamContactsAvailable => 'لا توجد جهات اتصال متاحة للفريق';
+
+  @override
+  String get choosePhoneContact => 'اختيار جهة اتصال من الهاتف';
+
+  @override
+  String get contactNameAndPhoneRequired => 'يرجى إدخال الاسم ورقم الهاتف';
+
+  @override
+  String get contactSaved => 'تم حفظ جهة الاتصال بنجاح';
+
+  @override
+  String get contactSubmittedForApproval =>
+      'تم إرسال اقتراح جهة الاتصال لموافقة المسؤول';
+
+  @override
+  String get contactSaveFailed => 'تعذر حفظ جهة الاتصال.';
+
+  @override
+  String get enterContactManually => 'أدخل بيانات جهة الاتصال يدويًا';
+
+  @override
+  String get openSettings => 'فتح الإعدادات';
+
+  @override
+  String get contactRole => 'الصفة';
+
+  @override
+  String get offlineMapsTitle => 'الخرائط دون اتصال';
+
+  @override
+  String get selectOfflineRegion => 'تحديد المنطقة';
+
+  @override
+  String get resumeDownload => 'استئناف';
+
+  @override
+  String get downloadedMaps => 'الخرائط التي تم تنزيلها';
+
+  @override
+  String get noMapsDownloaded => 'لم يتم تنزيل خرائط بعد';
+
+  @override
+  String get supportDispatchAssistant => 'مساعد تنسيق الدعم';
+
+  @override
+  String get selectStationForAlternatives => 'اختر محطة للعثور على البدائل';
+
+  @override
+  String get zoomRangeInvalid => 'يجب أن يكون مستوى التكبير بين 0 و20';
+
+  @override
+  String get pasteAndSearch => 'لصق وبحث';
+
+  @override
+  String get yes => 'نعم';
+
+  @override
+  String get no => 'لا';
+
+  @override
+  String get stationChangeReportHeader => 'التغييرات:';
+
+  @override
+  String get stationChangeNoChanges => 'لم يتم اكتشاف تغييرات';
+
+  @override
+  String stationChangeSubmittedBy(String name) {
+    return 'مقدم الطلب: $name';
+  }
+
+  @override
+  String stationPhoneChanged(String oldValue, String newValue) {
+    return 'تغير الهاتف من \"$oldValue\" إلى \"$newValue\"';
+  }
+
+  @override
+  String stationDisplayNameChanged(String oldValue, String newValue) {
+    return 'تغير الاسم المعروض من \"$oldValue\" إلى \"$newValue\"';
+  }
+
+  @override
+  String stationCategoryChanged(String oldValue, String newValue) {
+    return 'تغير التصنيف من \"$oldValue\" إلى \"$newValue\"';
+  }
+
+  @override
+  String stationDriveThruChanged(String oldValue, String newValue) {
+    return 'تغيرت خدمة السيارات من $oldValue إلى $newValue';
+  }
+
+  @override
+  String stationSpeedLimitChanged(String oldValue, String newValue) {
+    return 'تغير نطاق السرعة من $oldValue إلى $newValue';
+  }
+
+  @override
+  String get adminDataUnavailable =>
+      'تعذر تحميل موافقات المحطات. يرجى المحاولة مرة أخرى.';
 }

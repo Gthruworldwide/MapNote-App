@@ -53,7 +53,7 @@ jobs:
 
       - name: Build release APK
         run: >
-          flutter build apk --release
+          flutter build apk --release --flavor personal -t lib/main.dart
           --dart-define=GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
           --dart-define=GEMINI_MODEL=${{ vars.GEMINI_MODEL || 'gemini-2.0-flash' }}
 
@@ -61,5 +61,5 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: routenote-release-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: build/app/outputs/flutter-apk/app-personal-release.apk
           if-no-files-found: error

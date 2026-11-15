@@ -11,6 +11,7 @@ import '../../data/models/place.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../providers/app_providers.dart';
 import '../../services/app_logger.dart';
+import '../../services/firebase_station_service.dart';
 import '../../services/geocoding_service.dart';
 import '../../services/location_parser.dart';
 import '../../services/location_service.dart';
@@ -108,7 +109,8 @@ class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
 
   bool get _isEditing => widget.place != null;
 
-  bool get _reduceMotion => MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+  bool get _reduceMotion =>
+      MediaQuery.maybeDisableAnimationsOf(context) ?? false;
 
   /// The last GPS fix as a Plus Code reference point, if there is one.
   PlusCodePoint? get _gpsReference {
@@ -303,7 +305,9 @@ class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
         parsed = await _parser.resolveShortLink(text);
         if (mounted) setState(() => _pasting = false);
       }
-      plusCode ??= ref.read(smartClipboardServiceProvider).extractPlusCode(text);
+      plusCode ??= ref
+          .read(smartClipboardServiceProvider)
+          .extractPlusCode(text);
     }
 
     if (!mounted) return;
@@ -428,10 +432,9 @@ class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
     _ => l10n.categoryPersonal,
   };
 
-  bool _hasCategory(String tag) =>
-      RegExp('(^|\\s)${RegExp.escape(tag)}(?=\\s|\$)').hasMatch(
-        _notesController.text,
-      );
+  bool _hasCategory(String tag) => RegExp(
+    '(^|\\s)${RegExp.escape(tag)}(?=\\s|\$)',
+  ).hasMatch(_notesController.text);
 
   void _toggleCategory(String tag) {
     Haptics.light();
@@ -495,7 +498,41 @@ class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
             longitude: resolved.longitude,
           );
 
+    final bool hasWorkTag =
+        _nameController.text.toLowerCase().contains('#work') ||
+        _notesController.text.toLowerCase().contains('#work');
+
     setState(() => _saving = true);
+
+    if (hasWorkTag) {
+      try {
+        final hiveDb = ref.read(hiveDatabaseProvider);
+        final stationService = FirebaseStationService(hiveDatabase: hiveDb);
+        final authUser = ref.read(authProvider).value;
+        final submittedBy = authUser?.email ?? 'unknown';
+
+        await stationService.submitNewStationProposal(
+          name: _nameController.text.trim(),
+          latitude: resolved.latitude,
+          longitude: resolved.longitude,
+          city: '',
+          submittedBy: submittedBy,
+        );
+
+        if (mounted) {
+          messenger.showSnackBar(
+            SnackBar(content: Text(l10n.stationProposalSubmitted)),
+          );
+        }
+      } catch (_) {
+        if (mounted) {
+          messenger.showSnackBar(
+            SnackBar(content: Text(l10n.stationProposalFailed)),
+          );
+        }
+      }
+    }
+
     await ref.read(placesProvider.notifier).save(place);
 
     messenger.showSnackBar(SnackBar(content: Text(l10n.placeSaved)));
@@ -526,11 +563,7 @@ class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
     // with no GPS fix.
     final String? code = PlusCode.extract(plusText);
     if (code != null && PlusCode.isShortPlusCode(code)) {
-      final String locality = plusText
-          .split(',')
-          .skip(1)
-          .join(',')
-          .trim();
+      final String locality = plusText.split(',').skip(1).join(',').trim();
       if (locality.isNotEmpty) {
         final PlusCodePoint? reference = await ref
             .read(geocodingServiceProvider)
@@ -668,8 +701,7 @@ class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
           FilterChip(
             label: Text('#${_categoryLabel(l10n, key)}'),
             selected: _hasCategory('#${_categoryLabel(l10n, key)}'),
-            onSelected: (_) =>
-                _toggleCategory('#${_categoryLabel(l10n, key)}'),
+            onSelected: (_) => _toggleCategory('#${_categoryLabel(l10n, key)}'),
           ),
       ],
     );
@@ -709,7 +741,10 @@ class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
                   color: theme.colorScheme.primary,
                 ),
                 const SizedBox(width: 8),
-                Text(l10n.locationCoordinates, style: theme.textTheme.titleSmall),
+                Text(
+                  l10n.locationCoordinates,
+                  style: theme.textTheme.titleSmall,
+                ),
               ],
             ),
             const SizedBox(height: 12),
@@ -886,10 +921,7 @@ class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
               ],
             ),
             if (title != null)
-              Text(
-                l10n.foundPlace(title),
-                style: theme.textTheme.titleSmall,
-              ),
+              Text(l10n.foundPlace(title), style: theme.textTheme.titleSmall),
             if (detail != null) ...<Widget>[
               const SizedBox(height: 4),
               Text(
