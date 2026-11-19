@@ -31,6 +31,12 @@ class AutoMotionScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final AppLocalizations l10n = AppLocalizations.of(context);
+    if (!ref.watch(automotionAvailableProvider)) {
+      return Scaffold(
+        appBar: AppBar(title: Text(l10n.autoMotionDashboardTitle)),
+        body: Center(child: Text(l10n.editionFeatureUnavailable)),
+      );
+    }
     final AutoMotionState state = ref.watch(autoMotionControllerProvider);
     final List<DailyGpsSummary> history = ref.watch(autoMotionHistoryProvider);
     final AutoMotionAggregates agg7 = ref.watch(autoMotionAggregates7dProvider);

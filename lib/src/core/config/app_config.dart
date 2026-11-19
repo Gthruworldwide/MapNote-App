@@ -14,12 +14,17 @@
 /// The Gemini API key is the one real secret here. It is read from the
 /// environment only (`--dart-define`, or the `GEMINI_API_KEY` CI secret) and is
 /// never written into the repository or a release artifact.
-/// Build-bound product edition. The value comes from `--dart-define`, never
-/// from a runtime provider override, so a distributed binary's capabilities
-/// cannot be widened after it is built.
-enum AppEdition { personal, work }
+/// Build-bound product edition. The value comes from
+/// `--dart-define=MAPNOTE_EDITION=work|automotion`, never from a runtime
+/// provider override, so a distributed binary's capabilities cannot be widened
+/// after it is built.
+enum AppEdition { work, automotion }
 
-/// Immutable capability set derived only from [AppConfig.appEditionRaw].
+/// Immutable capability set derived only from [AppConfig.mapnoteEditionRaw].
+///
+/// Every capability that touches a vehicle sensor, background location or
+/// AutoMotion analytics is granted exclusively to the automotion edition. An
+/// unknown or missing define fails closed to [AppEdition.work].
 class EditionCapabilities {
   const EditionCapabilities(this.edition);
 
@@ -28,8 +33,18 @@ class EditionCapabilities {
 
   final AppEdition edition;
 
-  /// Whether an admin surface may be shown at all. Fail-closed on unknown
-  /// edition strings: the parser maps them to [AppEdition.personal].
+  bool get isAutomotion => edition == AppEdition.automotion;
+
+  /// Master switch for the whole AutoMotion subsystem.
+  bool get automotionEnabled => isAutomotion;
+
+  bool get backgroundLocationEnabled => isAutomotion;
+  bool get activityRecognitionEnabled => isAutomotion;
+  bool get motionSensorsEnabled => isAutomotion;
+  bool get automotiveForegroundServiceEnabled => isAutomotion;
+  bool get automotionUiEnabled => isAutomotion;
+
+  /// Admin UI belongs to the Work Edition only.
   bool get allowAdminUi => edition == AppEdition.work;
 
   /// Work Edition station administration is not shipped in this branch. Keep
@@ -41,23 +56,26 @@ class EditionCapabilities {
 class AppConfig {
   const AppConfig._();
 
-  /// Edition identity injected by the release workflow. Unknown values are
-  /// fail-closed to `personal` by [AppConfig.appEdition].
-  static const String appEditionRaw = String.fromEnvironment(
-    'APP_EDITION',
-    defaultValue: 'personal',
+  /// Edition identity injected by the build. Unknown values are fail-closed to
+  /// `work` by [AppConfig.appEdition] — the edition with the fewest capabilities.
+  static const String mapnoteEditionRaw = String.fromEnvironment(
+    'MAPNOTE_EDITION',
+    defaultValue: 'work',
   );
 
-  static AppEdition get appEdition => parseEdition(appEditionRaw);
+  /// Kept as an alias for callers that only need the raw identity string.
+  static String get appEditionRaw => mapnoteEditionRaw;
+
+  static AppEdition get appEdition => parseEdition(mapnoteEditionRaw);
 
   /// Fail-closed parser so an unknown build string can never grant privileges.
   static AppEdition parseEdition(String raw) {
-    switch (raw.toLowerCase()) {
+    switch (raw.trim().toLowerCase()) {
+      case 'automotion':
+        return AppEdition.automotion;
       case 'work':
-        return AppEdition.work;
-      case 'personal':
       default:
-        return AppEdition.personal;
+        return AppEdition.work;
     }
   }
 

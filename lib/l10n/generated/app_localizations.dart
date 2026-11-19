@@ -635,8 +635,74 @@ abstract class AppLocalizations {
   /// No description provided for @localOverridesCloud.
   ///
   /// In en, this message translates to:
-  /// **'Your device data always overwrites the Google Drive backup.'**
+  /// **'Local and cloud changes are merged place by place; conflicting edits wait for your decision.'**
   String get localOverridesCloud;
+
+  /// No description provided for @syncStatusIdle.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready to sync'**
+  String get syncStatusIdle;
+
+  /// No description provided for @syncStatusSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Up to date'**
+  String get syncStatusSuccess;
+
+  /// No description provided for @syncStatusError.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync failed'**
+  String get syncStatusError;
+
+  /// No description provided for @syncStatusConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'Conflicts need your decision'**
+  String get syncStatusConflict;
+
+  /// No description provided for @syncConflictTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Resolve sync conflicts'**
+  String get syncConflictTitle;
+
+  /// No description provided for @syncConflictMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'These places changed on both this device and Google Drive. Choose what to keep for each one.'**
+  String get syncConflictMessage;
+
+  /// No description provided for @syncConflictKeepLocal.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep local'**
+  String get syncConflictKeepLocal;
+
+  /// No description provided for @syncConflictUseCloud.
+  ///
+  /// In en, this message translates to:
+  /// **'Use cloud'**
+  String get syncConflictUseCloud;
+
+  /// No description provided for @syncConflictMerge.
+  ///
+  /// In en, this message translates to:
+  /// **'Merge'**
+  String get syncConflictMerge;
+
+  /// No description provided for @syncConflictResolved.
+  ///
+  /// In en, this message translates to:
+  /// **'Conflict resolved'**
+  String get syncConflictResolved;
+
+  /// No description provided for @syncConflictPlaceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Local: {local} / Cloud: {cloud}'**
+  String syncConflictPlaceLabel(String local, String cloud);
 
   /// No description provided for @restoreFromDrive.
   ///
@@ -653,7 +719,7 @@ abstract class AppLocalizations {
   /// No description provided for @restoreConfirmMessage.
   ///
   /// In en, this message translates to:
-  /// **'This replaces all places on this device with the backup from your Google Drive.'**
+  /// **'This merges the Google Drive backup with the places on this device. Conflicting edits will ask for your decision.'**
   String get restoreConfirmMessage;
 
   /// No description provided for @restoreComplete.
@@ -667,6 +733,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Restore failed: {error}'**
   String restoreFailed(String error);
+
+  /// No description provided for @recoveryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery file (.mapnote)'**
+  String get recoveryTitle;
+
+  /// No description provided for @recoverySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Export or import a checksum-verified backup of your places.'**
+  String get recoverySubtitle;
+
+  /// No description provided for @recoveryExport.
+  ///
+  /// In en, this message translates to:
+  /// **'Export backup'**
+  String get recoveryExport;
+
+  /// No description provided for @recoveryExportDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup copied to clipboard'**
+  String get recoveryExportDone;
+
+  /// No description provided for @recoveryImport.
+  ///
+  /// In en, this message translates to:
+  /// **'Import backup'**
+  String get recoveryImport;
+
+  /// No description provided for @recoveryImportTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Import .mapnote backup'**
+  String get recoveryImportTitle;
+
+  /// No description provided for @recoveryImportMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste the .mapnote backup below. Records are merged with your existing places; nothing is silently overwritten.'**
+  String get recoveryImportMessage;
+
+  /// No description provided for @recoveryPasteHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste .mapnote contents here'**
+  String get recoveryPasteHint;
+
+  /// No description provided for @recoveryImportInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'This backup is invalid or damaged.'**
+  String get recoveryImportInvalid;
+
+  /// No description provided for @recoveryImported.
+  ///
+  /// In en, this message translates to:
+  /// **'Imported {count} records'**
+  String recoveryImported(int count);
+
+  /// No description provided for @editionFeatureUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This feature is not available in this edition.'**
+  String get editionFeatureUnavailable;
 
   /// No description provided for @locationPermissionTitle.
   ///

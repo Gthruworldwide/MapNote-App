@@ -129,10 +129,27 @@
     }
   },
   "neverSynced": "Never synced",
-  "localOverridesCloud": "Your device data always overwrites the Google Drive backup.",
+  "localOverridesCloud": "Local and cloud changes are merged place by place; conflicting edits wait for your decision.",
+  "syncStatusIdle": "Ready to sync",
+  "syncStatusSuccess": "Up to date",
+  "syncStatusError": "Sync failed",
+  "syncStatusConflict": "Conflicts need your decision",
+  "syncConflictTitle": "Resolve sync conflicts",
+  "syncConflictMessage": "These places changed on both this device and Google Drive. Choose what to keep for each one.",
+  "syncConflictKeepLocal": "Keep local",
+  "syncConflictUseCloud": "Use cloud",
+  "syncConflictMerge": "Merge",
+  "syncConflictResolved": "Conflict resolved",
+  "syncConflictPlaceLabel": "Local: {local} / Cloud: {cloud}",
+  "@syncConflictPlaceLabel": {
+    "placeholders": {
+      "local": { "type": "String" },
+      "cloud": { "type": "String" }
+    }
+  },
   "restoreFromDrive": "Restore from Google Drive",
   "restoreConfirmTitle": "Restore from Google Drive?",
-  "restoreConfirmMessage": "This replaces all places on this device with the backup from your Google Drive.",
+  "restoreConfirmMessage": "This merges the Google Drive backup with the places on this device. Conflicting edits will ask for your decision.",
   "restoreComplete": "Restore complete",
   "restoreFailed": "Restore failed: {error}",
   "@restoreFailed": {
@@ -140,6 +157,24 @@
       "error": { "type": "String" }
     }
   },
+
+  "recoveryTitle": "Recovery file (.mapnote)",
+  "recoverySubtitle": "Export or import a checksum-verified backup of your places.",
+  "recoveryExport": "Export backup",
+  "recoveryExportDone": "Backup copied to clipboard",
+  "recoveryImport": "Import backup",
+  "recoveryImportTitle": "Import .mapnote backup",
+  "recoveryImportMessage": "Paste the .mapnote backup below. Records are merged with your existing places; nothing is silently overwritten.",
+  "recoveryPasteHint": "Paste .mapnote contents here",
+  "recoveryImportInvalid": "This backup is invalid or damaged.",
+  "recoveryImported": "Imported {count} records",
+  "@recoveryImported": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+
+  "editionFeatureUnavailable": "This feature is not available in this edition.",
 
   "locationPermissionTitle": "Location permission needed",
   "locationPermissionMessage": "MapNote needs access to your location to save places.",

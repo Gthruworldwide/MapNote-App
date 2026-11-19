@@ -290,7 +290,43 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get localOverridesCloud =>
-      'Your device data always overwrites the Google Drive backup.';
+      'Local and cloud changes are merged place by place; conflicting edits wait for your decision.';
+
+  @override
+  String get syncStatusIdle => 'Ready to sync';
+
+  @override
+  String get syncStatusSuccess => 'Up to date';
+
+  @override
+  String get syncStatusError => 'Sync failed';
+
+  @override
+  String get syncStatusConflict => 'Conflicts need your decision';
+
+  @override
+  String get syncConflictTitle => 'Resolve sync conflicts';
+
+  @override
+  String get syncConflictMessage =>
+      'These places changed on both this device and Google Drive. Choose what to keep for each one.';
+
+  @override
+  String get syncConflictKeepLocal => 'Keep local';
+
+  @override
+  String get syncConflictUseCloud => 'Use cloud';
+
+  @override
+  String get syncConflictMerge => 'Merge';
+
+  @override
+  String get syncConflictResolved => 'Conflict resolved';
+
+  @override
+  String syncConflictPlaceLabel(String local, String cloud) {
+    return 'Local: $local / Cloud: $cloud';
+  }
 
   @override
   String get restoreFromDrive => 'Restore from Google Drive';
@@ -300,7 +336,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get restoreConfirmMessage =>
-      'This replaces all places on this device with the backup from your Google Drive.';
+      'This merges the Google Drive backup with the places on this device. Conflicting edits will ask for your decision.';
 
   @override
   String get restoreComplete => 'Restore complete';
@@ -309,6 +345,44 @@ class AppLocalizationsEn extends AppLocalizations {
   String restoreFailed(String error) {
     return 'Restore failed: $error';
   }
+
+  @override
+  String get recoveryTitle => 'Recovery file (.mapnote)';
+
+  @override
+  String get recoverySubtitle =>
+      'Export or import a checksum-verified backup of your places.';
+
+  @override
+  String get recoveryExport => 'Export backup';
+
+  @override
+  String get recoveryExportDone => 'Backup copied to clipboard';
+
+  @override
+  String get recoveryImport => 'Import backup';
+
+  @override
+  String get recoveryImportTitle => 'Import .mapnote backup';
+
+  @override
+  String get recoveryImportMessage =>
+      'Paste the .mapnote backup below. Records are merged with your existing places; nothing is silently overwritten.';
+
+  @override
+  String get recoveryPasteHint => 'Paste .mapnote contents here';
+
+  @override
+  String get recoveryImportInvalid => 'This backup is invalid or damaged.';
+
+  @override
+  String recoveryImported(int count) {
+    return 'Imported $count records';
+  }
+
+  @override
+  String get editionFeatureUnavailable =>
+      'This feature is not available in this edition.';
 
   @override
   String get locationPermissionTitle => 'Location permission needed';

@@ -1,0 +1,24 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <!-- Work Edition: no vehicle tracking, no activity recognition and no
+         automotive foreground service. Manifest merger removes the main
+         source-set nodes so the installed APK never even asks for them. -->
+    <uses-permission
+        android:name="android.permission.ACCESS_BACKGROUND_LOCATION"
+        tools:node="remove"/>
+    <uses-permission
+        android:name="android.permission.ACTIVITY_RECOGNITION"
+        tools:node="remove"/>
+    <uses-permission
+        android:name="android.permission.FOREGROUND_SERVICE"
+        tools:node="remove"/>
+    <uses-permission
+        android:name="android.permission.FOREGROUND_SERVICE_LOCATION"
+        tools:node="remove"/>
+
+    <application>
+        <service
+            android:name=".LocationTrackingService"
+            tools:node="remove"/>
+    </application>
+</manifest>

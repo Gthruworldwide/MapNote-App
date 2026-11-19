@@ -29,6 +29,9 @@ class Place {
     this.isHidden = false,
     this.isLocked = false,
     this.isVaulted = false,
+    this.updatedAt,
+    this.syncVersion = 0,
+    this.deletedAt,
   });
 
   final String id;
@@ -54,6 +57,45 @@ class Place {
   /// Vaulted places are kept in the encrypted vault store.
   final bool isVaulted;
 
+  /// Last local modification time (UTC). Legacy rows have no value; their
+  /// [timestamp] is used as the effective revision time.
+  final DateTime? updatedAt;
+
+  /// Monotonically increasing local revision counter. It breaks ties when two
+  /// devices edit a record within the same millisecond.
+  final int syncVersion;
+
+  /// Soft-delete marker (UTC). A deleted record is retained so the deletion can
+  /// be merged across devices instead of silently resurrecting the place.
+  final DateTime? deletedAt;
+
+  /// True when this record is a tombstone and must be hidden from the user.
+  bool get isDeleted => deletedAt != null;
+
+  /// Revision time used by the sync merger. Never null, even for legacy rows.
+  DateTime get effectiveUpdatedAt => (updatedAt ?? timestamp).toUtc();
+
+  /// Returns a copy stamped as a local edit. The caller must not mutate a
+  /// record in place: Hive rows are immutable maps.
+  Place withLocalEdit({DateTime? now}) {
+    final DateTime stamp = (now ?? DateTime.now()).toUtc();
+    return copyWith(
+      updatedAt: stamp,
+      deletedAt: null,
+      syncVersion: syncVersion + 1,
+    );
+  }
+
+  /// Returns a copy stamped as a local soft delete.
+  Place withLocalDelete({DateTime? now}) {
+    final DateTime stamp = (now ?? DateTime.now()).toUtc();
+    return copyWith(
+      updatedAt: stamp,
+      deletedAt: stamp,
+      syncVersion: syncVersion + 1,
+    );
+  }
+
   Place copyWith({
     String? id,
     String? name,
@@ -65,6 +107,11 @@ class Place {
     bool? isHidden,
     bool? isLocked,
     bool? isVaulted,
+    DateTime? updatedAt,
+    int? syncVersion,
+    DateTime? deletedAt,
+    bool clearUpdatedAt = false,
+    bool clearDeletedAt = false,
   }) {
     return Place(
       id: id ?? this.id,
@@ -77,6 +124,9 @@ class Place {
       isHidden: isHidden ?? this.isHidden,
       isLocked: isLocked ?? this.isLocked,
       isVaulted: isVaulted ?? this.isVaulted,
+      updatedAt: clearUpdatedAt ? null : (updatedAt ?? this.updatedAt),
+      syncVersion: syncVersion ?? this.syncVersion,
+      deletedAt: clearDeletedAt ? null : (deletedAt ?? this.deletedAt),
     );
   }
 
@@ -106,6 +156,9 @@ class Place {
       'isHidden': isHidden,
       'isLocked': isLocked,
       'isVaulted': isVaulted,
+      'updatedAt': updatedAt?.toUtc().toIso8601String(),
+      'syncVersion': syncVersion,
+      'deletedAt': deletedAt?.toUtc().toIso8601String(),
     };
   }
 
@@ -130,6 +183,9 @@ class Place {
       isHidden: _toBool(map['isHidden']),
       isLocked: _toBool(map['isLocked']),
       isVaulted: _toBool(map['isVaulted']),
+      updatedAt: _toOptionalDateTime(map['updatedAt']),
+      syncVersion: _toRevision(map['syncVersion']),
+      deletedAt: _toOptionalDateTime(map['deletedAt']),
     );
   }
 
@@ -159,6 +215,25 @@ class Place {
     return DateTime.now().toUtc();
   }
 
+  /// Optional timestamps degrade to null rather than to "now": inventing a
+  /// revision time for a legacy row would let it win a merge against a real
+  /// edit. [effectiveUpdatedAt] supplies the creation time as the fallback.
+  static DateTime? _toOptionalDateTime(Object? value) {
+    if (value == null) return null;
+    if (value is DateTime) return value.toUtc();
+    if (value is String) return DateTime.tryParse(value)?.toUtc();
+    if (value is num && value.isFinite) {
+      return DateTime.fromMillisecondsSinceEpoch(value.toInt(), isUtc: true);
+    }
+    return null;
+  }
+
+  static int _toRevision(Object? value) {
+    if (value is int && value >= 0) return value;
+    if (value is num && value.isFinite && value >= 0) return value.toInt();
+    return 0;
+  }
+
   @override
   bool operator ==(Object other) =>
       other is Place &&
@@ -171,7 +246,10 @@ class Place {
       other.isPinned == isPinned &&
       other.isHidden == isHidden &&
       other.isLocked == isLocked &&
-      other.isVaulted == isVaulted;
+      other.isVaulted == isVaulted &&
+      other.updatedAt == updatedAt &&
+      other.syncVersion == syncVersion &&
+      other.deletedAt == deletedAt;
 
   @override
   int get hashCode => Object.hash(
@@ -185,10 +263,14 @@ class Place {
     isHidden,
     isLocked,
     isVaulted,
+    updatedAt,
+    syncVersion,
+    deletedAt,
   );
 
   @override
   String toString() =>
       'Place($id, $name, $latitude, $longitude, '
-      'pinned: $isPinned, hidden: $isHidden, locked: $isLocked, vaulted: $isVaulted)';
+      'pinned: $isPinned, hidden: $isHidden, locked: $isLocked, vaulted: $isVaulted, '
+      'rev: $syncVersion, deleted: $isDeleted)';
 }

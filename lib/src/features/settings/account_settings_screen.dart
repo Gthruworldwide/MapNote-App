@@ -11,7 +11,9 @@ import '../../providers/app_providers.dart';
 import '../../services/lock_gate.dart';
 import '../saved_places/presentation/saved_places_vault_screen.dart';
 import 'hidden_vault_screen.dart';
+import 'recovery_settings_screen.dart';
 import 'settings_shared.dart';
+import 'sync_conflict_sheet.dart';
 
 /// Account & cloud backup settings: Google account, Drive sync/restore,
 /// the hidden vault entry point and the encrypted saved-places vault.
@@ -45,6 +47,8 @@ class AccountSettingsScreen extends ConsumerWidget {
           content: Text(l10n.syncFailed(next.error ?? l10n.errorGeneric)),
         ),
         SyncStatus.skipped => SnackBar(content: Text(l10n.syncSignInRequired)),
+        SyncStatus.conflict =>
+          SnackBar(content: Text(l10n.syncStatusConflict)),
         _ => const SnackBar(content: SizedBox.shrink()),
       };
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -189,12 +193,49 @@ class AccountSettingsScreen extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 8),
+          Row(
+            children: <Widget>[
+              Icon(
+                sync.hasConflicts
+                    ? Icons.gpp_maybe_outlined
+                    : Icons.info_outline,
+                size: 18,
+                color: sync.hasConflicts
+                    ? theme.colorScheme.error
+                    : theme.colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  _statusLabel(l10n, sync),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: sync.hasConflicts
+                        ? theme.colorScheme.error
+                        : theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
           Text(
             l10n.localOverridesCloud,
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
+          if (sync.hasConflicts) ...<Widget>[
+            const SizedBox(height: 12),
+            FilledButton.tonalIcon(
+              icon: const Icon(Icons.gpp_maybe_outlined),
+              label: Text(l10n.syncConflictTitle),
+              onPressed: () => showModalBottomSheet<void>(
+                context: context,
+                isScrollControlled: true,
+                builder: (_) => const SyncConflictSheet(),
+              ),
+            ),
+          ],
           const SizedBox(height: 16),
           FilledButton.icon(
             onPressed: sync.isSyncing
@@ -219,9 +260,34 @@ class AccountSettingsScreen extends ConsumerWidget {
             icon: const Icon(Icons.settings_backup_restore_outlined),
             label: Text(l10n.restoreFromDrive),
           ),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const RecoverySettingsScreen(),
+              ),
+            ),
+            icon: const Icon(Icons.folder_open_outlined),
+            label: Text(l10n.recoveryTitle),
+          ),
         ],
       ),
     );
+  }
+
+  String _statusLabel(AppLocalizations l10n, SyncState sync) {
+    return switch (sync.status) {
+      SyncStatus.syncing => l10n.syncInProgress,
+      SyncStatus.success => switch (sync.outcome) {
+          SyncOutcome.restored => l10n.restoreComplete,
+          SyncOutcome.conflictsDetected => l10n.syncStatusConflict,
+          _ => l10n.syncComplete,
+        },
+      SyncStatus.error => l10n.syncStatusError,
+      SyncStatus.skipped => l10n.syncSignInRequired,
+      SyncStatus.conflict => l10n.syncStatusConflict,
+      SyncStatus.idle => l10n.syncStatusIdle,
+    };
   }
 
   Widget _buildPrivacyCard(

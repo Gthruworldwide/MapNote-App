@@ -18,13 +18,23 @@ class PlaceLocalDataSource {
 
   final HiveDatabase _database;
 
-  /// Returns all places, newest first.
+  /// Returns active places, newest first. Tombstones are retained in Hive for
+  /// sync but never shown to the user.
   Future<List<Place>> getAll() async {
+    final List<Place> places = (await getAllIncludingDeleted())
+        .where((Place place) => !place.isDeleted)
+        .toList();
+    return places;
+  }
+
+  /// Returns every record, including tombstones. Only the sync layer may use
+  /// this: a deleted place must stay hidden everywhere else.
+  Future<List<Place>> getAllIncludingDeleted() async {
     final List<Place> places = _database.placesBox.values
         .whereType<Map>()
         .map((Map raw) => Place.fromMap(Map<String, dynamic>.from(raw)))
         .toList();
-    places.sort((Place a, Place b) => b.timestamp.compareTo(a.timestamp));
+    places.sort((Place a, Place b) => b.effectiveUpdatedAt.compareTo(a.effectiveUpdatedAt));
     return places;
   }
 
@@ -45,7 +55,17 @@ class PlaceLocalDataSource {
     await _database.placesBox.flush();
   }
 
+  /// Soft delete: keeps a tombstone so the deletion can merge across devices
+  /// instead of the place being resurrected by an older backup.
   Future<void> delete(String id) async {
+    final Place? place = await getById(id);
+    if (place == null) return;
+    await put(place.withLocalDelete());
+  }
+
+  /// Permanent removal of a tombstone. Not exposed in the UI: it would allow a
+  /// stale backup to resurrect the record on the next sync.
+  Future<void> purge(String id) async {
     await _database.placesBox.delete(id);
     await _database.placesBox.flush();
   }
@@ -105,5 +125,35 @@ class PlaceLocalDataSource {
     }
     await box.flush();
     return RestoreApplyResult.applied;
+  }
+
+  /// Writes a record-level merge result after a network download.
+  ///
+  /// Like [applyBackup], the precondition and the write share one synchronous
+  /// critical section, so a place saved while the download was in flight is
+  /// preserved. Unlike the legacy path, nothing is hard-deleted: removals are
+  /// represented by tombstones inside [resolved].
+  Future<void> applyMerged({
+    required Iterable<Place> resolved,
+    required Set<String> baselineIds,
+  }) async {
+    final box = _database.placesBox;
+    final Set<String> currentIds = box.keys.whereType<String>().toSet();
+    final Map<String, Map<String, dynamic>> entries =
+        <String, Map<String, dynamic>>{
+          for (final Place place in resolved) place.id: place.toMap(),
+        };
+
+    for (final String id in currentIds.difference(baselineIds)) {
+      final Object? raw = box.get(id);
+      if (raw is Map) {
+        entries.putIfAbsent(id, () => Map<String, dynamic>.from(raw));
+      }
+    }
+
+    if (entries.isNotEmpty) {
+      box.putAll(entries);
+    }
+    await box.flush();
   }
 }

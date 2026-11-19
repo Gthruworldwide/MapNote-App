@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import '../../core/config/app_config.dart';
+import 'backup_data.dart';
 import 'place.dart';
 
 /// Opaque validation failure for a downloaded backup.
@@ -26,6 +27,9 @@ class BackupValidationException implements Exception {
   static const String badTimestamp = 'backup_bad_timestamp';
   static const String badFlag = 'backup_bad_flag';
   static const String badPlusCode = 'backup_bad_plus_code';
+  static const String unsupportedSchema = 'backup_unsupported_schema';
+  static const String badChecksum = 'backup_bad_checksum';
+  static const String badRevision = 'backup_bad_revision';
 
   final String code;
 
@@ -33,7 +37,12 @@ class BackupValidationException implements Exception {
   String toString() => 'BackupValidationException($code)';
 }
 
-const Set<String> _rootKeys = <String>{'last_synced', 'places'};
+const Set<String> _rootKeys = <String>{
+  BackupFormat.schemaVersionKey,
+  BackupFormat.checksumKey,
+  BackupFormat.lastSyncedKey,
+  BackupFormat.placesKey,
+};
 
 const Set<String> _placeKeys = <String>{
   'id',
@@ -47,7 +56,24 @@ const Set<String> _placeKeys = <String>{
   'isLocked',
   'isVaulted',
   'plusCode',
+  'updatedAt',
+  'syncVersion',
+  'deletedAt',
 };
+
+/// A strictly parsed backup envelope. [schemaVersion] is 1 for a legacy file
+/// without a version marker, otherwise the declared version.
+class BackupEnvelope {
+  const BackupEnvelope({
+    required this.places,
+    required this.schemaVersion,
+    required this.hasChecksum,
+  });
+
+  final List<Place> places;
+  final int schemaVersion;
+  final bool hasChecksum;
+}
 
 final RegExp _safeId = RegExp(r'^[A-Za-z0-9._-]+$');
 
@@ -61,6 +87,14 @@ final RegExp _safeId = RegExp(r'^[A-Za-z0-9._-]+$');
 /// `last_synced` is accepted for older clients but **ignored**: only a
 /// successful local apply may stamp it, via `SettingsRepository`.
 List<Place> parseBackup(
+  String raw, {
+  DateTime Function()? now,
+}) =>
+    parseBackupEnvelope(raw, now: now).places;
+
+/// Strict parser that also returns envelope metadata needed by the sync
+/// merger. See [parseBackup] for the validation contract.
+BackupEnvelope parseBackupEnvelope(
   String raw, {
   DateTime Function()? now,
 }) {
@@ -93,7 +127,16 @@ List<Place> parseBackup(
     }
   }
 
-  final Object? rawPlaces = root['places'];
+  final int schemaVersion = _readSchemaVersion(root[BackupFormat.schemaVersionKey]);
+  final Object? rawChecksum = root[BackupFormat.checksumKey];
+  if (rawChecksum != null && rawChecksum is! String) {
+    throw const BackupValidationException(BackupValidationException.badChecksum);
+  }
+  if (schemaVersion >= 2 && rawChecksum == null) {
+    throw const BackupValidationException(BackupValidationException.badChecksum);
+  }
+
+  final Object? rawPlaces = root[BackupFormat.placesKey];
   if (rawPlaces is! List) {
     throw const BackupValidationException(BackupValidationException.wrongPlaces);
   }
@@ -182,11 +225,39 @@ List<Place> parseBackup(
         isHidden: _readFlag(record, 'isHidden'),
         isLocked: _readFlag(record, 'isLocked'),
         isVaulted: _readFlag(record, 'isVaulted'),
+        updatedAt: _readOptionalTimestamp(record['updatedAt'], maxTimestamp),
+        syncVersion: _readRevision(record['syncVersion']),
+        deletedAt: _readOptionalTimestamp(record['deletedAt'], maxTimestamp),
       ),
     );
   }
 
-  return places;
+  if (rawChecksum != null && rawChecksum != BackupFormat.checksum(places)) {
+    throw const BackupValidationException(BackupValidationException.badChecksum);
+  }
+
+  return BackupEnvelope(
+    places: places,
+    schemaVersion: schemaVersion,
+    hasChecksum: rawChecksum != null,
+  );
+}
+
+int _readSchemaVersion(Object? value) {
+  if (value == null) return 1; // v1 pre-dates the marker.
+  final int? version = value is int
+      ? value
+      : (value is num && value.isFinite && value == value.toInt()
+          ? value.toInt()
+          : null);
+  if (version == null ||
+      version < 1 ||
+      version > BackupFormat.schemaVersion) {
+    throw const BackupValidationException(
+      BackupValidationException.unsupportedSchema,
+    );
+  }
+  return version;
 }
 
 String _readId(Object? value) {
@@ -242,6 +313,39 @@ DateTime _readTimestamp(Object? value, DateTime maxTimestamp) {
     );
   }
   return parsed;
+}
+
+DateTime? _readOptionalTimestamp(Object? value, DateTime maxTimestamp) {
+  if (value == null) return null; // Legacy record: fall back to creation time.
+  DateTime? parsed;
+  if (value is String) {
+    parsed = DateTime.tryParse(value)?.toUtc();
+  } else if (value is num && value.isFinite) {
+    try {
+      parsed = DateTime.fromMillisecondsSinceEpoch(value.toInt(), isUtc: true);
+    } on Exception {
+      parsed = null;
+    }
+  }
+  if (parsed == null ||
+      parsed.millisecondsSinceEpoch < AppConfig.minBackupTimestampMs ||
+      parsed.isAfter(maxTimestamp)) {
+    throw const BackupValidationException(BackupValidationException.badTimestamp);
+  }
+  return parsed;
+}
+
+int _readRevision(Object? value) {
+  if (value == null) return 0;
+  final int? revision = value is int
+      ? value
+      : (value is num && value.isFinite && value >= 0 && value == value.toInt()
+          ? value.toInt()
+          : null);
+  if (revision == null || revision < 0) {
+    throw const BackupValidationException(BackupValidationException.badRevision);
+  }
+  return revision;
 }
 
 bool _readFlag(Map<String, dynamic> record, String key) {

@@ -26,6 +26,7 @@ import '../data/remote/drive_service.dart';
 import '../data/remote/google_auth_service.dart';
 import '../data/repositories/place_repository.dart';
 import '../data/repositories/sync_repository.dart';
+import '../data/services/sync_merge.dart';
 import '../features/motion_analytics/data/ml_classifier_isolate.dart';
 import '../features/motion_analytics/data/motion_event_mapper.dart';
 import '../features/motion_analytics/domain/entities/motion_event.dart';
@@ -91,6 +92,12 @@ import '../services/transport_classifier.dart';
 /// identity, not a preference.
 final Provider<EditionCapabilities> editionCapabilitiesProvider =
     Provider<EditionCapabilities>((Ref ref) => EditionCapabilities.fromBuild());
+
+/// Single derived gate used by startup, sensors and UI. Watching this is
+/// cheaper and clearer than re-deriving the edition in every consumer.
+final Provider<bool> automotionAvailableProvider = Provider<bool>(
+  (Ref ref) => ref.watch(editionCapabilitiesProvider).automotionEnabled,
+);
 
 // Storage & repositories
 // ---------------------------------------------------------------------------
@@ -1053,7 +1060,7 @@ class PlacesNotifier extends AsyncNotifier<List<Place>> {
   Future<List<Place>> build() => ref.watch(placeRepositoryProvider).getAll();
 
   Future<void> save(Place place) async {
-    await ref.read(placeRepositoryProvider).save(place);
+    await ref.read(placeRepositoryProvider).saveLocalEdit(place);
     ref.read(appHealthLoggerProvider).log(HealthEventType.placeSaved);
     // Single funnel for every add/edit save path: no names, notes or
     // coordinates are sent (see AnalyticsService's privacy note).
@@ -1087,7 +1094,7 @@ class PlacesNotifier extends AsyncNotifier<List<Place>> {
     final PlaceRepository repository = ref.read(placeRepositoryProvider);
     final Place? place = await repository.getById(id);
     if (place == null) return;
-    await repository.save(transform(place));
+    await repository.saveLocalEdit(transform(place));
     await _refresh();
   }
 
@@ -1285,7 +1292,7 @@ class AuthNotifier extends AsyncNotifier<AuthUser?> {
   }
 }
 
-enum SyncStatus { idle, syncing, success, error, skipped }
+enum SyncStatus { idle, syncing, success, error, skipped, conflict }
 
 class SyncState {
   const SyncState({
@@ -1293,26 +1300,31 @@ class SyncState {
     this.lastSynced,
     this.outcome,
     this.error,
+    this.conflicts = const <SyncConflict>[],
   });
 
   final SyncStatus status;
   final DateTime? lastSynced;
   final SyncOutcome? outcome;
   final String? error;
+  final List<SyncConflict> conflicts;
 
   bool get isSyncing => status == SyncStatus.syncing;
+  bool get hasConflicts => conflicts.isNotEmpty;
 
   SyncState copyWith({
     SyncStatus? status,
     DateTime? lastSynced,
     SyncOutcome? outcome,
     bool clearError = false,
+    List<SyncConflict>? conflicts,
   }) {
     return SyncState(
       status: status ?? this.status,
       lastSynced: lastSynced ?? this.lastSynced,
       outcome: outcome ?? this.outcome,
       error: clearError ? null : error,
+      conflicts: conflicts ?? this.conflicts,
     );
   }
 }
@@ -1325,7 +1337,7 @@ class SyncController extends Notifier<SyncState> {
     );
   }
 
-  /// Performs the "device wins" sync, keeping the UI state in sync.
+  /// Performs a record-level merge sync, keeping the UI state in sync.
   ///
   /// [userInitiated] marks a sync the user explicitly asked for -- the Sync
   /// button, pull-to-refresh, a "Sync now" insight. Only those may
@@ -1339,9 +1351,10 @@ class SyncController extends Notifier<SyncState> {
     state = state.copyWith(status: SyncStatus.syncing, clearError: true);
     try {
       if (userInitiated) await _ensureSessionForDrive();
-      final SyncOutcome outcome = await ref
+      final SyncExecution execution = await ref
           .read(syncRepositoryProvider)
-          .syncNow();
+          .synchronize();
+      final SyncOutcome outcome = execution.outcome;
       health.log(
         outcome == SyncOutcome.skippedNotSignedIn
             ? HealthEventType.syncSkipped
@@ -1349,10 +1362,13 @@ class SyncController extends Notifier<SyncState> {
         data: <String, Object?>{'outcome': outcome.name},
       );
       state = SyncState(
-        status: outcome == SyncOutcome.skippedNotSignedIn
-            ? SyncStatus.skipped
-            : SyncStatus.success,
+        status: execution.hasConflicts
+            ? SyncStatus.conflict
+            : (outcome == SyncOutcome.skippedNotSignedIn
+                ? SyncStatus.skipped
+                : SyncStatus.success),
         outcome: outcome,
+        conflicts: execution.merge?.conflicts ?? const <SyncConflict>[],
         lastSynced: ref.read(settingsRepositoryProvider).lastSynced,
       );
     } catch (e) {
@@ -1430,10 +1446,8 @@ class SyncController extends Notifier<SyncState> {
 
   static const Duration silentSyncMinInterval = Duration(minutes: 1);
 
-  /// Downloads the Drive backup and replaces local data.
-  ///
-  /// Always user-initiated: the Restore button is the only caller, so the
-  /// session is re-established first and platform UI is expected here.
+  /// Downloads and merges the Drive backup. Always user-initiated: the Restore
+  /// button is the only caller, so platform UI is expected here.
   Future<void> restoreFromDrive() async {
     final AppHealthLogger health = ref.read(appHealthLoggerProvider);
     health.log(
@@ -1443,14 +1457,18 @@ class SyncController extends Notifier<SyncState> {
     state = state.copyWith(status: SyncStatus.syncing, clearError: true);
     try {
       await _ensureSessionForDrive();
-      await ref.read(syncRepositoryProvider).restoreFromDrive();
+      final SyncExecution execution =
+          await ref.read(syncRepositoryProvider).restore();
       health.log(
         HealthEventType.syncSucceeded,
         data: <String, Object?>{'kind': 'restore'},
       );
       state = SyncState(
-        status: SyncStatus.success,
-        outcome: SyncOutcome.restored,
+        status: execution.hasConflicts ? SyncStatus.conflict : SyncStatus.success,
+        outcome: execution.hasConflicts
+            ? SyncOutcome.conflictsDetected
+            : SyncOutcome.restored,
+        conflicts: execution.merge?.conflicts ?? const <SyncConflict>[],
         lastSynced: ref.read(settingsRepositoryProvider).lastSynced,
       );
     } catch (e) {
@@ -1458,6 +1476,73 @@ class SyncController extends Notifier<SyncState> {
       AppLogger.log(
         category: 'SYNC',
         message: 'Restore from Drive failed',
+        error: e,
+      );
+      state = SyncState(
+        status: SyncStatus.error,
+        error: e.toString(),
+        lastSynced: ref.read(settingsRepositoryProvider).lastSynced,
+      );
+    }
+    await ref.read(placesProvider.notifier).reload();
+  }
+
+  /// Imports a pasted `.mapnote` recovery payload. Fully offline; any conflicts
+  /// are published through [SyncState] so the shared resolution UI can handle
+  /// them exactly like a Drive conflict.
+  Future<void> importRecoveryBackup(String raw) async {
+    state = state.copyWith(status: SyncStatus.syncing, clearError: true);
+    try {
+      final SyncExecution execution = await ref
+          .read(syncRepositoryProvider)
+          .importRecoveryBackup(raw);
+      state = SyncState(
+        status: execution.hasConflicts ? SyncStatus.conflict : SyncStatus.success,
+        outcome: execution.outcome,
+        conflicts: execution.merge?.conflicts ?? const <SyncConflict>[],
+        lastSynced: ref.read(settingsRepositoryProvider).lastSynced,
+      );
+    } catch (e) {
+      AppLogger.log(
+        category: 'SYNC',
+        message: 'Recovery import failed',
+        error: e,
+      );
+      state = SyncState(
+        status: SyncStatus.error,
+        error: e.toString(),
+        lastSynced: ref.read(settingsRepositoryProvider).lastSynced,
+      );
+    }
+    await ref.read(placesProvider.notifier).reload();
+  }
+
+  /// Applies one user decision (Keep local / Use cloud / Merge) and backs up
+  /// the resulting record set. Only a user-initiated path may call this.
+  Future<void> resolveConflict(
+    SyncConflict conflict,
+    SyncResolution choice,
+  ) async {
+    state = state.copyWith(status: SyncStatus.syncing, clearError: true);
+    try {
+      await _ensureSessionForDrive();
+      final SyncExecution execution =
+          await ref.read(syncRepositoryProvider).resolveConflict(
+                conflict,
+                choice,
+                resolve: (SyncConflict c, SyncResolution r) =>
+                    const SyncMerger().resolve(c, r),
+              );
+      state = SyncState(
+        status: execution.hasConflicts ? SyncStatus.conflict : SyncStatus.success,
+        outcome: execution.outcome,
+        conflicts: execution.merge?.conflicts ?? const <SyncConflict>[],
+        lastSynced: ref.read(settingsRepositoryProvider).lastSynced,
+      );
+    } catch (e) {
+      AppLogger.log(
+        category: 'SYNC',
+        message: 'Conflict resolution failed',
         error: e,
       );
       state = SyncState(
@@ -1742,9 +1827,13 @@ class LocationStatusNotifier extends AsyncNotifier<LocationStatus> {
 /// Persists the Settings toggle for daily GPS tracking.
 class GpsTrackingEnabledController extends Notifier<bool> {
   @override
-  bool build() => ref.watch(settingsRepositoryProvider).isGpsTrackingEnabled;
+  bool build() {
+    if (!ref.watch(automotionAvailableProvider)) return false;
+    return ref.watch(settingsRepositoryProvider).isGpsTrackingEnabled;
+  }
 
   Future<void> setEnabled(bool value) async {
+    if (!ref.read(automotionAvailableProvider)) return;
     await ref.read(settingsRepositoryProvider).setGpsTrackingEnabled(value);
     state = value;
   }
@@ -1812,6 +1901,16 @@ class GpsTrackingState {
 class GpsTrackingController extends Notifier<GpsTrackingState> {
   @override
   GpsTrackingState build() {
+    if (!ref.watch(automotionAvailableProvider)) {
+      return const GpsTrackingState(
+        enabled: false,
+        active: false,
+        totalKm: 0,
+        maxSpeedKmh: 0,
+        currentSpeedKmh: 0,
+        unavailable: false,
+      );
+    }
     final bool enabled = ref.watch(gpsTrackingEnabledProvider);
     final GpsTrackerService tracker = ref.read(gpsTrackerProvider);
     final _LifecycleQueue queue = ref.read(_gpsLifecycleQueueProvider);
@@ -1883,10 +1982,12 @@ class GpsTrackingController extends Notifier<GpsTrackingState> {
   }
 
   /// Starts the tracker (called when the toggle turns on or the app opens).
-  Future<void> start() =>
-      ref.read(_gpsLifecycleQueueProvider).add(
-        () => _startNow(ref.read(gpsTrackerProvider)),
-      );
+  Future<void> start() async {
+    if (!ref.read(automotionAvailableProvider)) return;
+    await ref.read(_gpsLifecycleQueueProvider).add(
+          () => _startNow(ref.read(gpsTrackerProvider)),
+        );
+  }
 
   /// Stops the tracker and persists today's summary (toggle turned off).
   Future<void> stop() =>
@@ -2019,8 +2120,9 @@ Future<void> syncTrackingForegroundService(
 /// Android can refuse a foreground-service start while the app is backgrounded;
 /// retrying as soon as MapNote is visible keeps long trips recording with the
 /// screen off instead of silently degrading to in-app-only tracking.
-Future<void> resyncTrackingForegroundService(WidgetRef ref) {
-  return syncTrackingForegroundService(
+Future<void> resyncTrackingForegroundService(WidgetRef ref) async {
+  if (!ref.read(automotionAvailableProvider)) return;
+  await syncTrackingForegroundService(
     ref.read(gpsTrackerProvider),
     ref.read(autoMotionServiceProvider),
     ref.read(foregroundTrackingServiceProvider),
@@ -2042,6 +2144,7 @@ Future<void> applyTrackingPowerMode(
   WidgetRef ref, {
   required bool backgrounded,
 }) async {
+  if (!ref.read(automotionAvailableProvider)) return;
   final GpsTrackerService gps = ref.read(gpsTrackerProvider);
   final AutoMotionService motion = ref.read(autoMotionServiceProvider);
   await ref
@@ -2086,9 +2189,13 @@ Future<void> applyEngineProfile(
 /// Persists the Settings toggle for AutoMotion.
 class AutoMotionEnabledController extends Notifier<bool> {
   @override
-  bool build() => ref.watch(settingsRepositoryProvider).isAutoMotionEnabled;
+  bool build() {
+    if (!ref.watch(automotionAvailableProvider)) return false;
+    return ref.watch(settingsRepositoryProvider).isAutoMotionEnabled;
+  }
 
   Future<void> setEnabled(bool value) async {
+    if (!ref.read(automotionAvailableProvider)) return;
     await ref.read(settingsRepositoryProvider).setAutoMotionEnabled(value);
     state = value;
   }
@@ -2182,6 +2289,16 @@ class AutoMotionState {
 class AutoMotionController extends Notifier<AutoMotionState> {
   @override
   AutoMotionState build() {
+    if (!ref.watch(automotionAvailableProvider)) {
+      return const AutoMotionState(
+        enabled: false,
+        active: false,
+        totalKm: 0,
+        maxSpeedKmh: 0,
+        currentSpeedKmh: 0,
+        unavailable: false,
+      );
+    }
     final bool enabled = ref.watch(autoMotionEnabledProvider);
     final AutoMotionService tracker = ref.read(autoMotionServiceProvider);
     final _LifecycleQueue queue = ref.read(_autoMotionLifecycleQueueProvider);
@@ -2320,10 +2437,12 @@ class AutoMotionController extends Notifier<AutoMotionState> {
   }
 
   /// Starts the tracker (called when the toggle turns on or the app opens).
-  Future<void> start() =>
-      ref.read(_autoMotionLifecycleQueueProvider).add(
-        () => _startNow(ref.read(autoMotionServiceProvider)),
-      );
+  Future<void> start() async {
+    if (!ref.read(automotionAvailableProvider)) return;
+    await ref.read(_autoMotionLifecycleQueueProvider).add(
+          () => _startNow(ref.read(autoMotionServiceProvider)),
+        );
+  }
 
   /// Reconciles the live tracker with [enabled]; runs on the serialized queue.
   Future<void> _applyEnabled(AutoMotionService tracker, bool enabled) =>

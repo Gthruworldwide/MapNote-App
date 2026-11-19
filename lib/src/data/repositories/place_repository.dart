@@ -9,9 +9,17 @@ class PlaceRepository {
 
   Future<List<Place>> getAll() => _local.getAll();
 
+  /// Includes tombstones. Only the sync/recovery layer may call this.
+  Future<List<Place>> getAllIncludingDeleted() => _local.getAllIncludingDeleted();
+
   Future<Place?> getById(String id) => _local.getById(id);
 
+  /// Raw upsert, used by import/restore and tests. User edits should go through
+  /// [saveLocalEdit] so they carry a fresh revision for conflict resolution.
   Future<void> save(Place place) => _local.put(place);
+
+  Future<void> saveLocalEdit(Place place, {DateTime? now}) =>
+      _local.put(place.withLocalEdit(now: now));
 
   Future<void> delete(String id) => _local.delete(id);
 
@@ -27,4 +35,10 @@ class PlaceRepository {
         baselineIds: baselineIds,
         requireEmptyLocal: requireEmptyLocal,
       );
+
+  Future<void> applyMerged({
+    required Iterable<Place> resolved,
+    required Set<String> baselineIds,
+  }) =>
+      _local.applyMerged(resolved: resolved, baselineIds: baselineIds);
 }

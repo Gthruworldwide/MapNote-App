@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce/hive.dart';
 
 import 'package:routenote/l10n/generated/app_localizations.dart';
+import 'package:routenote/src/core/config/app_config.dart';
 import 'package:routenote/src/data/local/hive_database.dart';
 import 'package:routenote/src/data/remote/auth_service.dart';
 import 'package:routenote/src/features/settings/location_settings_screen.dart';
@@ -69,6 +70,11 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          // GPS tracking toggles/report are under test: opt in to the
+          // automotion build (the default test build is fail-closed `work`).
+          editionCapabilitiesProvider.overrideWithValue(
+            const EditionCapabilities(AppEdition.automotion),
+          ),
           hiveDatabaseProvider.overrideWithValue(database),
           authServiceProvider.overrideWithValue(_FakeAuthService()),
           appHealthLoggerProvider.overrideWithValue(AppHealthLogger(null)),

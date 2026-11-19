@@ -210,18 +210,20 @@ class PreferencesSettingsScreen extends ConsumerWidget {
             onChanged: (bool value) =>
                 ref.read(settingsRepositoryProvider).setUiDensityCompact(value),
           ),
-          const Divider(height: 24),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.file_download_outlined),
-            title: Text(l10n.exportMotionData),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => showModalBottomSheet<void>(
-              context: context,
-              isScrollControlled: true,
-              builder: (_) => const AutoMotionExportBottomSheet(),
+          if (ref.watch(automotionAvailableProvider)) ...<Widget>[
+            const Divider(height: 24),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.file_download_outlined),
+              title: Text(l10n.exportMotionData),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => showModalBottomSheet<void>(
+                context: context,
+                isScrollControlled: true,
+                builder: (_) => const AutoMotionExportBottomSheet(),
+              ),
             ),
-          ),
+          ],
           const Divider(height: 24),
           ListTile(
             contentPadding: EdgeInsets.zero,

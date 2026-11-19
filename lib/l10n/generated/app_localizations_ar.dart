@@ -291,7 +291,43 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get localOverridesCloud =>
-      'بيانات جهازك تتجاوز دائمًا النسخة الاحتياطية على جوجل درايف.';
+      'تُدمج التغييرات المحلية والسحابية مكانًا بمكان، وتنتظر التعديلات المتعارضة قرارك.';
+
+  @override
+  String get syncStatusIdle => 'جاهز للمزامنة';
+
+  @override
+  String get syncStatusSuccess => 'محدّث';
+
+  @override
+  String get syncStatusError => 'فشلت المزامنة';
+
+  @override
+  String get syncStatusConflict => 'تعارضات تحتاج قرارك';
+
+  @override
+  String get syncConflictTitle => 'حل تعارضات المزامنة';
+
+  @override
+  String get syncConflictMessage =>
+      'تغيّرت هذه الأماكن على هذا الجهاز وعلى جوجل درايف. اختر ما تريد الاحتفاظ به لكل مكان.';
+
+  @override
+  String get syncConflictKeepLocal => 'الاحتفاظ بالمحلي';
+
+  @override
+  String get syncConflictUseCloud => 'استخدام السحابي';
+
+  @override
+  String get syncConflictMerge => 'دمج';
+
+  @override
+  String get syncConflictResolved => 'تم حل التعارض';
+
+  @override
+  String syncConflictPlaceLabel(String local, String cloud) {
+    return 'المحلي: $local / السحابي: $cloud';
+  }
 
   @override
   String get restoreFromDrive => 'الاستعادة من جوجل درايف';
@@ -301,7 +337,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get restoreConfirmMessage =>
-      'سيؤدي هذا إلى استبدال جميع الأماكن على هذا الجهاز بالنسخة الاحتياطية من جوجل درايف.';
+      'سيؤدي هذا إلى دمج النسخة الاحتياطية من جوجل درايف مع الأماكن الموجودة على هذا الجهاز. ستطلب التعديلات المتعارضة قرارك.';
 
   @override
   String get restoreComplete => 'تمت الاستعادة';
@@ -310,6 +346,44 @@ class AppLocalizationsAr extends AppLocalizations {
   String restoreFailed(String error) {
     return 'فشلت الاستعادة: $error';
   }
+
+  @override
+  String get recoveryTitle => 'ملف الاستعادة (.mapnote)';
+
+  @override
+  String get recoverySubtitle =>
+      'صدّر أو استورد نسخة احتياطية موثّقة باختبار التكامل.';
+
+  @override
+  String get recoveryExport => 'تصدير النسخة الاحتياطية';
+
+  @override
+  String get recoveryExportDone => 'تم نسخ النسخة الاحتياطية إلى الحافظة';
+
+  @override
+  String get recoveryImport => 'استيراد النسخة الاحتياطية';
+
+  @override
+  String get recoveryImportTitle => 'استيراد نسخة .mapnote';
+
+  @override
+  String get recoveryImportMessage =>
+      'الصق نسخة .mapnote أدناه. تُدمج السجلات مع أماكنك الحالية؛ لا يُستبدل شيء دون علمك.';
+
+  @override
+  String get recoveryPasteHint => 'الصق محتويات .mapnote هنا';
+
+  @override
+  String get recoveryImportInvalid =>
+      'هذه النسخة الاحتياطية تالفة أو غير صالحة.';
+
+  @override
+  String recoveryImported(int count) {
+    return 'تم استيراد $count سجلًا';
+  }
+
+  @override
+  String get editionFeatureUnavailable => 'هذه الميزة غير متاحة في هذه النسخة.';
 
   @override
   String get locationPermissionTitle => 'مطلوب إذن الموقع';

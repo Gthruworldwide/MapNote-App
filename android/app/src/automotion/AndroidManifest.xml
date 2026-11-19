@@ -1,0 +1,4 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- AutoMotion Edition keeps every permission and the tracking foreground
+         service declared by the main source set. -->
+</manifest>

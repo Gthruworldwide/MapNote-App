@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:routenote/l10n/generated/app_localizations.dart';
+import 'package:routenote/src/core/config/app_config.dart';
 import 'package:routenote/src/core/theme/app_theme.dart';
 import 'package:routenote/src/data/models/daily_gps_summary.dart';
 import 'package:routenote/src/data/models/track_point.dart';
@@ -148,6 +149,11 @@ void main() {
     final GeocodingService geocoding = _geocoder(area: stopoverArea);
     final ProviderContainer container = ProviderContainer(
       overrides: <Override>[
+        // Route history is an AutoMotion surface: opt in to the automotion
+        // build (the default test build is fail-closed `work`).
+        editionCapabilitiesProvider.overrideWithValue(
+          const EditionCapabilities(AppEdition.automotion),
+        ),
         rawDailyTrackPointsProvider.overrideWithValue(points),
         // The day is built from synthetic fixes, so there is no persisted
         // record to fall back to — and therefore no Hive box to open.
@@ -370,6 +376,11 @@ void main() {
     }) {
       final ProviderContainer container = ProviderContainer(
         overrides: <Override>[
+          // Route history is an AutoMotion surface: opt in to the automotion
+          // build (the default test build is fail-closed `work`).
+          editionCapabilitiesProvider.overrideWithValue(
+            const EditionCapabilities(AppEdition.automotion),
+          ),
           rawDailyTrackPointsProvider.overrideWithValue(points),
           dailyGpsRecordForDayProvider.overrideWith(
             (Ref ref, DateTime day) => null,

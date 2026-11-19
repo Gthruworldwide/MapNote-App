@@ -18,6 +18,19 @@ void _assertPinnedActions(String workflow, String name) {
   );
 }
 
+void _assertEditionMatrix(String workflow, String name) {
+  expect(
+    workflow,
+    contains('edition: [work, automotion]'),
+    reason: '$name must build both build-bound editions',
+  );
+  expect(
+    workflow,
+    contains('MAPNOTE_EDITION: \${{ matrix.edition }}'),
+    reason: '$name must inject the edition from the build matrix',
+  );
+}
+
 void _assertNoDirectSecretShellExpansion(String workflow, String name) {
   for (final String line in workflow.split('\n')) {
     if (line.contains(r'${{ secrets.') &&
@@ -77,10 +90,16 @@ void main() {
       );
       expect(workflow, contains('retention-days: 1'));
       expect(workflow, contains('if-no-files-found: error'));
-      expect(workflow, contains('APP_EDITION: personal'));
+      _assertEditionMatrix(workflow, 'android-release.yml');
+      expect(workflow, contains(r'--flavor "$MAPNOTE_EDITION"'));
       expect(
         workflow,
-        contains(r'--dart-define="APP_EDITION=$APP_EDITION"'),
+        contains(r'--dart-define="MAPNOTE_EDITION=$MAPNOTE_EDITION"'),
+      );
+      expect(workflow, isNot(contains('APP_EDITION')));
+      expect(
+        workflow,
+        contains(r'build/app/outputs/flutter-apk/app-${{ matrix.edition }}-release.apk'),
       );
       _assertNoDirectSecretShellExpansion(workflow, 'android-release.yml');
       _assertPinnedActions(workflow, 'android-release.yml');
@@ -97,14 +116,21 @@ void main() {
       expect(workflow, contains('if-no-files-found: error'));
       expect(workflow, contains("type == \"service_account\""));
       expect(workflow, contains('FIREBASE_SERVICE_ACCOUNT_KEY'));
-      expect(workflow, contains('APP_EDITION: personal'));
+      _assertEditionMatrix(workflow, 'firebase-distribution.yml');
+      expect(workflow, contains(r'--flavor "$MAPNOTE_EDITION"'));
       expect(
         workflow,
-        contains(r'--dart-define="APP_EDITION=$APP_EDITION"'),
+        contains(r'--dart-define="MAPNOTE_EDITION=$MAPNOTE_EDITION"'),
       );
+      expect(workflow, isNot(contains('APP_EDITION')));
       expect(workflow, contains('Record artifact digest'));
       expect(workflow, contains('Verify distributed APK digest'));
-      expect(workflow, contains('needs.build.outputs.apk_sha256'));
+      expect(workflow, contains('apk.sha256'));
+      expect(
+        workflow,
+        contains(r'build/app/outputs/flutter-apk/app-${{ matrix.edition }}-release.apk'),
+      );
+      expect(workflow, isNot(contains('needs.build.outputs.apk_sha256')));
       _assertNoDirectSecretShellExpansion(workflow, 'firebase-distribution.yml');
       _assertPinnedActions(workflow, 'firebase-distribution.yml');
     });

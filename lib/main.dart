@@ -67,11 +67,20 @@ Future<void> main() async {
 
   // --- Offline-first storage -------------------------------------------------
   await Hive.initFlutter();
+  // The Work Edition never mounts the AutoMotion subsystem, so it does not even
+  // open the sensor-derived boxes. HiveDatabase falls back to settingsBox for
+  // callers that are never exercised in this edition.
+  final bool automotionEnabled =
+      EditionCapabilities.fromBuild().automotionEnabled;
   final HiveDatabase database = HiveDatabase(
     placesBox: await Hive.openBox<dynamic>(AppConfig.placesBoxName),
     settingsBox: await Hive.openBox<dynamic>(AppConfig.settingsBoxName),
-    gpsDailyBox: await Hive.openBox<dynamic>(AppConfig.gpsDailyBoxName),
-    autoMotionBox: await Hive.openBox<dynamic>(AppConfig.autoMotionBoxName),
+    gpsDailyBox: automotionEnabled
+        ? await Hive.openBox<dynamic>(AppConfig.gpsDailyBoxName)
+        : null,
+    autoMotionBox: automotionEnabled
+        ? await Hive.openBox<dynamic>(AppConfig.autoMotionBoxName)
+        : null,
   );
 
   runApp(

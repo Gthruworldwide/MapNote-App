@@ -74,6 +74,27 @@ android {
         versionName = flutter.versionName
     }
 
+    // Two build-bound editions. The `work` flavour removes the AutoMotion-only
+    // permissions and the tracking foreground service through its own manifest
+    // source set; the Dart side derives the same boundary from MAPNOTE_EDITION.
+    flavorDimensions += "edition"
+    productFlavors {
+        // Both flavours keep the same application id so the existing Firebase
+        // app registration and Drive OAuth client continue to work. The
+        // edition is distinguished by its Dart define and its Android manifest
+        // source set, not by a second package registration.
+        create("work") {
+            dimension = "edition"
+            versionNameSuffix = "-work"
+            manifestPlaceholders["mapnoteEdition"] = "work"
+        }
+        create("automotion") {
+            dimension = "edition"
+            versionNameSuffix = "-automotion"
+            manifestPlaceholders["mapnoteEdition"] = "automotion"
+        }
+    }
+
     signingConfigs {
         // `maybeCreate` keeps this idempotent: AGP may already expose a
         // "release" signing config, and creating it twice would fail the build.

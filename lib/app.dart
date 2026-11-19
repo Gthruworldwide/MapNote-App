@@ -88,6 +88,10 @@ class _MapNoteAppState extends ConsumerState<MapNoteApp>
     // before the activity is resumed is dropped by Android.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
+      // The Work Edition is built without vehicle sensors, background location
+      // or the tracking foreground service: creating this controller would
+      // start all three, so it must never be read on that path.
+      if (!ref.read(automotionAvailableProvider)) return;
       if (!ref.read(autoMotionEnabledProvider)) return;
       ref.read(autoMotionControllerProvider);
     });

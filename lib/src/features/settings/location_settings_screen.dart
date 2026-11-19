@@ -30,10 +30,11 @@ class LocationSettingsScreen extends ConsumerWidget {
             title: l10n.sectionLocationServices,
             child: _buildLocationCard(context, ref, l10n, location),
           ),
-          SettingsSection(
-            title: l10n.autoMotionSection,
-            child: _buildTrackingCard(context, ref, l10n),
-          ),
+          if (ref.watch(automotionAvailableProvider))
+            SettingsSection(
+              title: l10n.autoMotionSection,
+              child: _buildTrackingCard(context, ref, l10n),
+            ),
         ],
       ),
     );
@@ -180,6 +181,7 @@ class LocationSettingsScreen extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
   ) async {
+    if (!ref.read(automotionAvailableProvider)) return;
     await ref.read(locationStatusProvider.notifier).requestAccessFromUser();
     if (!context.mounted) return;
     if (ref.read(gpsTrackingEnabledProvider)) {

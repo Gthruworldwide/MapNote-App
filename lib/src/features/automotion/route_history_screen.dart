@@ -38,6 +38,12 @@ class RouteHistoryScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final AppLocalizations l10n = AppLocalizations.of(context);
+    if (!ref.watch(automotionAvailableProvider)) {
+      return Scaffold(
+        appBar: AppBar(title: Text(l10n.motionHistoryTitle)),
+        body: Center(child: Text(l10n.editionFeatureUnavailable)),
+      );
+    }
     final DateTime day = ref.watch(selectedDateProvider);
     final DailyMotionSummary summary = ref.watch(dailyMotionSummaryProvider);
     final MotionHistoryViewMode mode = ref.watch(motionHistoryViewModeProvider);

@@ -193,7 +193,7 @@ class _CompactActionBar extends ConsumerWidget {
 
     final Place? latest = await repository.getById(place.id);
     final Place updated = (latest ?? place).copyWith(isLocked: locked);
-    await repository.save(updated);
+    await repository.saveLocalEdit(updated);
     await notifier.reload();
 
     if (context.mounted) {

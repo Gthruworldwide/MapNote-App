@@ -24,6 +24,30 @@ class _MemoryDataSource extends PlaceLocalDataSource {
   @override
   Future<List<Place>> getAll() async => store.values.toList();
 
+  // The sync layer reads/writes through these two methods. Back them with the
+  // in-memory store so a place inserted mid-download is visible to the merge
+  // exactly as it would be in Hive.
+  @override
+  Future<List<Place>> getAllIncludingDeleted() async =>
+      store.values.toList();
+
+  @override
+  Future<void> applyMerged({
+    required Iterable<Place> resolved,
+    required Set<String> baselineIds,
+  }) async {
+    final Map<String, Place> entries = <String, Place>{
+      for (final Place place in resolved) place.id: place,
+    };
+    // Preserve anything created after the baseline was captured.
+    for (final String id in store.keys.toSet().difference(baselineIds)) {
+      entries.putIfAbsent(id, () => store[id]!);
+    }
+    store
+      ..clear()
+      ..addEntries(entries.entries);
+  }
+
   @override
   Future<RestoreApplyResult> applyBackup({
     required Iterable<Place> backupPlaces,
@@ -158,7 +182,7 @@ void main() {
     await tempDir.delete(recursive: true);
   });
 
-  test('automatic restore re-checks emptiness after the download', () async {
+  test('a place added during download is merged, never overwritten', () async {
     final Future<SyncOutcome> outcome = sync.syncNow();
     final Place added = Place(
       id: 'added-locally',
@@ -168,18 +192,22 @@ void main() {
       longitude: 2,
       timestamp: DateTime.utc(2026, 11, 19),
     );
+    // Inserted after `synchronize` captured its baseline but before the
+    // download completes — the exact race the merge must survive.
     dataSource.store[added.id] = added;
     drive.gate.complete(backupJson(places: <Map<String, dynamic>>[
       backupPlace(),
     ]));
 
-    expect(await outcome, SyncOutcome.uploaded);
+    expect(await outcome, SyncOutcome.merged);
     expect(dataSource.store.containsKey(added.id), isTrue);
-    expect(dataSource.store.containsKey('p1'), isFalse);
+    expect(dataSource.store.containsKey('p1'), isTrue);
     expect(drive.downloads, 1);
+    // A successful Drive round-trip is the only thing that stamps trust.
+    expect(settings.lastSynced, isNotNull);
   });
 
-  test('explicit restore preserves places added while downloading', () async {
+  test('explicit restore keeps local places and merges the cloud copy', () async {
     final Place original = Place(
       id: 'original',
       name: 'Original',
@@ -204,9 +232,13 @@ void main() {
       backupPlace(),
     ]));
 
-    expect(await restored, 1);
-    expect(dataSource.store.keys, containsAll(<String>['p1', added.id]));
-    expect(dataSource.store.containsKey(original.id), isFalse);
+    // No local record is silently replaced: the pre-existing place, the one
+    // added mid-download, and the cloud record all survive the merge.
+    expect(await restored, 2);
+    expect(
+      dataSource.store.keys,
+      containsAll(<String>['p1', added.id, original.id]),
+    );
   });
 
   test('a remote last_synced never becomes local session-trust evidence',
