@@ -261,6 +261,18 @@
       "to": { "type": "String" }
     }
   },
+  "autoMotionQualityGood": "Good",
+  "autoMotionQualityFair": "Fair",
+  "autoMotionQualityPoor": "Poor",
+  "@autoMotionQualityGood": {
+    "placeholders": {}
+  },
+  "@autoMotionQualityFair": {
+    "placeholders": {}
+  },
+  "@autoMotionQualityPoor": {
+    "placeholders": {}
+  },
   "@autoMotionDaysRecorded": {
     "placeholders": {
       "count": {
@@ -360,6 +372,16 @@
   "noDeviceSecurityWarning": "No lock screen or biometrics on this device, so verification was skipped.",
 
   "sectionPrivacy": "Privacy & security",
+  "sectionPrivacyData": "Privacy & Data",
+  "sectionPrivacyDataSubtitle": "Review and manage your data",
+  "sectionAppLock": "App Lock",
+  "sessionTimeoutMinutes": "{minutes, plural, =1{1 minute} other{{minutes} minutes}}",
+  "@sessionTimeoutMinutes": {
+    "placeholders": {
+      "minutes": { "type": "int" }
+    }
+  },
+
   "hiddenVault": "Hidden Vault",
   "hiddenVaultSubtitle": "{count, plural, =0{No hidden locations} =1{1 hidden location} other{{count} hidden locations}}",
   "@hiddenVaultSubtitle": {

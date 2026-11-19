@@ -1,0 +1,1748 @@
+﻿==================================================
+🚀 Starting MapNote Local Verification & Install 
+==================================================
+
+[1/5] Running Static Analysis (flutter analyze)...
+Analyzing RouteNote App...                                      
+No issues found! (ran in 12.6s)
+✅ Static Analysis passed with 0 issues.
+
+[2/5] Running Unit & Widget Tests (flutter test)...
+00:00 +0: loading D:/RouteNote App/test/accessibility_test.dart
+00:00 +0: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:00 +1: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:00 +2: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:00 +3: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:00 +4: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:00 +5: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:00 +6: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:00 +7: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:00 +8: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:00 +9: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:00 +10: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:00 +11: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:00 +12: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:00 +13: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:00 +14: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:00 +15: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:00 +16: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:00 +17: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:00 +18: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:00 +19: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:00 +20: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:00 +21: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:00 +22: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:00 +23: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:00 +24: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:00 +25: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:00 +26: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:00 +27: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:00 +28: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:00 +29: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:00 +30: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:00 +31: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:00 +32: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:00 +33: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:00 +34: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:00 +35: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:00 +36: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:00 +37: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:00 +38: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:00 +39: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:00 +40: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:00 +41: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:00 +42: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:00 +43: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:00 +44: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:00 +45: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:00 +46: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:00 +47: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:00 +48: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:00 +49: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:00 +50: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:00 +51: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:00 +52: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:00 +53: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:00 +54: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:00 +55: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:01 +56: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:01 +57: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:01 +58: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:01 +59: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:01 +60: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:01 +61: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:01 +62: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:01 +63: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:01 +64: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:01 +65: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:01 +66: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:01 +67: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:01 +68: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:01 +69: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:01 +70: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:01 +71: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:01 +72: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:01 +73: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:01 +74: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:01 +75: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:01 +76: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:01 +77: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:01 +78: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:01 +79: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:01 +80: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:01 +81: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:01 +82: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:01 +83: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:01 +84: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:01 +85: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:01 +86: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:01 +87: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:01 +88: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:01 +89: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:01 +90: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:01 +91: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:01 +92: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:01 +93: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:01 +94: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:01 +95: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:01 +96: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:01 +97: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:01 +98: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:01 +99: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:01 +100: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:01 +101: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:01 +102: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:01 +103: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:01 +104: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:01 +105: D:/RouteNote App/test/accessibility_test.dart: dynamic type & overflow safety PlaceCard does not overflow at 200% text scale
+00:01 +106: D:/RouteNote App/test/adaptive_sampling_manager_test.dart: AdaptiveSamplingNotifier starts from the conservative stationary defaults
+00:01 +107: D:/RouteNote App/test/adaptive_sampling_manager_test.dart: AdaptiveSamplingNotifier starts from the conservative stationary defaults
+00:01 +108: D:/RouteNote App/test/activity_state_manager_test.dart: noise tolerance (no false vehicle while indoors) a fidgeting phone on a desk never confirms a drive
+00:01 +109: D:/RouteNote App/test/activity_state_manager_test.dart: noise tolerance (no false vehicle while indoors) a fidgeting phone on a desk never confirms a drive
+00:01 +110: D:/RouteNote App/test/activity_state_manager_test.dart: noise tolerance (no false vehicle while indoors) a fidgeting phone on a desk never confirms a drive
+00:01 +111: D:/RouteNote App/test/activity_state_manager_test.dart: noise tolerance (no false vehicle while indoors) a fidgeting phone on a desk never confirms a drive
+00:01 +112: D:/RouteNote App/test/activity_state_manager_test.dart: noise tolerance (no false vehicle while indoors) a fidgeting phone on a desk never confirms a drive
+00:01 +113: D:/RouteNote App/test/activity_state_manager_test.dart: noise tolerance (no false vehicle while indoors) a fidgeting phone on a desk never confirms a drive
+00:01 +114: D:/RouteNote App/test/accessibility_test.dart: reduce motion bottom sheets keep the house motion by default
+00:01 +115: D:/RouteNote App/test/activity_state_manager_test.dart: noise tolerance (no false vehicle while indoors) a gait at a slow cadence is still rejected
+00:01 +116: D:/RouteNote App/test/accessibility_test.dart: reduce motion SheetEntrance drops its fade/rise when reduce-motion is on
+00:01 +117: D:/RouteNote App/test/accessibility_test.dart: reduce motion StaggeredReveal is fully visible when reduce-motion is on
+00:01 +118: D:/RouteNote App/test/accessibility_test.dart: reduce motion page turns are bypassed when reduce-motion is on
+00:02 +119: D:/RouteNote App/test/add_place_screen_test.dart: a shared location pre-fills the manual fields
+00:02 +120: D:/RouteNote App/test/add_place_screen_test.dart: a shared location pre-fills the manual fields
+00:02 +121: D:/RouteNote App/test/add_place_screen_test.dart: a shared location pre-fills the manual fields
+00:02 +122: D:/RouteNote App/test/add_place_screen_test.dart: a shared location pre-fills the manual fields
+00:02 +123: D:/RouteNote App/test/add_place_screen_test.dart: a shared location pre-fills the manual fields
+00:02 +124: D:/RouteNote App/test/add_place_screen_test.dart: a shared location pre-fills the manual fields
+00:02 +125: D:/RouteNote App/test/add_place_screen_test.dart: a shared location pre-fills the manual fields
+00:02 +126: D:/RouteNote App/test/add_place_screen_test.dart: a shared location pre-fills the manual fields
+00:02 +127: D:/RouteNote App/test/add_place_screen_test.dart: a shared location pre-fills the manual fields
+00:02 +128: D:/RouteNote App/test/add_place_screen_test.dart: a shared location pre-fills the manual fields
+00:02 +129: D:/RouteNote App/test/add_place_screen_test.dart: a shared location pre-fills the manual fields
+00:02 +130: D:/RouteNote App/test/add_place_screen_test.dart: a shared location pre-fills the manual fields
+00:02 +131: D:/RouteNote App/test/add_place_screen_test.dart: a shared location pre-fills the manual fields
+00:02 +132: D:/RouteNote App/test/add_place_screen_test.dart: a shared location pre-fills the manual fields
+00:02 +133: D:/RouteNote App/test/add_place_screen_test.dart: a shared location pre-fills the manual fields
+00:03 +133: D:/RouteNote App/test/anti_gravity_benchmark_test.dart: AntiGravityMotionAdapter Stress & Benchmark Suite Stress Test: Ingest and process 5,000 telemetry points (< 2.0 ms latency)
+===============================================================
+🚀 ANTI-GRAVITY MOTION PIPELINE BENCHMARK (5,000 Points)
+===============================================================
+Total Points Processed:   5000
+Total Pipeline Time:      56 ms
+Average Processing Latency: 0.0112 ms / point
+50th Percentile (p50):    0.0050 ms
+95th Percentile (p95):    0.0170 ms
+99th Percentile (p99):    0.0620 ms
+Throughput:               89286 points/sec
+Target Threshold:         < 2.0 ms
+Result:                   PASSED ✅
+===============================================================
+
+00:03 +134: D:/RouteNote App/test/add_place_screen_test.dart: a shared location pre-fills the manual fields
+00:03 +135: D:/RouteNote App/test/add_place_screen_test.dart: a shared location pre-fills the manual fields
+00:03 +136: D:/RouteNote App/test/add_place_screen_test.dart: a shared location pre-fills the manual fields
+00:04 +137: D:/RouteNote App/test/add_place_screen_test.dart: a shared location pre-fills the manual fields
+00:04 +137: D:/RouteNote App/test/analytics_service_test.dart: unknown event names and parameter maps cannot reach the sink
+AnalyticsService refused unknown event: place_saved_with_notes
+00:04 +138: D:/RouteNote App/test/add_place_screen_test.dart: a shared location pre-fills the manual fields
+00:04 +139: D:/RouteNote App/test/add_place_screen_test.dart: a shared location pre-fills the manual fields
+00:04 +140: D:/RouteNote App/test/add_place_screen_test.dart: a shared location pre-fills the manual fields
+00:04 +141: D:/RouteNote App/test/add_place_screen_test.dart: a shared location pre-fills the manual fields
+00:04 +142: D:/RouteNote App/test/add_place_screen_test.dart: a shared location pre-fills the manual fields
+00:04 +143: D:/RouteNote App/test/add_place_screen_test.dart: a shared location pre-fills the manual fields
+00:04 +144: D:/RouteNote App/test/add_place_screen_test.dart: a shared location pre-fills the manual fields
+00:04 +145: D:/RouteNote App/test/add_place_screen_test.dart: a shared location pre-fills the manual fields
+00:04 +146: D:/RouteNote App/test/add_place_screen_test.dart: a shared location pre-fills the manual fields
+00:04 +147: D:/RouteNote App/test/add_place_screen_test.dart: a shared location pre-fills the manual fields
+00:04 +148: D:/RouteNote App/test/add_place_screen_test.dart: a shared location pre-fills the manual fields
+00:04 +149: D:/RouteNote App/test/analytics_service_test.dart: opening the compass sheet logs qibla_compass_opened once
+00:05 +149: D:/RouteNote App/test/app_logger_test.dart: logs error message to app_logs.txt and reads them back
+[2026-11-19T18:31:12.640177] [ERROR] [SYNC] Failed to connect to Google Drive
+  ErrorDetails: Network Timeout
+
+00:05 +150: D:/RouteNote App/test/analytics_service_test.dart: opening the compass sheet logs qibla_compass_opened once
+00:05 +150: D:/RouteNote App/test/app_logger_test.dart: clears log file when clearLogs is called
+[2026-11-19T18:31:12.701657] [WARNING] [LOCATION_PARSER] Invalid coordinates format
+
+00:05 +151: D:/RouteNote App/test/analytics_service_test.dart: opening the compass sheet logs qibla_compass_opened once
+00:05 +151: D:/RouteNote App/test/app_logger_test.dart: redacts credential-like values before writing
+[2026-11-19T18:31:12.726319] [ERROR] [SYNC] request failed
+  ErrorDetails: [redacted] [redacted]
+
+00:05 +152: D:/RouteNote App/test/analytics_service_test.dart: opening the compass sheet logs qibla_compass_opened once
+00:05 +152: D:/RouteNote App/test/app_logger_test.dart: bounds the log file and trims older entries
+[2026-11-19T18:31:12.746481] [INFO] [UI] performance entry number 0
+
+[2026-11-19T18:31:12.753015] [INFO] [UI] performance entry number 1
+
+[2026-11-19T18:31:12.764639] [INFO] [UI] performance entry number 2
+
+[2026-11-19T18:31:12.776679] [INFO] [UI] performance entry number 3
+
+[2026-11-19T18:31:12.783033] [INFO] [UI] performance entry number 4
+
+[2026-11-19T18:31:12.790673] [INFO] [UI] performance entry number 5
+
+[2026-11-19T18:31:12.798677] [INFO] [UI] performance entry number 6
+
+[2026-11-19T18:31:12.805096] [INFO] [UI] performance entry number 7
+
+[2026-11-19T18:31:12.855796] [INFO] [UI] performance entry number 8
+
+[2026-11-19T18:31:12.884894] [INFO] [UI] performance entry number 9
+
+[2026-11-19T18:31:12.919620] [INFO] [UI] performance entry number 10
+
+[2026-11-19T18:31:13.002738] [INFO] [UI] performance entry number 11
+
+[2026-11-19T18:31:13.058452] [INFO] [UI] performance entry number 12
+
+[2026-11-19T18:31:13.085122] [INFO] [UI] performance entry number 13
+
+[2026-11-19T18:31:13.108677] [INFO] [UI] performance entry number 14
+
+[2026-11-19T18:31:13.134281] [INFO] [UI] performance entry number 15
+
+[2026-11-19T18:31:13.156325] [INFO] [UI] performance entry number 16
+
+[2026-11-19T18:31:13.178498] [INFO] [UI] performance entry number 17
+
+00:05 +153: D:/RouteNote App/test/analytics_service_test.dart: opening the compass sheet logs qibla_compass_opened once
+00:05 +153: D:/RouteNote App/test/app_logger_test.dart: bounds the log file and trims older entries
+[2026-11-19T18:31:13.241877] [INFO] [UI] performance entry number 18
+
+00:05 +153: D:/RouteNote App/test/app_observer_service_test.dart: never persists the stack trace
+MapNote issue [sync]: dart:async  #0 fakeStackFrame (package:app/main.dart:1:1)
+00:05 +154: D:/RouteNote App/test/analytics_service_test.dart: opening the compass sheet logs qibla_compass_opened once
+00:05 +154: D:/RouteNote App/test/app_logger_test.dart: bounds the log file and trims older entries
+[2026-11-19T18:31:13.289684] [INFO] [UI] performance entry number 19
+
+00:05 +155: D:/RouteNote App/test/analytics_service_test.dart: opening the compass sheet logs qibla_compass_opened once
+00:05 +155: D:/RouteNote App/test/app_logger_test.dart: bounds the log file and trims older entries
+[2026-11-19T18:31:13.353027] [INFO] [UI] performance entry number 20
+
+[2026-11-19T18:31:13.389628] [INFO] [UI] performance entry number 21
+
+00:05 +156: D:/RouteNote App/test/analytics_service_test.dart: opening the compass sheet logs qibla_compass_opened once
+00:05 +156: D:/RouteNote App/test/app_logger_test.dart: bounds the log file and trims older entries
+[2026-11-19T18:31:13.436368] [INFO] [UI] performance entry number 22
+
+[2026-11-19T18:31:13.475523] [INFO] [UI] performance entry number 23
+
+00:06 +157: D:/RouteNote App/test/analytics_service_test.dart: opening the compass sheet logs qibla_compass_opened once
+00:06 +157: D:/RouteNote App/test/app_logger_test.dart: bounds the log file and trims older entries
+[2026-11-19T18:31:13.593802] [INFO] [UI] performance entry number 24
+
+00:06 +158: D:/RouteNote App/test/analytics_service_test.dart: opening the compass sheet logs qibla_compass_opened once
+00:06 +159: D:/RouteNote App/test/analytics_service_test.dart: opening the compass sheet logs qibla_compass_opened once
+00:06 +160: D:/RouteNote App/test/analytics_service_test.dart: opening the compass sheet logs qibla_compass_opened once
+00:06 +161: D:/RouteNote App/test/analytics_service_test.dart: opening the compass sheet logs qibla_compass_opened once
+00:06 +162: D:/RouteNote App/test/analytics_service_test.dart: opening the compass sheet logs qibla_compass_opened once
+00:06 +163: D:/RouteNote App/test/analytics_service_test.dart: opening the compass sheet logs qibla_compass_opened once
+00:06 +164: D:/RouteNote App/test/analytics_service_test.dart: opening the compass sheet logs qibla_compass_opened once
+00:06 +165: D:/RouteNote App/test/analytics_service_test.dart: opening the compass sheet logs qibla_compass_opened once
+00:06 +166: D:/RouteNote App/test/analytics_service_test.dart: opening the compass sheet logs qibla_compass_opened once
+00:06 +166: D:/RouteNote App/test/app_logger_test.dart: bounds the log file and trims older entries
+[2026-11-19T18:31:13.660483] [INFO] [UI] performance entry number 25
+
+00:06 +167: D:/RouteNote App/test/analytics_service_test.dart: opening the compass sheet logs qibla_compass_opened once
+00:06 +168: D:/RouteNote App/test/analytics_service_test.dart: opening the compass sheet logs qibla_compass_opened once
+00:06 +168: D:/RouteNote App/test/app_logger_test.dart: bounds the log file and trims older entries
+[2026-11-19T18:31:13.674828] [INFO] [UI] performance entry number 26
+
+00:06 +169: D:/RouteNote App/test/analytics_service_test.dart: opening the compass sheet logs qibla_compass_opened once
+00:06 +169: D:/RouteNote App/test/app_logger_test.dart: bounds the log file and trims older entries
+[2026-11-19T18:31:13.688360] [INFO] [UI] performance entry number 27
+
+00:06 +170: D:/RouteNote App/test/analytics_service_test.dart: opening the compass sheet logs qibla_compass_opened once
+00:06 +170: D:/RouteNote App/test/app_logger_test.dart: bounds the log file and trims older entries
+[2026-11-19T18:31:13.701776] [INFO] [UI] performance entry number 28
+
+00:06 +171: D:/RouteNote App/test/analytics_service_test.dart: opening the compass sheet logs qibla_compass_opened once
+00:06 +172: D:/RouteNote App/test/analytics_service_test.dart: opening the compass sheet logs qibla_compass_opened once
+00:06 +172: D:/RouteNote App/test/app_logger_test.dart: bounds the log file and trims older entries
+[2026-11-19T18:31:13.715849] [INFO] [UI] performance entry number 29
+
+00:06 +173: D:/RouteNote App/test/analytics_service_test.dart: opening the compass sheet logs qibla_compass_opened once
+00:06 +174: D:/RouteNote App/test/analytics_service_test.dart: opening the compass sheet logs qibla_compass_opened once
+00:06 +174: D:/RouteNote App/test/app_logger_test.dart: bounds the log file and trims older entries
+[2026-11-19T18:31:13.729437] [INFO] [UI] performance entry number 30
+
+00:06 +175: D:/RouteNote App/test/analytics_service_test.dart: opening the compass sheet logs qibla_compass_opened once
+00:06 +175: D:/RouteNote App/test/app_logger_test.dart: bounds the log file and trims older entries
+[2026-11-19T18:31:13.741969] [INFO] [UI] performance entry number 31
+
+00:06 +176: D:/RouteNote App/test/analytics_service_test.dart: opening the compass sheet logs qibla_compass_opened once
+00:06 +176: D:/RouteNote App/test/app_logger_test.dart: bounds the log file and trims older entries
+[2026-11-19T18:31:13.752723] [INFO] [UI] performance entry number 32
+
+00:06 +177: D:/RouteNote App/test/analytics_service_test.dart: opening the compass sheet logs qibla_compass_opened once
+00:06 +177: D:/RouteNote App/test/app_logger_test.dart: bounds the log file and trims older entries
+[2026-11-19T18:31:13.764249] [INFO] [UI] performance entry number 33
+
+[2026-11-19T18:31:13.772875] [INFO] [UI] performance entry number 34
+
+[2026-11-19T18:31:13.778389] [INFO] [UI] performance entry number 35
+
+[2026-11-19T18:31:13.784412] [INFO] [UI] performance entry number 36
+
+00:06 +178: D:/RouteNote App/test/analytics_service_test.dart: opening the compass sheet logs qibla_compass_opened once
+00:06 +178: D:/RouteNote App/test/app_logger_test.dart: bounds the log file and trims older entries
+[2026-11-19T18:31:13.791944] [INFO] [UI] performance entry number 37
+
+[2026-11-19T18:31:13.799983] [INFO] [UI] performance entry number 38
+
+[2026-11-19T18:31:13.809850] [INFO] [UI] performance entry number 39
+
+[2026-11-19T18:31:13.819373] [INFO] [UI] performance entry number 40
+
+[2026-11-19T18:31:13.826894] [INFO] [UI] performance entry number 41
+
+[2026-11-19T18:31:13.833422] [INFO] [UI] performance entry number 42
+
+[2026-11-19T18:31:13.840941] [INFO] [UI] performance entry number 43
+
+[2026-11-19T18:31:13.850463] [INFO] [UI] performance entry number 44
+
+[2026-11-19T18:31:13.858463] [INFO] [UI] performance entry number 45
+
+[2026-11-19T18:31:13.865986] [INFO] [UI] performance entry number 46
+
+[2026-11-19T18:31:13.875280] [INFO] [UI] performance entry number 47
+
+[2026-11-19T18:31:13.883389] [INFO] [UI] performance entry number 48
+
+[2026-11-19T18:31:13.890504] [INFO] [UI] performance entry number 49
+
+[2026-11-19T18:31:13.896512] [INFO] [UI] performance entry number 50
+
+[2026-11-19T18:31:13.905030] [INFO] [UI] performance entry number 51
+
+[2026-11-19T18:31:13.913121] [INFO] [UI] performance entry number 52
+
+[2026-11-19T18:31:13.920642] [INFO] [UI] performance entry number 53
+
+[2026-11-19T18:31:13.929584] [INFO] [UI] performance entry number 54
+
+[2026-11-19T18:31:13.937587] [INFO] [UI] performance entry number 55
+
+[2026-11-19T18:31:13.947002] [INFO] [UI] performance entry number 56
+
+[2026-11-19T18:31:13.955680] [INFO] [UI] performance entry number 57
+
+[2026-11-19T18:31:13.965242] [INFO] [UI] performance entry number 58
+
+[2026-11-19T18:31:13.973769] [INFO] [UI] performance entry number 59
+
+00:06 +179: D:/RouteNote App/test/analytics_service_test.dart: opening the compass sheet logs qibla_compass_opened once
+00:06 +179: D:/RouteNote App/test/app_logger_test.dart: serialises concurrent writes without losing an entry
+[2026-11-19T18:31:13.996344] [INFO] [UI] concurrent entry 0
+
+[2026-11-19T18:31:13.996344] [INFO] [UI] concurrent entry 1
+
+[2026-11-19T18:31:13.997343] [INFO] [UI] concurrent entry 2
+
+[2026-11-19T18:31:13.997343] [INFO] [UI] concurrent entry 3
+
+[2026-11-19T18:31:13.997343] [INFO] [UI] concurrent entry 4
+
+[2026-11-19T18:31:13.997343] [INFO] [UI] concurrent entry 5
+
+[2026-11-19T18:31:13.998343] [INFO] [UI] concurrent entry 6
+
+[2026-11-19T18:31:13.998343] [INFO] [UI] concurrent entry 7
+
+[2026-11-19T18:31:13.998343] [INFO] [UI] concurrent entry 8
+
+[2026-11-19T18:31:13.998343] [INFO] [UI] concurrent entry 9
+
+[2026-11-19T18:31:13.998343] [INFO] [UI] concurrent entry 10
+
+[2026-11-19T18:31:13.999457] [INFO] [UI] concurrent entry 11
+
+[2026-11-19T18:31:13.999968] [INFO] [UI] concurrent entry 12
+
+[2026-11-19T18:31:13.999968] [INFO] [UI] concurrent entry 13
+
+[2026-11-19T18:31:13.999968] [INFO] [UI] concurrent entry 14
+
+[2026-11-19T18:31:13.999968] [INFO] [UI] concurrent entry 15
+
+[2026-11-19T18:31:14.000980] [INFO] [UI] concurrent entry 16
+
+[2026-11-19T18:31:14.000980] [INFO] [UI] concurrent entry 17
+
+[2026-11-19T18:31:14.000980] [INFO] [UI] concurrent entry 18
+
+[2026-11-19T18:31:14.000980] [INFO] [UI] concurrent entry 19
+
+[2026-11-19T18:31:14.001981] [INFO] [UI] concurrent entry 20
+
+[2026-11-19T18:31:14.001981] [INFO] [UI] concurrent entry 21
+
+[2026-11-19T18:31:14.001981] [INFO] [UI] concurrent entry 22
+
+[2026-11-19T18:31:14.001981] [INFO] [UI] concurrent entry 23
+
+[2026-11-19T18:31:14.001981] [INFO] [UI] concurrent entry 24
+
+[2026-11-19T18:31:14.001981] [INFO] [UI] concurrent entry 25
+
+[2026-11-19T18:31:14.002976] [INFO] [UI] concurrent entry 26
+
+[2026-11-19T18:31:14.002976] [INFO] [UI] concurrent entry 27
+
+[2026-11-19T18:31:14.002976] [INFO] [UI] concurrent entry 28
+
+[2026-11-19T18:31:14.002976] [INFO] [UI] concurrent entry 29
+
+[2026-11-19T18:31:14.002976] [INFO] [UI] concurrent entry 30
+
+[2026-11-19T18:31:14.002976] [INFO] [UI] concurrent entry 31
+
+[2026-11-19T18:31:14.002976] [INFO] [UI] concurrent entry 32
+
+[2026-11-19T18:31:14.003975] [INFO] [UI] concurrent entry 33
+
+[2026-11-19T18:31:14.003975] [INFO] [UI] concurrent entry 34
+
+[2026-11-19T18:31:14.003975] [INFO] [UI] concurrent entry 35
+
+[2026-11-19T18:31:14.003975] [INFO] [UI] concurrent entry 36
+
+[2026-11-19T18:31:14.004977] [INFO] [UI] concurrent entry 37
+
+[2026-11-19T18:31:14.004977] [INFO] [UI] concurrent entry 38
+
+[2026-11-19T18:31:14.004977] [INFO] [UI] concurrent entry 39
+
+00:06 +180: D:/RouteNote App/test/analytics_service_test.dart: opening the compass sheet logs qibla_compass_opened once
+00:06 +180: D:/RouteNote App/test/app_logger_test.dart: trims whole lines without splitting multi-byte Arabic text
+[2026-11-19T18:31:14.216054] [INFO] [UI] الإحداثيات 0
+
+[2026-11-19T18:31:14.225589] [INFO] [UI] الإحداثيات 1
+
+[2026-11-19T18:31:14.229426] [INFO] [UI] الإحداثيات 2
+
+[2026-11-19T18:31:14.233433] [INFO] [UI] الإحداثيات 3
+
+[2026-11-19T18:31:14.238431] [INFO] [UI] الإحداثيات 4
+
+[2026-11-19T18:31:14.243526] [INFO] [UI] الإحداثيات 5
+
+[2026-11-19T18:31:14.253777] [INFO] [UI] الإحداثيات 6
+
+[2026-11-19T18:31:14.264226] [INFO] [UI] الإحداثيات 7
+
+[2026-11-19T18:31:14.272552] [INFO] [UI] الإحداثيات 8
+
+[2026-11-19T18:31:14.282897] [INFO] [UI] الإحداثيات 9
+
+[2026-11-19T18:31:14.291433] [INFO] [UI] الإحداثيات 10
+
+[2026-11-19T18:31:14.299776] [INFO] [UI] الإحداثيات 11
+
+[2026-11-19T18:31:14.307287] [INFO] [UI] الإحداثيات 12
+
+[2026-11-19T18:31:14.314399] [INFO] [UI] الإحداثيات 13
+
+[2026-11-19T18:31:14.321603] [INFO] [UI] الإحداثيات 14
+
+[2026-11-19T18:31:14.331272] [INFO] [UI] الإحداثيات 15
+
+[2026-11-19T18:31:14.338279] [INFO] [UI] الإحداثيات 16
+
+[2026-11-19T18:31:14.345823] [INFO] [UI] الإحداثيات 17
+
+[2026-11-19T18:31:14.354898] [INFO] [UI] الإحداثيات 18
+
+[2026-11-19T18:31:14.364455] [INFO] [UI] الإحداثيات 19
+
+[2026-11-19T18:31:14.371975] [INFO] [UI] الإحداثيات 20
+
+[2026-11-19T18:31:14.380501] [INFO] [UI] الإحداثيات 21
+
+[2026-11-19T18:31:14.388511] [INFO] [UI] الإحداثيات 22
+
+[2026-11-19T18:31:14.394635] [INFO] [UI] الإحداثيات 23
+
+[2026-11-19T18:31:14.402807] [INFO] [UI] الإحداثيات 24
+
+[2026-11-19T18:31:14.411075] [INFO] [UI] الإحداثيات 25
+
+[2026-11-19T18:31:14.418597] [INFO] [UI] الإحداثيات 26
+
+[2026-11-19T18:31:14.427622] [INFO] [UI] الإحداثيات 27
+
+[2026-11-19T18:31:14.437145] [INFO] [UI] الإحداثيات 28
+
+[2026-11-19T18:31:14.444689] [INFO] [UI] الإحداثيات 29
+
+[2026-11-19T18:31:14.462626] [INFO] [UI] الإحداثيات 30
+
+00:07 +181: D:/RouteNote App/test/analytics_service_test.dart: opening the compass sheet logs qibla_compass_opened once
+00:07 +181: D:/RouteNote App/test/app_logger_test.dart: trims whole lines without splitting multi-byte Arabic text
+[2026-11-19T18:31:14.655220] [INFO] [UI] الإحداثيات 31
+
+[2026-11-19T18:31:14.852544] [INFO] [UI] الإحداثيات 32
+
+[2026-11-19T18:31:15.021948] [INFO] [UI] الإحداثيات 33
+
+[2026-11-19T18:31:15.172100] [INFO] [UI] الإحداثيات 34
+
+00:07 +182: D:/RouteNote App/test/app_logger_test.dart: trims whole lines without splitting multi-byte Arabic text
+00:07 +182: D:/RouteNote App/test/auth_session_test.dart: cached session renders immediately without a loading state
+MapNote: silent restore found no session; keeping cached state (logged in = true)
+00:07 +182: D:/RouteNote App/test/app_logger_test.dart: trims whole lines without splitting multi-byte Arabic text
+[2026-11-19T18:31:15.280496] [INFO] [UI] الإحداثيات 35
+
+[2026-11-19T18:31:15.382123] [INFO] [UI] الإحداثيات 36
+
+00:07 +183: D:/RouteNote App/test/app_logger_test.dart: trims whole lines without splitting multi-byte Arabic text
+00:07 +184: D:/RouteNote App/test/app_logger_test.dart: trims whole lines without splitting multi-byte Arabic text
+[2026-11-19T18:31:15.505660] [INFO] [UI] الإحداثيات 37
+
+[2026-11-19T18:31:15.636344] [INFO] [UI] الإحداثيات 38
+
+[2026-11-19T18:31:15.757630] [INFO] [UI] الإحداثيات 39
+
+00:08 +185: D:/RouteNote App/test/app_logger_test.dart: trims whole lines without splitting multi-byte Arabic text
+00:08 +186: D:/RouteNote App/test/analytics_service_test.dart: expanding the compass island logs the event, collapsing does not
+00:08 +187: D:/RouteNote App/test/add_place_screen_test.dart: the coordinate fields drive the Plus Code preview
+00:08 +188: D:/RouteNote App/test/automotion_dashboard_test.dart: driver mode shows the live current speed and today's totals
+00:08 +189: D:/RouteNote App/test/automotion_dashboard_test.dart: driver mode shows the live current speed and today's totals
+00:08 +189: D:/RouteNote App/test/auth_session_test.dart: a rebuild re-enters the silent restore at most zero times
+MapNote: silent restore found no session; keeping cached state (logged in = true)
+00:09 +190: D:/RouteNote App/test/automotion_dashboard_test.dart: driver mode shows the live current speed and today's totals
+00:09 +191: D:/RouteNote App/test/automotion_dashboard_test.dart: driver mode shows the live current speed and today's totals
+00:09 +192: D:/RouteNote App/test/automotion_dashboard_test.dart: driver mode shows the live current speed and today's totals
+00:09 +192: D:/RouteNote App/test/auth_session_test.dart: a null silent result keeps the cached session (no silent sign-out)
+MapNote: silent restore found no session; keeping cached state (logged in = true)
+00:09 +193: D:/RouteNote App/test/automotion_dashboard_test.dart: driver mode shows the live current speed and today's totals
+00:09 +193: D:/RouteNote App/test/auth_session_test.dart: a throwing silent restore keeps the cached session (no crash, no silent sign-out)
+[2026-11-19T18:31:17.215087] [ERROR] [AUTH] Silent sign-in restore failed
+  ErrorDetails: Bad state: platform unavailable
+  StackTrace: #0      _FakeAuthService.signInSilently ([redacted]
+#1      AuthNotifier._signInSilentlyInBackground (package:routenote[redacted]:1203:41)
+#2      AuthNotifier.build (package:routenote[redacted]:1154:17)
+#3      ElementWithFuture.handleFuture.<anonymous closure> (package:riverpod[redacted]:259:30)
+#4      ElementWithFuture._handleAsync (package:riverpod[redacted]:329:35)
+#5      ElementWithFuture.handleFuture (package:riverpod[redacted]:253:12)
+#6      $AsyncNotifierProviderElement.handleCreate (package:riverpod[redacted]:91:12)
+#7      AsyncNotifier.runBuild (package:riverpod[redacted]:37:47)
+#8      $ClassProviderElement.create (package:[redacted]_provider.dart:570:43)
+#9      ProviderElement.buildState (package:riverpod[redacted]:798:28)
+#10     ProviderElement.mount (package:riverpod[redacted]:634:7)
+#11     ProviderElement.flush (package:riverpod[redacted]:751:9)
+#12     $ProviderBaseImpl._addListener (package:[redacted].dart:166:24)
+#13     ProviderContainer.listen (package:riverpod[redacted]:1215:26)
+#14     ProviderContainer.read (package:riverpod[redacted]:1145:17)
+#15     main.<anonymous closure> ([redacted]
+
+MapNote issue [sync]: #0      _FakeAuthService.signInSilently (file:///D:/RouteNote%20App/test/auth_session_test.dart:61:24)
+#1      AuthNotifier._signInSilentlyInBackground (package:routenote/src/providers/app_providers.dart:1203:41)
+#2      AuthNotifier.build (package:routenote/src/providers/app_providers.dart:1154:17)
+#3      ElementWithFuture.handleFuture.<anonymous closure> (package:riverpod/src/core/element.dart:259:30)
+#4      ElementWithFuture._handleAsync (package:riverpod/src/core/element.dart:329:35)
+#5      ElementWithFuture.handleFuture (package:riverpod/src/core/element.dart:253:12)
+#6      $AsyncNotifierProviderElement.handleCreate (package:riverpod/src/providers/async_notifier.dart:91:12)
+#7      AsyncNotifier.runBuild (package:riverpod/src/providers/async_notifier/orphan.dart:37:47)
+#8      $ClassProviderElement.create (package:riverpod/src/core/provider/notifier_provider.dart:570:43)
+#9      ProviderElement.buildState (package:riverpod/src/core/element.dart:798:28)
+#10     ProviderElement.mount (package:riverpod/src/core/element.dart:634:7)
+#11     ProviderElement.flush (package:riverpod/src/core/element.dart:751:9)
+#12     $ProviderBaseImpl._addListener (package:riverpod/src/core/provider/provider.dart:166:24)
+#13     ProviderContainer.listen (package:riverpod/src/core/provider_container.dart:1215:26)
+#14     ProviderContainer.read (package:riverpod/src/core/provider_container.dart:1145:17)
+#15     main.<anonymous closure> (file:///D:/RouteNote%20App/test/auth_session_test.dart:400:24)
+<asynchronous suspension>
+#16     Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:253:15)
+<asynchronous suspension>
+#17     Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:250:11)
+<asynchronous suspension>
+#18     Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:318:9)
+<asynchronous suspension>
+
+00:09 +194: D:/RouteNote App/test/automotion_dashboard_test.dart: driver mode shows the live current speed and today's totals
+00:09 +195: D:/RouteNote App/test/automotion_dashboard_test.dart: driver mode shows the live current speed and today's totals
+00:10 +196: D:/RouteNote App/test/automotion_dashboard_test.dart: driver mode shows the live current speed and today's totals
+00:10 +197: D:/RouteNote App/test/automotion_dashboard_test.dart: driver mode shows the live current speed and today's totals
+00:10 +198: D:/RouteNote App/test/automotion_dashboard_test.dart: driver mode shows the live current speed and today's totals
+00:10 +199: D:/RouteNote App/test/automotion_dashboard_test.dart: driver mode shows the live current speed and today's totals
+00:10 +200: D:/RouteNote App/test/automotion_dashboard_test.dart: driver mode shows the live current speed and today's totals
+00:10 +201: D:/RouteNote App/test/automotion_dashboard_test.dart: driver mode shows the live current speed and today's totals
+00:10 +202: D:/RouteNote App/test/automotion_dashboard_test.dart: driver mode shows the live current speed and today's totals
+00:10 +203: D:/RouteNote App/test/automotion_dashboard_test.dart: driver mode shows the live current speed and today's totals
+00:10 +204: D:/RouteNote App/test/automotion_dashboard_test.dart: driver mode shows the live current speed and today's totals
+00:10 +205: D:/RouteNote App/test/automotion_dashboard_test.dart: driver mode shows the live current speed and today's totals
+00:10 +206: D:/RouteNote App/test/automotion_dashboard_test.dart: driver mode shows the live current speed and today's totals
+00:10 +207: D:/RouteNote App/test/automotion_dashboard_test.dart: driver mode shows the live current speed and today's totals
+00:10 +208: D:/RouteNote App/test/automotion_dashboard_test.dart: driver mode shows the live current speed and today's totals
+00:10 +209: D:/RouteNote App/test/automotion_dashboard_test.dart: driver mode shows the live current speed and today's totals
+00:10 +210: D:/RouteNote App/test/automotion_dashboard_test.dart: driver mode shows the live current speed and today's totals
+00:10 +211: D:/RouteNote App/test/automotion_dashboard_test.dart: driver mode shows the live current speed and today's totals
+00:10 +212: D:/RouteNote App/test/automotion_dashboard_test.dart: driver mode shows the live current speed and today's totals
+00:10 +213: D:/RouteNote App/test/automotion_dashboard_test.dart: driver mode shows the live current speed and today's totals
+00:10 +214: D:/RouteNote App/test/automotion_dashboard_test.dart: driver mode shows the live current speed and today's totals
+00:10 +215: D:/RouteNote App/test/automotion_dashboard_test.dart: driver mode shows the live current speed and today's totals
+00:10 +216: D:/RouteNote App/test/automotion_dashboard_test.dart: driver mode shows the live current speed and today's totals
+00:10 +217: D:/RouteNote App/test/automotion_dashboard_test.dart: driver mode shows the live current speed and today's totals
+00:10 +218: D:/RouteNote App/test/automotion_dashboard_test.dart: driver mode shows the live current speed and today's totals
+00:10 +219: D:/RouteNote App/test/automotion_dashboard_test.dart: driver mode shows the live current speed and today's totals
+00:11 +220: D:/RouteNote App/test/automotion_dashboard_test.dart: driver mode shows the live current speed and today's totals
+00:11 +221: D:/RouteNote App/test/automotion_dashboard_test.dart: driver mode shows the live current speed and today's totals
+00:11 +221: D:/RouteNote App/test/auth_session_test.dart: last_synced is written only after a successful Drive round-trip
+[2026-11-19T18:31:18.588336] [ERROR] [SYNC] Drive backup sync failed
+  ErrorDetails: Bad state: drive upload failed
+
+00:11 +221: D:/RouteNote App/test/automotion_dashboard_test.dart: driver mode shows the live current speed and today's totals
+  [1m[flutter_map][0m
+    We want to help keep OpenStreetMap available for everyone. Our examples
+    and demo app use the public tile servers, but they are NOT free to use by
+    everyone! Please review whether the OpenStreetMap tile servers are suitable
+    for your project.
+    See:
+      * https://operations.osmfoundation.org/policies/tiles (OSM Tile Usage Policy)
+      * https://docs.fleaflet.dev/osm-warn for more information about this warning
+00:11 +222: D:/RouteNote App/test/automotion_export_ui_test.dart: export sheet renders CSV/JSON buttons and range picker
+00:11 +223: D:/RouteNote App/test/automotion_export_ui_test.dart: export sheet renders CSV/JSON buttons and range picker
+00:11 +224: D:/RouteNote App/test/auto_motion_path_test.dart: DailyTrackEngine path cap reaching maxPathPoints halves the path, keeping every even vertex
+00:11 +225: D:/RouteNote App/test/auto_motion_path_test.dart: DailyTrackEngine path cap reaching maxPathPoints halves the path, keeping every even vertex
+00:11 +226: D:/RouteNote App/test/automotion_dashboard_test.dart: trip history lists stored days newest-first
+00:11 +226: D:/RouteNote App/test/auth_session_test.dart: a failed interactive sign-in rethrows and leaves the card usable
+MapNote sign-in error: DEVELOPER_ERROR
+00:11 +227: D:/RouteNote App/test/automotion_dashboard_test.dart: trip history lists stored days newest-first
+00:11 +228: D:/RouteNote App/test/automotion_export_ui_test.dart: AutoMotion screen shows export action icon
+00:11 +229: D:/RouteNote App/test/automotion_export_ui_test.dart: AutoMotion screen shows export action icon
+00:11 +230: D:/RouteNote App/test/automotion_export_ui_test.dart: AutoMotion screen shows export action icon
+00:11 +231: D:/RouteNote App/test/automotion_export_ui_test.dart: AutoMotion screen shows export action icon
+00:11 +232: D:/RouteNote App/test/automotion_export_ui_test.dart: AutoMotion screen shows export action icon
+00:11 +233: D:/RouteNote App/test/automotion_export_ui_test.dart: AutoMotion screen shows export action icon
+00:11 +234: D:/RouteNote App/test/automotion_export_ui_test.dart: AutoMotion screen shows export action icon
+00:11 +235: D:/RouteNote App/test/automotion_export_ui_test.dart: AutoMotion screen shows export action icon
+00:11 +236: D:/RouteNote App/test/automotion_export_ui_test.dart: AutoMotion screen shows export action icon
+00:11 +237: D:/RouteNote App/test/automotion_export_ui_test.dart: AutoMotion screen shows export action icon
+00:11 +238: D:/RouteNote App/test/automotion_export_ui_test.dart: AutoMotion screen shows export action icon
+00:11 +239: D:/RouteNote App/test/automotion_export_ui_test.dart: AutoMotion screen shows export action icon
+00:12 +240: D:/RouteNote App/test/automotion_export_ui_test.dart: AutoMotion screen shows export action icon
+00:12 +241: D:/RouteNote App/test/automotion_export_ui_test.dart: AutoMotion screen shows export action icon
+00:12 +242: D:/RouteNote App/test/automotion_export_ui_test.dart: AutoMotion screen shows export action icon
+00:12 +243: D:/RouteNote App/test/automotion_export_ui_test.dart: AutoMotion screen shows export action icon
+00:12 +244: D:/RouteNote App/test/automotion_export_ui_test.dart: AutoMotion screen shows export action icon
+00:12 +245: D:/RouteNote App/test/automotion_export_ui_test.dart: AutoMotion screen shows export action icon
+00:12 +246: D:/RouteNote App/test/automotion_export_ui_test.dart: AutoMotion screen shows export action icon
+00:12 +247: D:/RouteNote App/test/automotion_export_ui_test.dart: AutoMotion screen shows export action icon
+00:12 +248: D:/RouteNote App/test/automotion_export_ui_test.dart: AutoMotion screen shows export action icon
+00:12 +249: D:/RouteNote App/test/automotion_export_ui_test.dart: AutoMotion screen shows export action icon
+00:12 +250: D:/RouteNote App/test/automotion_export_ui_test.dart: AutoMotion screen shows export action icon
+00:12 +251: D:/RouteNote App/test/automotion_export_ui_test.dart: AutoMotion screen shows export action icon
+00:12 +252: D:/RouteNote App/test/automotion_export_ui_test.dart: AutoMotion screen shows export action icon
+00:12 +253: D:/RouteNote App/test/automotion_export_ui_test.dart: AutoMotion screen shows export action icon
+00:12 +254: D:/RouteNote App/test/automotion_export_ui_test.dart: AutoMotion screen shows export action icon
+00:12 +255: D:/RouteNote App/test/automotion_export_ui_test.dart: AutoMotion screen shows export action icon
+00:12 +256: D:/RouteNote App/test/automotion_export_ui_test.dart: AutoMotion screen shows export action icon
+00:12 +257: D:/RouteNote App/test/automotion_export_ui_test.dart: AutoMotion screen shows export action icon
+00:12 +258: D:/RouteNote App/test/automotion_export_ui_test.dart: AutoMotion screen shows export action icon
+00:12 +259: D:/RouteNote App/test/automotion_dashboard_test.dart: the history refreshes when the tracker records a fix
+00:12 +260: D:/RouteNote App/test/automotion_dashboard_test.dart: the history refreshes when the tracker records a fix
+00:12 +261: D:/RouteNote App/test/automotion_dashboard_test.dart: the history refreshes when the tracker records a fix
+  [1m[flutter_map][0m
+    We want to help keep OpenStreetMap available for everyone. Our examples
+    and demo app use the public tile servers, but they are NOT free to use by
+    everyone! Please review whether the OpenStreetMap tile servers are suitable
+    for your project.
+    See:
+      * https://operations.osmfoundation.org/policies/tiles (OSM Tile Usage Policy)
+      * https://docs.fleaflet.dev/osm-warn for more information about this warning
+00:12 +262: D:/RouteNote App/test/auto_motion_path_test.dart: DailyTrackEngine track points decimation folds dropped step counts into the next survivor
+00:12 +263: D:/RouteNote App/test/automotion_export_ui_test.dart: exported JSON contains no coordinate keys
+00:12 +264: D:/RouteNote App/test/automotion_export_ui_test.dart: exported JSON contains no coordinate keys
+00:12 +265: D:/RouteNote App/test/auto_motion_service_test.dart: AutoMotionService midnight roll-over saves the finished day and starts the next one
+00:12 +266: D:/RouteNote App/test/automotion_dashboard_test.dart: an empty history shows the empty state
+00:13 +267: D:/RouteNote App/test/automotion_dashboard_test.dart: an empty history shows the empty state
+00:13 +268: D:/RouteNote App/test/automotion_dashboard_test.dart: an empty history shows the empty state
+00:13 +269: D:/RouteNote App/test/automotion_dashboard_test.dart: an empty history shows the empty state
+00:13 +270: D:/RouteNote App/test/automotion_dashboard_test.dart: an empty history shows the empty state
+00:13 +271: D:/RouteNote App/test/automotion_dashboard_test.dart: an empty history shows the empty state
+00:13 +272: D:/RouteNote App/test/automotion_dashboard_test.dart: an empty history shows the empty state
+00:13 +273: D:/RouteNote App/test/automotion_dashboard_test.dart: an empty history shows the empty state
+00:13 +274: D:/RouteNote App/test/automotion_dashboard_test.dart: an empty history shows the empty state
+00:13 +275: D:/RouteNote App/test/automotion_dashboard_test.dart: an empty history shows the empty state
+00:13 +276: D:/RouteNote App/test/auto_motion_toggle_test.dart: settings shows the AutoMotion toggle (on by default)
+00:13 +277: D:/RouteNote App/test/auto_motion_toggle_test.dart: settings shows the AutoMotion toggle (on by default)
+00:13 +278: D:/RouteNote App/test/auto_motion_toggle_test.dart: settings shows the AutoMotion toggle (on by default)
+00:13 +279: D:/RouteNote App/test/auto_motion_toggle_test.dart: settings shows the AutoMotion toggle (on by default)
+00:13 +280: D:/RouteNote App/test/auto_motion_toggle_test.dart: settings shows the AutoMotion toggle (on by default)
+00:13 +281: D:/RouteNote App/test/auto_motion_toggle_test.dart: settings shows the AutoMotion toggle (on by default)
+00:13 +282: D:/RouteNote App/test/auto_motion_toggle_test.dart: settings shows the AutoMotion toggle (on by default)
+00:13 +283: D:/RouteNote App/test/auto_motion_toggle_test.dart: settings shows the AutoMotion toggle (on by default)
+00:13 +284: D:/RouteNote App/test/auto_motion_toggle_test.dart: settings shows the AutoMotion toggle (on by default)
+00:14 +285: D:/RouteNote App/test/auto_motion_toggle_test.dart: settings shows the AutoMotion toggle (on by default)
+00:14 +285: D:/RouteNote App/test/automotion_dashboard_test.dart: the route card draws the path once fixes are recorded
+  [1m[flutter_map][0m
+    We want to help keep OpenStreetMap available for everyone. Our examples
+    and demo app use the public tile servers, but they are NOT free to use by
+    everyone! Please review whether the OpenStreetMap tile servers are suitable
+    for your project.
+    See:
+      * https://operations.osmfoundation.org/policies/tiles (OSM Tile Usage Policy)
+      * https://docs.fleaflet.dev/osm-warn for more information about this warning
+00:14 +286: D:/RouteNote App/test/auto_motion_toggle_test.dart: settings shows the AutoMotion toggle (on by default)
+00:14 +287: D:/RouteNote App/test/auto_motion_toggle_test.dart: settings shows the AutoMotion toggle (on by default)
+00:14 +288: D:/RouteNote App/test/auto_motion_toggle_test.dart: settings shows the AutoMotion toggle (on by default)
+00:14 +289: D:/RouteNote App/test/auto_motion_toggle_test.dart: settings shows the AutoMotion toggle (on by default)
+00:14 +290: D:/RouteNote App/test/auto_motion_toggle_test.dart: settings shows the AutoMotion toggle (on by default)
+00:15 +291: D:/RouteNote App/test/auto_motion_toggle_test.dart: settings shows the AutoMotion toggle (on by default)
+00:15 +292: D:/RouteNote App/test/auto_motion_toggle_test.dart: settings shows the AutoMotion toggle (on by default)
+00:15 +293: D:/RouteNote App/test/auto_motion_toggle_test.dart: settings shows the AutoMotion toggle (on by default)
+00:15 +294: D:/RouteNote App/test/brand_lockup_test.dart: the mark renders as vector with its chevron punched out
+00:15 +295: D:/RouteNote App/test/brand_splash_test.dart: covers the app, then fades away leaving it live
+00:15 +295: D:/RouteNote App/test/automotion_dashboard_test.dart: the route and events cards share the dashboard with history intact
+  [1m[flutter_map][0m
+    We want to help keep OpenStreetMap available for everyone. Our examples
+    and demo app use the public tile servers, but they are NOT free to use by
+    everyone! Please review whether the OpenStreetMap tile servers are suitable
+    for your project.
+    See:
+      * https://operations.osmfoundation.org/policies/tiles (OSM Tile Usage Policy)
+      * https://docs.fleaflet.dev/osm-warn for more information about this warning
+00:15 +296: D:/RouteNote App/test/brand_splash_test.dart: covers the app, then fades away leaving it live
+00:15 +297: D:/RouteNote App/test/brand_splash_test.dart: covers the app, then fades away leaving it live
+00:15 +298: D:/RouteNote App/test/brand_splash_test.dart: covers the app, then fades away leaving it live
+00:16 +299: D:/RouteNote App/test/brand_splash_test.dart: covers the app, then fades away leaving it live
+00:16 +300: D:/RouteNote App/test/brand_splash_test.dart: covers the app, then fades away leaving it live
+00:16 +301: D:/RouteNote App/test/brand_splash_test.dart: covers the app, then fades away leaving it live
+00:16 +302: D:/RouteNote App/test/brand_splash_test.dart: covers the app, then fades away leaving it live
+00:16 +303: D:/RouteNote App/test/brand_splash_test.dart: covers the app, then fades away leaving it live
+00:16 +304: D:/RouteNote App/test/dead_reckoning_service_test.dart: DeadReckoningService evidence contracts a window starting before two-hour-old anchors is refused
+00:16 +305: D:/RouteNote App/test/auto_motion_toggle_test.dart: flipping the AutoMotion toggle persists enable_auto_motion
+00:16 +306: D:/RouteNote App/test/auto_motion_toggle_test.dart: flipping the AutoMotion toggle persists enable_auto_motion
+00:16 +307: D:/RouteNote App/test/auto_motion_toggle_test.dart: flipping the AutoMotion toggle persists enable_auto_motion
+00:16 +308: D:/RouteNote App/test/auto_motion_toggle_test.dart: flipping the AutoMotion toggle persists enable_auto_motion
+00:16 +309: D:/RouteNote App/test/auto_motion_toggle_test.dart: flipping the AutoMotion toggle persists enable_auto_motion
+00:16 +310: D:/RouteNote App/test/brand_splash_test.dart: never rebuilds the app underneath when the splash ends
+00:16 +311: D:/RouteNote App/test/auto_motion_toggle_test.dart: home shows the AutoMotion dashboard card when enabled
+00:16 +312: D:/RouteNote App/test/auto_motion_toggle_test.dart: home shows the AutoMotion dashboard card when enabled
+00:16 +313: D:/RouteNote App/test/auto_motion_toggle_test.dart: home shows the AutoMotion dashboard card when enabled
+00:16 +314: D:/RouteNote App/test/auto_motion_toggle_test.dart: home shows the AutoMotion dashboard card when enabled
+00:16 +315: D:/RouteNote App/test/auto_motion_toggle_test.dart: home shows the AutoMotion dashboard card when enabled
+00:16 +316: D:/RouteNote App/test/auto_motion_toggle_test.dart: home shows the AutoMotion dashboard card when enabled
+00:17 +317: D:/RouteNote App/test/auto_motion_toggle_test.dart: home shows the AutoMotion dashboard card when enabled
+00:17 +318: D:/RouteNote App/test/auto_motion_toggle_test.dart: home shows the AutoMotion dashboard card when enabled
+00:17 +319: D:/RouteNote App/test/auto_motion_toggle_test.dart: home shows the AutoMotion dashboard card when enabled
+00:17 +320: D:/RouteNote App/test/auto_motion_toggle_test.dart: home shows the AutoMotion dashboard card when enabled
+00:17 +321: D:/RouteNote App/test/auto_motion_toggle_test.dart: home shows the AutoMotion dashboard card when enabled
+00:17 +322: D:/RouteNote App/test/auto_motion_toggle_test.dart: home shows the AutoMotion dashboard card when enabled
+00:17 +323: D:/RouteNote App/test/auto_motion_toggle_test.dart: home shows the AutoMotion dashboard card when enabled
+00:17 +324: D:/RouteNote App/test/auto_motion_toggle_test.dart: home shows the AutoMotion dashboard card when enabled
+00:17 +325: D:/RouteNote App/test/auto_motion_toggle_test.dart: home shows the AutoMotion dashboard card when enabled
+00:17 +326: D:/RouteNote App/test/auto_motion_toggle_test.dart: home shows the AutoMotion dashboard card when enabled
+00:17 +327: D:/RouteNote App/test/auto_motion_toggle_test.dart: home keeps the AutoMotion card visible with today's totals while the toggle is off (Paused badge)
+00:17 +328: D:/RouteNote App/test/auto_motion_toggle_test.dart: home keeps the AutoMotion card visible with today's totals while the toggle is off (Paused badge)
+00:17 +329: D:/RouteNote App/test/auto_motion_toggle_test.dart: home keeps the AutoMotion card visible with today's totals while the toggle is off (Paused badge)
+00:17 +330: D:/RouteNote App/test/auto_motion_toggle_test.dart: home keeps the AutoMotion card visible with today's totals while the toggle is off (Paused badge)
+00:17 +331: D:/RouteNote App/test/auto_motion_toggle_test.dart: home keeps the AutoMotion card visible with today's totals while the toggle is off (Paused badge)
+00:17 +332: D:/RouteNote App/test/auto_motion_toggle_test.dart: home keeps the AutoMotion card visible with today's totals while the toggle is off (Paused badge)
+00:17 +333: D:/RouteNote App/test/auto_motion_toggle_test.dart: home keeps the AutoMotion card visible with today's totals while the toggle is off (Paused badge)
+00:18 +334: D:/RouteNote App/test/auto_motion_toggle_test.dart: home hides the AutoMotion card when disabled and no motion yet
+00:18 +335: D:/RouteNote App/test/eco_driving_score_test.dart: EcoScoreModel computes scores and metrics correctly from MotionScore
+00:18 +336: D:/RouteNote App/test/eco_driving_score_test.dart: ScoreGaugeWidget renders score and arc progress
+00:18 +337: D:/RouteNote App/test/eco_driving_score_test.dart: ScoreGaugeWidget renders score and arc progress
+00:18 +338: D:/RouteNote App/test/eco_driving_score_test.dart: ScoreGaugeWidget renders score and arc progress
+00:18 +339: D:/RouteNote App/test/eco_driving_score_test.dart: ScoreGaugeWidget renders score and arc progress
+00:18 +340: D:/RouteNote App/test/eco_driving_score_test.dart: ScoreGaugeWidget renders score and arc progress
+00:19 +341: D:/RouteNote App/test/eco_driving_score_test.dart: ScoreGaugeWidget renders score and arc progress
+00:19 +342: D:/RouteNote App/test/eco_driving_score_test.dart: ScoreGaugeWidget renders score and arc progress
+00:19 +343: D:/RouteNote App/test/eco_driving_score_test.dart: ScoreGaugeWidget renders score and arc progress
+00:19 +344: D:/RouteNote App/test/eco_driving_score_test.dart: EcoDrivingDashboardCard renders metrics and feedback
+00:20 +345: D:/RouteNote App/test/edition_separation_test.dart: Android product-flavour separation both build-bound flavours are declared on the edition dimension
+00:20 +346: D:/RouteNote App/test/edition_separation_test.dart: Android product-flavour separation work manifest removes every vehicle-only permission and service
+00:20 +347: D:/RouteNote App/test/edition_separation_test.dart: Android product-flavour separation the removed nodes really come from the main source set
+00:20 +348: D:/RouteNote App/test/edition_separation_test.dart: Android product-flavour separation automotion manifest keeps the main source-set permissions
+00:20 +349: D:/RouteNote App/test/edition_separation_test.dart: Android product-flavour separation work flavour declaratively maps to the work edition build define
+00:20 +350: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics location settings show no tracking section
+00:20 +351: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics location settings show no tracking section
+00:21 +352: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics location settings show no tracking section
+00:21 +353: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics location settings show no tracking section
+00:21 +354: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics location settings show no tracking section
+00:21 +355: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics location settings show no tracking section
+00:21 +356: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics location settings show no tracking section
+00:21 +357: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics location settings show no tracking section
+00:21 +358: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics location settings show no tracking section
+00:21 +359: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics location settings show no tracking section
+00:21 +360: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics location settings show no tracking section
+00:21 +361: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics location settings show no tracking section
+00:21 +362: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics location settings show no tracking section
+00:21 +363: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics location settings show no tracking section
+00:21 +364: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics location settings show no tracking section
+00:21 +365: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics location settings show no tracking section
+00:21 +366: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics location settings show no tracking section
+00:21 +367: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics location settings show no tracking section
+00:21 +368: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics location settings show no tracking section
+00:21 +369: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics location settings show no tracking section
+00:22 +370: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics location settings show no tracking section
+00:22 +371: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics location settings show no tracking section
+00:22 +372: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics location settings show no tracking section
+00:22 +373: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics location settings show no tracking section
+00:22 +374: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics location settings show no tracking section
+00:22 +375: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics location settings show no tracking section
+00:22 +376: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics location settings show no tracking section
+00:22 +377: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics location settings show no tracking section
+00:22 +378: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics location settings show no tracking section
+00:22 +379: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics location settings show no tracking section
+00:22 +380: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics location settings show no tracking section
+00:22 +381: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics location settings show no tracking section
+00:22 +382: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics location settings show no tracking section
+00:22 +383: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics location settings show no tracking section
+00:22 +384: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics location settings show no tracking section
+00:22 +385: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics location settings show no tracking section
+00:22 +386: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics location settings show no tracking section
+00:22 +387: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics location settings show no tracking section
+00:22 +388: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics location settings show no tracking section
+00:22 +389: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics location settings show no tracking section
+00:22 +390: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics location settings show no tracking section
+00:22 +391: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics location settings show no tracking section
+00:22 +392: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics location settings show no tracking section
+00:22 +393: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics location settings show no tracking section
+00:22 +394: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics location settings show no tracking section
+00:22 +395: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics location settings show no tracking section
+00:22 +396: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics location settings show no tracking section
+00:22 +397: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics location settings show no tracking section
+00:22 +398: D:/RouteNote App/test/foreground_tracking_service_test.dart: a native side that never replies times out into a safe no-op
+00:22 +399: D:/RouteNote App/test/foreground_tracking_service_test.dart: a native side that never replies times out into a safe no-op
+00:22 +400: D:/RouteNote App/test/foreground_tracking_service_test.dart: a native side that never replies times out into a safe no-op
+00:22 +401: D:/RouteNote App/test/foreground_tracking_service_test.dart: a native side that never replies times out into a safe no-op
+00:22 +402: D:/RouteNote App/test/foreground_tracking_service_test.dart: a native side that never replies times out into a safe no-op
+00:22 +403: D:/RouteNote App/test/foreground_tracking_service_test.dart: a native side that never replies times out into a safe no-op
+00:22 +404: D:/RouteNote App/test/foreground_tracking_service_test.dart: a native side that never replies times out into a safe no-op
+00:22 +405: D:/RouteNote App/test/foreground_tracking_service_test.dart: a native side that never replies times out into a safe no-op
+00:22 +406: D:/RouteNote App/test/foreground_tracking_service_test.dart: a native side that never replies times out into a safe no-op
+00:22 +407: D:/RouteNote App/test/foreground_tracking_service_test.dart: a native side that never replies times out into a safe no-op
+00:22 +408: D:/RouteNote App/test/foreground_tracking_service_test.dart: a native side that never replies times out into a safe no-op
+00:22 +409: D:/RouteNote App/test/foreground_tracking_service_test.dart: a native side that never replies times out into a safe no-op
+00:22 +410: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics the AutoMotion dashboard is replaced by an edition notice
+00:22 +411: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics the AutoMotion dashboard is replaced by an edition notice
+00:22 +412: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics the AutoMotion dashboard is replaced by an edition notice
+00:22 +413: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics the AutoMotion dashboard is replaced by an edition notice
+00:22 +414: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics the AutoMotion dashboard is replaced by an edition notice
+00:22 +415: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics the AutoMotion dashboard is replaced by an edition notice
+00:22 +416: D:/RouteNote App/test/encrypted_vault_test.dart: KeystoreVaultPinVerifier the lockout survives a restart
+00:22 +417: D:/RouteNote App/test/fused_location_service_test.dart: FusedLocationService falls back to the network tier when the high tier stays silent
+00:22 +418: D:/RouteNote App/test/fused_location_service_test.dart: FusedLocationService falls back to the network tier when the high tier stays silent
+00:22 +419: D:/RouteNote App/test/fused_location_service_test.dart: FusedLocationService falls back to the network tier when the high tier stays silent
+00:22 +420: D:/RouteNote App/test/fused_location_service_test.dart: FusedLocationService falls back to the network tier when the high tier stays silent
+00:22 +421: D:/RouteNote App/test/fused_location_service_test.dart: FusedLocationService falls back to the network tier when the high tier stays silent
+00:22 +422: D:/RouteNote App/test/fused_location_service_test.dart: FusedLocationService falls back to the network tier when the high tier stays silent
+00:22 +423: D:/RouteNote App/test/fused_location_service_test.dart: FusedLocationService falls back to the network tier when the high tier stays silent
+00:22 +424: D:/RouteNote App/test/fused_location_service_test.dart: FusedLocationService falls back to the network tier when the high tier stays silent
+00:22 +425: D:/RouteNote App/test/fused_location_service_test.dart: FusedLocationService falls back to the network tier when the high tier stays silent
+00:22 +426: D:/RouteNote App/test/fused_location_service_test.dart: FusedLocationService falls back to the network tier when the high tier stays silent
+00:22 +427: D:/RouteNote App/test/fused_location_service_test.dart: FusedLocationService falls back to the network tier when the high tier stays silent
+00:22 +428: D:/RouteNote App/test/fused_location_service_test.dart: FusedLocationService falls back to the network tier when the high tier stays silent
+00:22 +429: D:/RouteNote App/test/fused_location_service_test.dart: FusedLocationService falls back to the network tier when the high tier stays silent
+00:22 +430: D:/RouteNote App/test/fused_location_service_test.dart: FusedLocationService falls back to the network tier when the high tier stays silent
+00:22 +431: D:/RouteNote App/test/fused_location_service_test.dart: FusedLocationService falls back to the network tier when the high tier stays silent
+00:22 +432: D:/RouteNote App/test/fused_location_service_test.dart: FusedLocationService falls back to the network tier when the high tier stays silent
+00:22 +433: D:/RouteNote App/test/fused_location_service_test.dart: FusedLocationService falls back to the network tier when the high tier stays silent
+00:22 +434: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics preferences hide the motion-data export entry
+00:22 +435: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics preferences hide the motion-data export entry
+00:23 +436: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics preferences hide the motion-data export entry
+00:23 +437: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics preferences hide the motion-data export entry
+00:23 +438: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics preferences hide the motion-data export entry
+00:23 +439: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics preferences hide the motion-data export entry
+00:23 +440: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics preferences hide the motion-data export entry
+00:23 +441: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics preferences hide the motion-data export entry
+00:23 +442: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics preferences hide the motion-data export entry
+00:23 +443: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics preferences hide the motion-data export entry
+00:23 +444: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics preferences hide the motion-data export entry
+00:23 +445: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics preferences hide the motion-data export entry
+00:23 +446: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics preferences hide the motion-data export entry
+00:23 +447: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics preferences hide the motion-data export entry
+00:23 +448: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics preferences hide the motion-data export entry
+00:23 +449: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics preferences hide the motion-data export entry
+00:23 +450: D:/RouteNote App/test/fused_location_service_test.dart: FusedLocationService re-probes the high tier after the retry interval, then falls back again
+00:23 +451: D:/RouteNote App/test/fused_location_service_test.dart: FusedLocationService re-probes the high tier after the retry interval, then falls back again
+00:23 +452: D:/RouteNote App/test/fused_location_service_test.dart: FusedLocationService re-probes the high tier after the retry interval, then falls back again
+00:23 +453: D:/RouteNote App/test/fused_location_service_test.dart: FusedLocationService re-probes the high tier after the retry interval, then falls back again
+00:23 +454: D:/RouteNote App/test/fused_location_service_test.dart: FusedLocationService re-probes the high tier after the retry interval, then falls back again
+00:23 +455: D:/RouteNote App/test/fused_location_service_test.dart: FusedLocationService re-probes the high tier after the retry interval, then falls back again
+00:23 +456: D:/RouteNote App/test/fused_location_service_test.dart: FusedLocationService re-probes the high tier after the retry interval, then falls back again
+00:23 +457: D:/RouteNote App/test/fused_location_service_test.dart: FusedLocationService re-probes the high tier after the retry interval, then falls back again
+00:23 +458: D:/RouteNote App/test/fused_location_service_test.dart: FusedLocationService re-probes the high tier after the retry interval, then falls back again
+00:23 +459: D:/RouteNote App/test/fused_location_service_test.dart: FusedLocationService re-probes the high tier after the retry interval, then falls back again
+00:23 +460: D:/RouteNote App/test/fused_location_service_test.dart: FusedLocationService re-probes the high tier after the retry interval, then falls back again
+00:23 +461: D:/RouteNote App/test/fused_location_service_test.dart: FusedLocationService re-probes the high tier after the retry interval, then falls back again
+00:23 +462: D:/RouteNote App/test/fused_location_service_test.dart: FusedLocationService re-probes the high tier after the retry interval, then falls back again
+00:23 +463: D:/RouteNote App/test/fused_location_service_test.dart: FusedLocationService re-probes the high tier after the retry interval, then falls back again
+00:23 +464: D:/RouteNote App/test/fused_location_service_test.dart: FusedLocationService re-probes the high tier after the retry interval, then falls back again
+00:24 +465: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics the Home screen renders no AutoMotion status card
+00:24 +466: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics the Home screen renders no AutoMotion status card
+00:24 +467: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics the Home screen renders no AutoMotion status card
+00:24 +468: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics the Home screen renders no AutoMotion status card
+00:24 +469: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics the Home screen renders no AutoMotion status card
+00:24 +470: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics the Home screen renders no AutoMotion status card
+00:24 +471: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics the Home screen renders no AutoMotion status card
+00:24 +472: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics the Home screen renders no AutoMotion status card
+00:24 +473: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics the Home screen renders no AutoMotion status card
+00:24 +474: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics the Home screen renders no AutoMotion status card
+00:24 +475: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics the Home screen renders no AutoMotion status card
+00:24 +476: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics the Home screen renders no AutoMotion status card
+00:24 +477: D:/RouteNote App/test/edition_separation_test.dart: work edition hides AutoMotion UI and metrics the Home screen renders no AutoMotion status card
+00:24 +478: D:/RouteNote App/test/fused_location_service_test.dart: FusedLocationService cancels timers and inner subscriptions with the outer subscription
+00:24 +479: D:/RouteNote App/test/fused_location_service_test.dart: FusedLocationService runs two sequential sessions independently with fresh fallback timers
+00:24 +480: D:/RouteNote App/test/gps_sample_validator_test.dart: strict GPS sample integrity a well-formed first fix is accepted
+00:24 +481: D:/RouteNote App/test/gps_sample_validator_test.dart: strict GPS sample integrity NaN and infinite coordinates are rejected
+00:24 +482: D:/RouteNote App/test/gps_sample_validator_test.dart: strict GPS sample integrity out-of-range coordinates are rejected
+00:25 +483: D:/RouteNote App/test/gps_sample_validator_test.dart: strict GPS sample integrity non-finite accuracy or speed is rejected
+00:25 +484: D:/RouteNote App/test/gps_sample_validator_test.dart: strict GPS sample integrity a backwards timestamp is rejected
+00:25 +485: D:/RouteNote App/test/gps_sample_validator_test.dart: strict GPS sample integrity an equal timestamp is tolerated (frozen clocks in tests)
+00:25 +486: D:/RouteNote App/test/gps_sample_validator_test.dart: strict GPS sample integrity an impossible Cairo -> New York jump in one second is rejected
+00:25 +487: D:/RouteNote App/test/gps_sample_validator_test.dart: strict GPS sample integrity ordinary driving over the same span is accepted
+00:25 +488: D:/RouteNote App/test/gps_sample_validator_test.dart: strict GPS sample integrity an intercontinental jump is rejected even across a long gap
+00:25 +489: D:/RouteNote App/test/gps_sample_validator_test.dart: strict GPS sample integrity a small move across a long gap is accepted
+00:25 +490: D:/RouteNote App/test/gps_tracker_test.dart: DailyGpsSummary round-trips through toMap/fromMap
+00:25 +491: D:/RouteNote App/test/gps_tracker_test.dart: DailyGpsSummary fromMap tolerates missing fields
+00:25 +492: D:/RouteNote App/test/gps_tracker_test.dart: GpsTrackerService.distanceKmBetween returns the expected Haversine distances
+00:25 +493: D:/RouteNote App/test/gps_tracker_test.dart: GpsTrackerService accumulation accumulates distance and tracks current/max speed in km/h
+00:25 +494: D:/RouteNote App/test/gps_tracker_test.dart: GpsTrackerService accumulation drops fixes that are too noisy or lack a real accuracy
+00:25 +495: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:25 +496: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:25 +497: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:25 +498: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:25 +499: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:25 +500: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:25 +501: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:25 +502: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:25 +503: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:25 +504: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:25 +505: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:25 +506: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:25 +507: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:25 +508: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:25 +509: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:26 +510: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:26 +511: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:26 +512: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:26 +513: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:26 +514: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:26 +515: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:26 +516: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:26 +517: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:26 +518: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:26 +519: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:26 +520: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:26 +521: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:26 +522: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:26 +523: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:26 +524: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:26 +525: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:26 +526: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:26 +527: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:26 +528: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:26 +529: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:26 +530: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:26 +531: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:26 +532: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:26 +533: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:26 +534: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:26 +535: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:26 +536: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:26 +537: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:26 +538: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:26 +539: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:26 +540: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:26 +541: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:26 +542: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:26 +543: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:26 +544: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:26 +545: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:26 +546: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:26 +547: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:26 +548: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:26 +549: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:26 +550: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:27 +551: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:27 +552: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:27 +553: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:27 +554: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:27 +555: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:27 +556: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:27 +557: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:27 +558: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:27 +559: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:27 +560: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:27 +561: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:27 +562: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:27 +563: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:27 +564: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:27 +565: D:/RouteNote App/test/gps_tracking_toggle_test.dart: the shared tracking toggle is off when AutoMotion is opted out and GPS was never enabled
+00:27 +566: D:/RouteNote App/test/gps_tracking_toggle_test.dart: when enabled in storage the toggle is on and the report tile shows today's distance and max speed
+00:28 +567: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:28 +568: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:28 +569: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:28 +570: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:28 +571: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:28 +572: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:28 +573: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:28 +574: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:28 +575: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:28 +576: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:28 +577: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:28 +578: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:28 +579: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:28 +580: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:28 +581: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:28 +582: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:28 +583: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:28 +584: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:28 +585: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:28 +586: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:28 +587: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:29 +588: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:29 +589: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:29 +590: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:29 +591: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:29 +592: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:29 +593: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:29 +594: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:29 +595: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:29 +596: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:29 +597: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:29 +598: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:29 +599: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:29 +600: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:29 +601: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:29 +602: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:30 +603: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:30 +604: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:30 +605: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:30 +606: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:30 +607: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:30 +608: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:30 +609: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:30 +610: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:30 +611: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:30 +612: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:30 +613: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:30 +614: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:30 +615: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:30 +616: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:30 +617: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:30 +618: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:30 +619: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:30 +620: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:30 +621: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:30 +622: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:30 +623: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:30 +624: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:30 +625: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:30 +626: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:30 +627: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:30 +628: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:30 +629: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:30 +630: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:30 +631: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:30 +632: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:30 +633: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:30 +634: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:30 +635: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:30 +636: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:30 +637: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:30 +638: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:30 +639: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:30 +640: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:30 +641: D:/RouteNote App/test/home_compass_island_test.dart: the Dynamic Island slot and the compass sheet never run two Qibla indicators at once
+00:31 +642: D:/RouteNote App/test/location_service_test.dart: reconnectingPositionStream forwards fixes from the live source
+00:31 +643: D:/RouteNote App/test/location_service_test.dart: reconnectingPositionStream re-opens the source after it errors
+00:31 +644: D:/RouteNote App/test/location_service_test.dart: reconnectingPositionStream re-opens the source when it closes without an error
+00:31 +645: D:/RouteNote App/test/locked_place_disclosure_test.dart: Home search locked places are excluded from every search query
+00:31 +646: D:/RouteNote App/test/location_service_test.dart: reconnectingPositionStream cancelling stops the reconnect loop
+00:31 +647: D:/RouteNote App/test/location_service_test.dart: reconnectingPositionStream cancelling stops the reconnect loop
+00:31 +648: D:/RouteNote App/test/location_service_test.dart: reconnectingPositionStream cancelling stops the reconnect loop
+00:31 +649: D:/RouteNote App/test/location_service_test.dart: reconnectingPositionStream cancelling stops the reconnect loop
+00:32 +650: D:/RouteNote App/test/location_service_test.dart: LocationService tracking settings uses high accuracy with a 10 m movement filter
+00:32 +651: D:/RouteNote App/test/location_service_test.dart: LocationService.trackingSettingsFor defaults to high accuracy, a 5 s interval and the 10 m filter
+00:32 +652: D:/RouteNote App/test/location_service_test.dart: LocationService.trackingSettingsFor honours explicit interval/accuracy overrides for sampling profiles
+00:32 +653: D:/RouteNote App/test/location_service_test.dart: LocationService.trackingSettingsFor never enables the plugin-owned foreground notification
+00:32 +654: D:/RouteNote App/test/location_service_test.dart: LocationService.trackingSettingsFor the background tier is balanced accuracy at a 15 m / 15 s cadence
+00:32 +655: D:/RouteNote App/test/milestone_name_resolver_test.dart: MilestoneNameResolver.labelFor prefers neighbourhood over city and governorate
+00:32 +656: D:/RouteNote App/test/milestone_name_resolver_test.dart: MilestoneNameResolver.labelFor falls back to city, then governorate
+00:32 +657: D:/RouteNote App/test/milestone_name_resolver_test.dart: MilestoneNameResolver.labelFor uses the venue name when no area is known
+00:32 +658: D:/RouteNote App/test/milestone_name_resolver_test.dart: MilestoneNameResolver.labelFor skips coordinate echoes from the platform geocoder
+00:32 +659: D:/RouteNote App/test/milestone_name_resolver_test.dart: MilestoneNameResolver.labelFor trims whitespace around the chosen label
+00:32 +660: D:/RouteNote App/test/milestone_name_resolver_test.dart: MilestoneNameResolver.labelFor an empty suggestion resolves to no name
+00:32 +661: D:/RouteNote App/test/milestone_name_resolver_test.dart: MilestoneNameResolver.resolve / cached resolves a name and serves it from the cache afterwards
+00:32 +662: D:/RouteNote App/test/milestone_name_resolver_test.dart: MilestoneNameResolver.resolve / cached distinct coordinates are looked up separately
+00:32 +663: D:/RouteNote App/test/milestone_name_resolver_test.dart: MilestoneNameResolver.resolve / cached a miss is negative-cached until the retry window passes
+00:32 +664: D:/RouteNote App/test/milestone_name_resolver_test.dart: MilestoneNameResolver.resolve / cached a thrown lookup resolves to null instead of an exception
+00:32 +665: D:/RouteNote App/test/milestone_name_resolver_test.dart: MilestoneNameResolver.resolve / cached concurrent resolves share a single platform call
+00:32 +666: D:/RouteNote App/test/milestone_name_resolver_test.dart: MilestoneNameResolver.resolve / cached start and stop at the same coordinate share one lookup
+00:32 +667: D:/RouteNote App/test/milestone_name_resolver_test.dart: MilestoneNameResolver lookup pacing serialises lookups with the configured gap
+00:32 +668: D:/RouteNote App/test/ml_classifier_isolate_test.dart: window buffering does not classify until a full window is buffered
+00:32 +669: D:/RouteNote App/test/ml_classifier_isolate_test.dart: window buffering slides by one sample and infers once per hop
+00:32 +670: D:/RouteNote App/test/ml_classifier_isolate_test.dart: window buffering keeps the newest samples, in capture order
+00:32 +671: D:/RouteNote App/test/ml_classifier_isolate_test.dart: window buffering a slow inference never queues up more work
+00:32 +672: D:/RouteNote App/test/ml_classifier_isolate_test.dart: window buffering clear() empties the window and the event log
+00:32 +673: D:/RouteNote App/test/ml_classifier_isolate_test.dart: event publishing captures every maneuver the model reports
+00:33 +674: D:/RouteNote App/test/ml_classifier_isolate_test.dart: event publishing de-duplicates one maneuver across overlapping windows
+00:33 +675: D:/RouteNote App/test/ml_classifier_isolate_test.dart: event publishing reports the same maneuver again after the cooldown
+00:33 +676: D:/RouteNote App/test/ml_classifier_isolate_test.dart: event publishing reports smooth driving once, not once per window
+00:33 +677: D:/RouteNote App/test/ml_classifier_isolate_test.dart: event publishing a throwing model yields no events and never crashes the pipeline
+00:33 +678: D:/RouteNote App/test/ml_classifier_isolate_test.dart: accelerometer and gravity alignment drops samples until the device is calibrated
+00:33 +679: D:/RouteNote App/test/ml_classifier_isolate_test.dart: accelerometer and gravity alignment buffers gravity-free vehicle samples once calibrated
+00:33 +680: D:/RouteNote App/test/motion_behavior_lifecycle_test.dart: MotionBehaviorAnalyzer sensor lifecycle start() opens the feed and samples reach the variance window
+00:33 +681: D:/RouteNote App/test/motion_behavior_lifecycle_test.dart: MotionBehaviorAnalyzer sensor lifecycle start() opens the feed and samples reach the variance window
+00:33 +682: D:/RouteNote App/test/motion_behavior_lifecycle_test.dart: MotionBehaviorAnalyzer sensor lifecycle start() opens the feed and samples reach the variance window
+00:33 +683: D:/RouteNote App/test/motion_behavior_lifecycle_test.dart: MotionBehaviorAnalyzer sensor lifecycle start() opens the feed and samples reach the variance window
+00:33 +684: D:/RouteNote App/test/motion_behavior_lifecycle_test.dart: MotionBehaviorAnalyzer sensor lifecycle start() opens the feed and samples reach the variance window
+00:33 +685: D:/RouteNote App/test/motion_behavior_lifecycle_test.dart: MotionBehaviorAnalyzer sensor lifecycle start() opens the feed and samples reach the variance window
+00:33 +686: D:/RouteNote App/test/ml_classifier_isolate_test.dart: real background isolate classifies a window on a dedicated isolate
+00:33 +687: D:/RouteNote App/test/ml_classifier_isolate_test.dart: real background isolate classifies a window on a dedicated isolate
+00:33 +688: D:/RouteNote App/test/motion_behavior_lifecycle_test.dart: MotionBehaviorAnalyzer sensor lifecycle start() twice subscribes exactly once
+00:33 +689: D:/RouteNote App/test/ml_classifier_isolate_test.dart: real background isolate keeps the worker alive across many windows
+00:33 +690: D:/RouteNote App/test/ml_classifier_isolate_test.dart: real background isolate keeps the worker alive across many windows
+00:33 +691: D:/RouteNote App/test/ml_classifier_isolate_test.dart: real background isolate keeps the worker alive across many windows
+00:33 +692: D:/RouteNote App/test/motion_behavior_lifecycle_test.dart: DrivingEventsNotifier mirrors the analyzer mirrors a harsh brake and then a harsh launch, in order
+00:33 +693: D:/RouteNote App/test/motion_behavior_lifecycle_test.dart: DrivingEventsNotifier mirrors the analyzer mirrors a harsh brake and then a harsh launch, in order
+00:33 +694: D:/RouteNote App/test/motion_behavior_lifecycle_test.dart: DrivingEventsNotifier mirrors the analyzer mirrors a harsh brake and then a harsh launch, in order
+00:33 +695: D:/RouteNote App/test/motion_behavior_lifecycle_test.dart: DrivingEventsNotifier mirrors the analyzer mirrors a harsh brake and then a harsh launch, in order
+00:33 +696: D:/RouteNote App/test/motion_classifier_service_test.dart: MotionClassifierService — happy path a steady drive is one vehicle segment with its distance and speed
+00:33 +697: D:/RouteNote App/test/motion_classifier_service_test.dart: MotionClassifierService — happy path a steady drive is one vehicle segment with its distance and speed
+00:33 +698: D:/RouteNote App/test/motion_classifier_service_test.dart: MotionClassifierService — happy path a steady drive is one vehicle segment with its distance and speed
+00:33 +699: D:/RouteNote App/test/motion_behavior_lifecycle_test.dart: DrivingEventsNotifier mirrors the analyzer clear() on a fresh notifier is safe
+00:33 +700: D:/RouteNote App/test/motion_classifier_service_test.dart: MotionClassifierService — happy path movement with no measured steps is a stopover, never a walk
+00:33 +701: D:/RouteNote App/test/motion_behavior_lifecycle_test.dart: DrivingEventsNotifier health-log mirroring logs one privacy-safe health entry per detected event
+00:33 +702: D:/RouteNote App/test/motion_behavior_lifecycle_test.dart: DrivingEventsNotifier health-log mirroring logs one privacy-safe health entry per detected event
+00:33 +703: D:/RouteNote App/test/motion_classifier_service_test.dart: MotionClassifierService — steps decide on foot a cadence above the run threshold is a run at the running stride
+00:33 +704: D:/RouteNote App/test/motion_behavior_lifecycle_test.dart: vehicle gating through the notifier a walking verdict swallows the same recipe: no event, mirror or log
+00:33 +705: D:/RouteNote App/test/motion_behavior_lifecycle_test.dart: vehicle gating through the notifier a walking verdict swallows the same recipe: no event, mirror or log
+00:33 +706: D:/RouteNote App/test/motion_classifier_service_test.dart: MotionClassifierService — steps decide on foot a measured zero at vehicle speed is a drive
+00:33 +707: D:/RouteNote App/test/motion_classifier_service_test.dart: MotionClassifierService — steps decide on foot a sparse step count is still a walk, because it is a measurement
+00:33 +708: D:/RouteNote App/test/motion_classifier_service_test.dart: MotionClassifierService — steps decide on foot a parked track with zero steps is a stopover with no step count
+00:33 +709: D:/RouteNote App/test/motion_classifier_service_test.dart: MotionClassifierService — steps decide on foot a walk followed by a drive splits on the step evidence
+00:33 +710: D:/RouteNote App/test/motion_classifier_service_test.dart: MotionClassifierService — stopovers a six-minute stop splits the day into drive / stopover / drive
+00:33 +711: D:/RouteNote App/test/motion_classifier_service_test.dart: MotionClassifierService — stopovers a stop under three minutes is not a stopover
+00:33 +712: D:/RouteNote App/test/motion_classifier_service_test.dart: MotionClassifierService — stopovers a stopover tolerates sub-60 m GPS jitter without splitting
+00:33 +713: D:/RouteNote App/test/motion_classifier_service_test.dart: MotionClassifierService — blips and short stretches a red light under a minute is absorbed into the drive
+00:33 +714: D:/RouteNote App/test/motion_classifier_service_test.dart: MotionClassifierService — blips and short stretches a 20-second crawl at walking speed does not split one drive
+00:33 +715: D:/RouteNote App/test/motion_classifier_service_test.dart: MotionClassifierService — blips and short stretches a genuine walk of several minutes stays its own segment
+00:33 +716: D:/RouteNote App/test/motion_classifier_service_test.dart: MotionClassifierService — evidence quality a sensor activity hint is not motion evidence on its own
+00:33 +717: D:/RouteNote App/test/motion_classifier_service_test.dart: MotionClassifierService — evidence quality a Still hint does not stop a measured drive
+00:33 +718: D:/RouteNote App/test/motion_classifier_service_test.dart: MotionClassifierService — evidence quality fixes with poor accuracy are dropped
+00:33 +719: D:/RouteNote App/test/motion_classifier_service_test.dart: MotionClassifierService — evidence quality a bad-accuracy fix in the middle does not create a gap segment
+00:33 +720: D:/RouteNote App/test/motion_classifier_service_test.dart: MotionClassifierService — evidence quality a speed-less stored route still classifies from geometry
+00:33 +721: D:/RouteNote App/test/motion_classifier_service_test.dart: MotionClassifierService — interruptions and bad input a GPS hole longer than the gap limit ends the segment
+00:33 +722: D:/RouteNote App/test/motion_classifier_service_test.dart: MotionClassifierService — interruptions and bad input an empty day is empty
+00:33 +723: D:/RouteNote App/test/motion_classifier_service_test.dart: MotionClassifierService — interruptions and bad input a single fix is not a segment
+00:33 +724: D:/RouteNote App/test/motion_classifier_service_test.dart: MotionClassifierService — interruptions and bad input out-of-range coordinates and untimed fixes are ignored
+00:33 +725: D:/RouteNote App/test/motion_classifier_service_test.dart: MotionClassifierService — interruptions and bad input out-of-order fixes are classified chronologically
+00:33 +726: D:/RouteNote App/test/motion_classifier_service_test.dart: MotionClassifierService — thresholds are injectable a raised vehicle threshold reclassifies a slow drive as a stopover
+00:33 +727: D:/RouteNote App/test/motion_classifier_service_test.dart: MotionClassifierService — thresholds are injectable a longer stopover threshold absorbs a five-minute stop
+00:34 +728: D:/RouteNote App/test/motion_gate_test.dart: cold gate starts closed, watching nothing
+00:34 +729: D:/RouteNote App/test/motion_gate_test.dart: walking is withheld entirely walking forwards nothing at all
+00:34 +730: D:/RouteNote App/test/motion_gate_test.dart: a confirmed drive flows through samples reach the gated consumer
+00:34 +731: D:/RouteNote App/test/motion_gate_test.dart: a confirmed drive flows through suspend closes the gate immediately and the next sample is withheld
+00:34 +732: D:/RouteNote App/test/motion_gate_test.dart: a confirmed drive flows through a broadcast stream feeds both consumers
+00:34 +733: D:/RouteNote App/test/motion_gate_test.dart: the gate is the only vehicle authority a walking-speed rumble never becomes a drive
+00:34 +734: D:/RouteNote App/test/motion_gate_test.dart: the gate is the only vehicle authority a road-speed rumble confirms the drive through the same seam
+00:34 +735: D:/RouteNote App/test/motion_gate_test.dart: reset and lifecycle reset clears the evidence and counters
+00:34 +736: D:/RouteNote App/test/motion_gate_test.dart: reset and lifecycle start is idempotent
+00:34 +737: D:/RouteNote App/test/motion_gate_test.dart: reset and lifecycle a real raw stream is consumed through the gate
+00:34 +738: D:/RouteNote App/test/motion_gate_test.dart: reset and lifecycle stop releases the raw subscription
+00:34 +739: D:/RouteNote App/test/motion_gate_test.dart: reset and lifecycle dispose closes the gated stream
+00:34 +740: D:/RouteNote App/test/motion_model_test.dart: exposes a stable id and the full label set
+00:34 +741: D:/RouteNote App/test/motion_model_test.dart: maneuver classification sustained braking is a hard brake, signed negative
+00:34 +742: D:/RouteNote App/test/motion_model_test.dart: maneuver classification sustained acceleration is a hard launch, signed positive
+00:34 +743: D:/RouteNote App/test/motion_model_test.dart: maneuver classification sustained lateral force is a sharp turn, keeping its sign
+00:34 +744: D:/RouteNote App/test/motion_model_test.dart: maneuver classification a brief upward impulse is a speed bump
+00:34 +745: D:/RouteNote App/test/motion_model_test.dart: maneuver classification a brief downward impulse is a pothole
+00:34 +746: D:/RouteNote App/test/motion_model_test.dart: maneuver classification a calm window is a smooth drive
+00:34 +747: D:/RouteNote App/test/motion_model_test.dart: rejecting false positives a short longitudinal spike is not sustained braking
+00:34 +748: D:/RouteNote App/test/motion_model_test.dart: rejecting false positives a sustained vertical climb is not a bump (bumps are brief)
+00:34 +749: D:/RouteNote App/test/motion_model_test.dart: rejecting false positives one window may report two maneuvers (braking into a corner)
+00:34 +750: D:/RouteNote App/test/motion_model_test.dart: rejecting false positives an empty window classifies as nothing at all
+00:34 +751: D:/RouteNote App/test/motion_model_test.dart: decodeMotionScores (the trained-model seam) maps scores through the label order above the threshold
+00:34 +752: D:/RouteNote App/test/motion_model_test.dart: decodeMotionScores (the trained-model seam) returns strongest first and ignores low scores
+00:34 +753: D:/RouteNote App/test/motion_model_test.dart: decodeMotionScores (the trained-model seam) tolerates a score vector that is shorter than the label set
+00:34 +754: D:/RouteNote App/test/motion_model_test.dart: decodeMotionScores (the trained-model seam) ignores non-finite scores
+00:34 +755: D:/RouteNote App/test/motion_model_test.dart: decidingAxisPeak reads the right axis and sign for every kind
+00:34 +756: D:/RouteNote App/test/motion_model_test.dart: model labels match the published taxonomy
+00:34 +757: D:/RouteNote App/test/motion_model_test.dart: model labels round-trip through fromModelLabel
+00:35 +758: D:/RouteNote App/test/motion_overlay_test.dart: a detected maneuver is pinned on the map at its route vertex
+00:35 +759: D:/RouteNote App/test/motion_overlay_test.dart: a detected maneuver is pinned on the map at its route vertex
+00:35 +760: D:/RouteNote App/test/motion_overlay_test.dart: a detected maneuver is pinned on the map at its route vertex
+00:35 +761: D:/RouteNote App/test/motion_overlay_test.dart: a detected maneuver is pinned on the map at its route vertex
+00:35 +762: D:/RouteNote App/test/motion_overlay_test.dart: a detected maneuver is pinned on the map at its route vertex
+00:35 +763: D:/RouteNote App/test/motion_overlay_test.dart: a detected maneuver is pinned on the map at its route vertex
+00:35 +764: D:/RouteNote App/test/motion_overlay_test.dart: a detected maneuver is pinned on the map at its route vertex
+00:35 +765: D:/RouteNote App/test/motion_overlay_test.dart: a detected maneuver is pinned on the map at its route vertex
+00:35 +766: D:/RouteNote App/test/motion_overlay_test.dart: a detected maneuver is pinned on the map at its route vertex
+00:35 +767: D:/RouteNote App/test/motion_overlay_test.dart: a detected maneuver is pinned on the map at its route vertex
+00:35 +768: D:/RouteNote App/test/motion_overlay_test.dart: a detected maneuver is pinned on the map at its route vertex
+00:35 +769: D:/RouteNote App/test/motion_overlay_test.dart: a detected maneuver is pinned on the map at its route vertex
+00:35 +770: D:/RouteNote App/test/motion_overlay_test.dart: a detected maneuver is pinned on the map at its route vertex
+00:35 +771: D:/RouteNote App/test/motion_overlay_test.dart: a detected maneuver is pinned on the map at its route vertex
+00:35 +772: D:/RouteNote App/test/motion_overlay_test.dart: a detected maneuver is pinned on the map at its route vertex
+00:36 +773: D:/RouteNote App/test/motion_overlay_test.dart: a detected maneuver is pinned on the map at its route vertex
+00:36 +774: D:/RouteNote App/test/motion_overlay_test.dart: a detected maneuver is pinned on the map at its route vertex
+00:36 +775: D:/RouteNote App/test/motion_overlay_test.dart: a detected maneuver is pinned on the map at its route vertex
+00:36 +776: D:/RouteNote App/test/motion_overlay_test.dart: a detected maneuver is pinned on the map at its route vertex
+00:36 +777: D:/RouteNote App/test/motion_overlay_test.dart: a detected maneuver is pinned on the map at its route vertex
+00:36 +778: D:/RouteNote App/test/motion_overlay_test.dart: a detected maneuver is pinned on the map at its route vertex
+00:36 +779: D:/RouteNote App/test/motion_overlay_test.dart: a detected maneuver is pinned on the map at its route vertex
+00:36 +780: D:/RouteNote App/test/motion_overlay_test.dart: a detected maneuver is pinned on the map at its route vertex
+00:36 +781: D:/RouteNote App/test/motion_overlay_test.dart: a detected maneuver is pinned on the map at its route vertex
+00:36 +782: D:/RouteNote App/test/motion_overlay_test.dart: a detected maneuver is pinned on the map at its route vertex
+00:36 +783: D:/RouteNote App/test/motion_overlay_test.dart: a detected maneuver is pinned on the map at its route vertex
+00:36 +784: D:/RouteNote App/test/motion_overlay_test.dart: a detected maneuver is pinned on the map at its route vertex
+00:36 +785: D:/RouteNote App/test/motion_overlay_test.dart: a detected maneuver is pinned on the map at its route vertex
+00:36 +786: D:/RouteNote App/test/motion_overlay_test.dart: a detected maneuver is pinned on the map at its route vertex
+  [1m[flutter_map][0m
+    We want to help keep OpenStreetMap available for everyone. Our examples
+    and demo app use the public tile servers, but they are NOT free to use by
+    everyone! Please review whether the OpenStreetMap tile servers are suitable
+    for your project.
+    See:
+      * https://operations.osmfoundation.org/policies/tiles (OSM Tile Usage Policy)
+      * https://docs.fleaflet.dev/osm-warn for more information about this warning
+00:37 +787: D:/RouteNote App/test/motion_overlay_test.dart: every maneuver kind lands on the map, none falls through
+00:37 +788: D:/RouteNote App/test/motion_overlay_test.dart: every maneuver kind lands on the map, none falls through
+00:37 +789: D:/RouteNote App/test/motion_overlay_test.dart: every maneuver kind lands on the map, none falls through
+00:37 +790: D:/RouteNote App/test/motion_overlay_test.dart: every maneuver kind lands on the map, none falls through
+00:37 +791: D:/RouteNote App/test/motion_overlay_test.dart: every maneuver kind lands on the map, none falls through
+00:37 +792: D:/RouteNote App/test/motion_overlay_test.dart: every maneuver kind lands on the map, none falls through
+00:37 +793: D:/RouteNote App/test/motion_overlay_test.dart: every maneuver kind lands on the map, none falls through
+00:37 +794: D:/RouteNote App/test/motion_overlay_test.dart: every maneuver kind lands on the map, none falls through
+00:37 +795: D:/RouteNote App/test/motion_overlay_test.dart: every maneuver kind lands on the map, none falls through
+00:37 +796: D:/RouteNote App/test/motion_overlay_test.dart: every maneuver kind lands on the map, none falls through
+00:37 +797: D:/RouteNote App/test/motion_overlay_test.dart: every maneuver kind lands on the map, none falls through
+  [1m[flutter_map][0m
+    We want to help keep OpenStreetMap available for everyone. Our examples
+    and demo app use the public tile servers, but they are NOT free to use by
+    everyone! Please review whether the OpenStreetMap tile servers are suitable
+    for your project.
+    See:
+      * https://operations.osmfoundation.org/policies/tiles (OSM Tile Usage Policy)
+      * https://docs.fleaflet.dev/osm-warn for more information about this warning
+00:37 +798: D:/RouteNote App/test/motion_overlay_test.dart: every maneuver kind lands on the map, none falls through
+00:37 +799: D:/RouteNote App/test/motion_signal_test.dart: MotionClassifier inTransit decays after the evidence TTL
+00:37 +800: D:/RouteNote App/test/motion_overlay_test.dart: a new trip clears the map markers and the score
+00:37 +801: D:/RouteNote App/test/motion_overlay_test.dart: a new trip clears the map markers and the score
+00:37 +802: D:/RouteNote App/test/motion_overlay_test.dart: a new trip clears the map markers and the score
+00:37 +803: D:/RouteNote App/test/motion_overlay_test.dart: a new trip clears the map markers and the score
+00:37 +804: D:/RouteNote App/test/motion_overlay_test.dart: a new trip clears the map markers and the score
+00:37 +805: D:/RouteNote App/test/motion_overlay_test.dart: a new trip clears the map markers and the score
+00:37 +806: D:/RouteNote App/test/motion_overlay_test.dart: a new trip clears the map markers and the score
+00:37 +807: D:/RouteNote App/test/motion_overlay_test.dart: a new trip clears the map markers and the score
+  [1m[flutter_map][0m
+    We want to help keep OpenStreetMap available for everyone. Our examples
+    and demo app use the public tile servers, but they are NOT free to use by
+    everyone! Please review whether the OpenStreetMap tile servers are suitable
+    for your project.
+    See:
+      * https://operations.osmfoundation.org/policies/tiles (OSM Tile Usage Policy)
+      * https://docs.fleaflet.dev/osm-warn for more information about this warning
+00:38 +808: D:/RouteNote App/test/motion_overlay_test.dart: a maneuver with no route evidence is never misplaced
+  [1m[flutter_map][0m
+    We want to help keep OpenStreetMap available for everyone. Our examples
+    and demo app use the public tile servers, but they are NOT free to use by
+    everyone! Please review whether the OpenStreetMap tile servers are suitable
+    for your project.
+    See:
+      * https://operations.osmfoundation.org/policies/tiles (OSM Tile Usage Policy)
+      * https://docs.fleaflet.dev/osm-warn for more information about this warning
+00:38 +809: D:/RouteNote App/test/motion_overlay_test.dart: tapping an event marker explains the maneuver
+00:38 +810: D:/RouteNote App/test/motion_overlay_test.dart: tapping an event marker explains the maneuver
+00:38 +811: D:/RouteNote App/test/motion_overlay_test.dart: tapping an event marker explains the maneuver
+00:38 +812: D:/RouteNote App/test/motion_overlay_test.dart: tapping an event marker explains the maneuver
+  [1m[flutter_map][0m
+    We want to help keep OpenStreetMap available for everyone. Our examples
+    and demo app use the public tile servers, but they are NOT free to use by
+    everyone! Please review whether the OpenStreetMap tile servers are suitable
+    for your project.
+    See:
+      * https://operations.osmfoundation.org/policies/tiles (OSM Tile Usage Policy)
+      * https://docs.fleaflet.dev/osm-warn for more information about this warning
+00:38 +813: D:/RouteNote App/test/offline_tile_cache_test.dart: wrapPin wraps child in RepaintBoundary
+00:39 +814: D:/RouteNote App/test/offline_tile_cache_test.dart: wrapPin wraps child in RepaintBoundary
+00:39 +815: D:/RouteNote App/test/offline_tile_cache_test.dart: wrapPin wraps child in RepaintBoundary
+00:39 +816: D:/RouteNote App/test/offline_tile_cache_test.dart: wrapPin wraps child in RepaintBoundary
+00:39 +817: D:/RouteNote App/test/offline_tile_cache_test.dart: wrapPin wraps child in RepaintBoundary
+00:39 +818: D:/RouteNote App/test/offline_tile_cache_test.dart: wrapPin wraps child in RepaintBoundary
+00:39 +819: D:/RouteNote App/test/offline_tile_cache_test.dart: wrapPin wraps child in RepaintBoundary
+00:39 +820: D:/RouteNote App/test/offline_tile_cache_test.dart: wrapPin wraps child in RepaintBoundary
+00:39 +821: D:/RouteNote App/test/offline_tile_cache_test.dart: wrapPin wraps child in RepaintBoundary
+00:39 +822: D:/RouteNote App/test/offline_tile_cache_test.dart: wrapPin wraps child in RepaintBoundary
+00:39 +823: D:/RouteNote App/test/place_card_test.dart: locked place masks title, notes and coordinates
+00:40 +824: D:/RouteNote App/test/place_card_test.dart: locked place masks title, notes and coordinates
+00:40 +825: D:/RouteNote App/test/place_card_test.dart: locked place masks title, notes and coordinates
+00:40 +826: D:/RouteNote App/test/place_card_test.dart: locked place masks title, notes and coordinates
+00:40 +827: D:/RouteNote App/test/place_card_test.dart: locked place masks title, notes and coordinates
+00:40 +828: D:/RouteNote App/test/place_card_test.dart: locked place masks title, notes and coordinates
+00:40 +829: D:/RouteNote App/test/place_card_test.dart: locked place masks title, notes and coordinates
+00:40 +830: D:/RouteNote App/test/place_card_test.dart: locked place masks title, notes and coordinates
+00:40 +831: D:/RouteNote App/test/place_card_test.dart: locked place masks title, notes and coordinates
+00:40 +832: D:/RouteNote App/test/place_card_test.dart: locked place masks title, notes and coordinates
+00:40 +833: D:/RouteNote App/test/place_card_test.dart: locked place masks title, notes and coordinates
+00:40 +834: D:/RouteNote App/test/place_card_test.dart: locked place masks title, notes and coordinates
+00:40 +835: D:/RouteNote App/test/place_card_test.dart: locked place masks title, notes and coordinates
+00:40 +836: D:/RouteNote App/test/place_list_touch_gesture_test.dart: long-press opens action without firing tap
+00:40 +837: D:/RouteNote App/test/place_list_touch_gesture_test.dart: long-press opens action without firing tap
+00:41 +838: D:/RouteNote App/test/place_list_touch_gesture_test.dart: long-press opens action without firing tap
+00:41 +839: D:/RouteNote App/test/place_list_touch_gesture_test.dart: long-press opens action without firing tap
+00:41 +840: D:/RouteNote App/test/place_list_touch_gesture_test.dart: long-press opens action without firing tap
+00:41 +841: D:/RouteNote App/test/place_list_touch_gesture_test.dart: long-press opens action without firing tap
+00:41 +842: D:/RouteNote App/test/place_list_touch_gesture_test.dart: long-press opens action without firing tap
+00:41 +843: D:/RouteNote App/test/place_list_touch_gesture_test.dart: long-press opens action without firing tap
+00:41 +844: D:/RouteNote App/test/place_list_touch_gesture_test.dart: long-press opens action without firing tap
+00:41 +845: D:/RouteNote App/test/place_list_touch_gesture_test.dart: long-press opens action without firing tap
+00:41 +846: D:/RouteNote App/test/place_list_touch_gesture_test.dart: long-press opens action without firing tap
+00:41 +847: D:/RouteNote App/test/place_list_touch_gesture_test.dart: long-press opens action without firing tap
+00:41 +848: D:/RouteNote App/test/place_list_touch_gesture_test.dart: long-press opens action without firing tap
+00:41 +849: D:/RouteNote App/test/place_list_touch_gesture_test.dart: long-press opens action without firing tap
+00:41 +850: D:/RouteNote App/test/place_list_touch_gesture_test.dart: long-press opens action without firing tap
+00:41 +851: D:/RouteNote App/test/place_list_touch_gesture_test.dart: long-press opens action without firing tap
+00:41 +852: D:/RouteNote App/test/place_list_touch_gesture_test.dart: long-press opens action without firing tap
+00:41 +853: D:/RouteNote App/test/place_list_touch_gesture_test.dart: long-press opens action without firing tap
+00:41 +854: D:/RouteNote App/test/place_list_touch_gesture_test.dart: long-press opens action without firing tap
+00:42 +855: D:/RouteNote App/test/place_list_touch_gesture_test.dart: long-press opens action without firing tap
+00:42 +856: D:/RouteNote App/test/place_list_touch_gesture_test.dart: long-press opens action without firing tap
+00:42 +857: D:/RouteNote App/test/place_list_touch_gesture_test.dart: long-press opens action without firing tap
+00:42 +858: D:/RouteNote App/test/place_list_touch_gesture_test.dart: long-press opens action without firing tap
+00:42 +859: D:/RouteNote App/test/place_list_touch_gesture_test.dart: long-press opens action without firing tap
+00:42 +860: D:/RouteNote App/test/place_list_touch_gesture_test.dart: long-press opens action without firing tap
+00:42 +861: D:/RouteNote App/test/place_list_touch_gesture_test.dart: long-press opens action without firing tap
+00:42 +862: D:/RouteNote App/test/place_list_touch_gesture_test.dart: long-press opens action without firing tap
+00:42 +863: D:/RouteNote App/test/place_list_touch_gesture_test.dart: long-press opens action without firing tap
+00:42 +864: D:/RouteNote App/test/place_list_touch_gesture_test.dart: long-press opens action without firing tap
+00:42 +865: D:/RouteNote App/test/place_list_touch_gesture_test.dart: long-press opens action without firing tap
+00:42 +866: D:/RouteNote App/test/place_list_touch_gesture_test.dart: long-press opens action without firing tap
+00:42 +867: D:/RouteNote App/test/place_list_touch_gesture_test.dart: long-press opens action without firing tap
+00:42 +868: D:/RouteNote App/test/place_list_touch_gesture_test.dart: long-press opens action without firing tap
+00:42 +869: D:/RouteNote App/test/place_list_touch_gesture_test.dart: long-press opens action without firing tap
+00:42 +870: D:/RouteNote App/test/place_list_touch_gesture_test.dart: long-press opens action without firing tap
+00:42 +871: D:/RouteNote App/test/place_list_touch_gesture_test.dart: long-press opens action without firing tap
+00:42 +872: D:/RouteNote App/test/place_link_suggestions_card_test.dart: shows a matching saved place, its distance and the dwell
+00:42 +873: D:/RouteNote App/test/place_list_touch_gesture_test.dart: CompactActionBar touch targets are at least 48dp
+00:42 +874: D:/RouteNote App/test/place_link_suggestions_card_test.dart: a locked matched place never appears as a saved suggestion
+00:42 +875: D:/RouteNote App/test/place_link_suggestions_card_test.dart: offers to save an unmatched stop
+00:42 +876: D:/RouteNote App/test/place_link_suggestions_card_test.dart: renders in dark mode
+00:42 +877: D:/RouteNote App/test/place_link_suggestions_card_test.dart: renders mirrored for Arabic
+00:42 +878: D:/RouteNote App/test/place_link_suggestions_card_test.dart: (tearDownAll)
+00:43 +878: D:/RouteNote App/test/qibla_indicator_test.dart: QiblaCalculator.bearingFrom points due north/south/east/west of Mecca correctly
+00:43 +879: D:/RouteNote App/test/qibla_indicator_test.dart: QiblaCalculator.bearingFrom rejects out-of-range latitudes
+00:43 +880: D:/RouteNote App/test/qibla_indicator_test.dart: QiblaCalculator.bearingFrom always returns a bearing within [0, 360)
+00:43 +881: D:/RouteNote App/test/qibla_indicator_test.dart: MagneticDeclination.degreesAt reproduces the published NOAA WMM-2020 test values
+00:43 +882: D:/RouteNote App/test/qibla_indicator_test.dart: MagneticDeclination.degreesAt is westward (negative) in New York and eastward (positive) in Sydney
+00:43 +883: D:/RouteNote App/test/qibla_indicator_test.dart: MagneticDeclination.degreesAt returns null for out-of-range or non-finite coordinates
+00:43 +884: D:/RouteNote App/test/qibla_indicator_test.dart: QiblaIndicator applies the magnetic declination to the true heading
+00:43 +885: D:/RouteNote App/test/qibla_indicator_test.dart: QiblaIndicator applies the magnetic declination to the true heading
+00:43 +886: D:/RouteNote App/test/qibla_indicator_test.dart: QiblaIndicator applies the magnetic declination to the true heading
+00:43 +887: D:/RouteNote App/test/qibla_indicator_test.dart: QiblaIndicator applies the magnetic declination to the true heading
+00:43 +888: D:/RouteNote App/test/qibla_indicator_test.dart: QiblaIndicator applies the magnetic declination to the true heading
+00:43 +889: D:/RouteNote App/test/qibla_indicator_test.dart: QiblaIndicator applies the magnetic declination to the true heading
+00:43 +890: D:/RouteNote App/test/qibla_indicator_test.dart: QiblaIndicator applies the magnetic declination to the true heading
+00:45 +891: D:/RouteNote App/test/qibla_indicator_test.dart: QiblaIndicator applies the magnetic declination to the true heading
+00:45 +892: D:/RouteNote App/test/qibla_indicator_test.dart: QiblaIndicator applies the magnetic declination to the true heading
+00:45 +893: D:/RouteNote App/test/qibla_indicator_test.dart: QiblaIndicator applies the magnetic declination to the true heading
+00:45 +894: D:/RouteNote App/test/qibla_indicator_test.dart: QiblaIndicator applies the magnetic declination to the true heading
+00:45 +895: D:/RouteNote App/test/qibla_indicator_test.dart: QiblaIndicator applies the magnetic declination to the true heading
+00:45 +896: D:/RouteNote App/test/qibla_indicator_test.dart: QiblaIndicator applies the magnetic declination to the true heading
+00:45 +897: D:/RouteNote App/test/qibla_indicator_test.dart: QiblaIndicator applies the magnetic declination to the true heading
+00:45 +898: D:/RouteNote App/test/qibla_indicator_test.dart: QiblaIndicator applies the magnetic declination to the true heading
+00:45 +899: D:/RouteNote App/test/qibla_indicator_test.dart: QiblaIndicator applies the magnetic declination to the true heading
+00:45 +900: D:/RouteNote App/test/qibla_indicator_test.dart: QiblaIndicator applies the magnetic declination to the true heading
+00:45 +901: D:/RouteNote App/test/qibla_indicator_test.dart: QiblaIndicator applies the magnetic declination to the true heading
+00:45 +902: D:/RouteNote App/test/qibla_indicator_test.dart: QiblaIndicator applies the magnetic declination to the true heading
+00:45 +903: D:/RouteNote App/test/qibla_indicator_test.dart: QiblaIndicator applies the magnetic declination to the true heading
+00:45 +904: D:/RouteNote App/test/route_history_screen_test.dart: RouteHistoryScreen — timeline renders the day as drive, stopover and walk cards
+00:45 +905: D:/RouteNote App/test/route_history_screen_test.dart: RouteHistoryScreen — timeline renders the day as drive, stopover and walk cards
+00:45 +906: D:/RouteNote App/test/route_history_screen_test.dart: RouteHistoryScreen — timeline renders the day as drive, stopover and walk cards
+00:45 +907: D:/RouteNote App/test/route_history_screen_test.dart: RouteHistoryScreen — timeline renders the day as drive, stopover and walk cards
+00:45 +908: D:/RouteNote App/test/route_history_screen_test.dart: RouteHistoryScreen — timeline renders the day as drive, stopover and walk cards
+00:45 +909: D:/RouteNote App/test/route_history_screen_test.dart: RouteHistoryScreen — timeline renders the day as drive, stopover and walk cards
+00:46 +910: D:/RouteNote App/test/route_history_screen_test.dart: RouteHistoryScreen — timeline renders the day as drive, stopover and walk cards
+00:46 +911: D:/RouteNote App/test/route_history_screen_test.dart: RouteHistoryScreen — timeline renders the day as drive, stopover and walk cards
+00:46 +912: D:/RouteNote App/test/route_history_screen_test.dart: RouteHistoryScreen — timeline renders the day as drive, stopover and walk cards
+00:46 +913: D:/RouteNote App/test/route_history_screen_test.dart: RouteHistoryScreen — timeline renders the day as drive, stopover and walk cards
+00:46 +914: D:/RouteNote App/test/route_history_screen_test.dart: RouteHistoryScreen — timeline renders the day as drive, stopover and walk cards
+00:46 +915: D:/RouteNote App/test/route_history_screen_test.dart: RouteHistoryScreen — timeline renders the day as drive, stopover and walk cards
+00:46 +916: D:/RouteNote App/test/route_history_screen_test.dart: RouteHistoryScreen — timeline renders the day as drive, stopover and walk cards
+00:46 +917: D:/RouteNote App/test/route_history_screen_test.dart: RouteHistoryScreen — timeline renders the day as drive, stopover and walk cards
+00:46 +918: D:/RouteNote App/test/route_history_screen_test.dart: RouteHistoryScreen — timeline renders the day as drive, stopover and walk cards
+00:48 +919: D:/RouteNote App/test/route_preview_card_test.dart: draws the route over OSM tiles with both markers and distance
+00:48 +920: D:/RouteNote App/test/route_preview_card_test.dart: draws the route over OSM tiles with both markers and distance
+00:48 +921: D:/RouteNote App/test/route_preview_card_test.dart: draws the route over OSM tiles with both markers and distance
+  [1m[flutter_map][0m
+    We want to help keep OpenStreetMap available for everyone. Our examples
+    and demo app use the public tile servers, but they are NOT free to use by
+    everyone! Please review whether the OpenStreetMap tile servers are suitable
+    for your project.
+    See:
+      * https://operations.osmfoundation.org/policies/tiles (OSM Tile Usage Policy)
+      * https://docs.fleaflet.dev/osm-warn for more information about this warning
+00:48 +922: D:/RouteNote App/test/route_timeline_test.dart: shows every milestone with its name, kind, exact time and date
+00:48 +923: D:/RouteNote App/test/route_timeline_test.dart: shows every milestone with its name, kind, exact time and date
+00:48 +924: D:/RouteNote App/test/route_timeline_test.dart: shows every milestone with its name, kind, exact time and date
+00:48 +925: D:/RouteNote App/test/route_timeline_test.dart: shows every milestone with its name, kind, exact time and date
+00:48 +926: D:/RouteNote App/test/route_timeline_test.dart: shows every milestone with its name, kind, exact time and date
+00:48 +927: D:/RouteNote App/test/route_timeline_test.dart: shows every milestone with its name, kind, exact time and date
+00:48 +928: D:/RouteNote App/test/route_timeline_test.dart: shows every milestone with its name, kind, exact time and date
+00:48 +929: D:/RouteNote App/test/route_timeline_test.dart: shows every milestone with its name, kind, exact time and date
+00:48 +930: D:/RouteNote App/test/route_timeline_test.dart: shows every milestone with its name, kind, exact time and date
+00:48 +931: D:/RouteNote App/test/route_timeline_test.dart: shows every milestone with its name, kind, exact time and date
+00:48 +932: D:/RouteNote App/test/route_timeline_test.dart: shows every milestone with its name, kind, exact time and date
+00:48 +933: D:/RouteNote App/test/route_timeline_test.dart: shows every milestone with its name, kind, exact time and date
+00:48 +934: D:/RouteNote App/test/route_timeline_test.dart: shows every milestone with its name, kind, exact time and date
+00:48 +935: D:/RouteNote App/test/route_timeline_test.dart: shows every milestone with its name, kind, exact time and date
+00:48 +936: D:/RouteNote App/test/route_timeline_test.dart: shows every milestone with its name, kind, exact time and date
+00:48 +937: D:/RouteNote App/test/route_timeline_test.dart: shows every milestone with its name, kind, exact time and date
+00:48 +938: D:/RouteNote App/test/route_timeline_test.dart: shows every milestone with its name, kind, exact time and date
+00:48 +939: D:/RouteNote App/test/route_timeline_test.dart: shows every milestone with its name, kind, exact time and date
+00:48 +940: D:/RouteNote App/test/route_timeline_test.dart: shows every milestone with its name, kind, exact time and date
+00:48 +941: D:/RouteNote App/test/route_timeline_test.dart: shows every milestone with its name, kind, exact time and date
+00:48 +942: D:/RouteNote App/test/route_timeline_test.dart: shows every milestone with its name, kind, exact time and date
+00:48 +943: D:/RouteNote App/test/route_timeline_test.dart: shows every milestone with its name, kind, exact time and date
+00:48 +944: D:/RouteNote App/test/route_timeline_test.dart: shows every milestone with its name, kind, exact time and date
+00:48 +945: D:/RouteNote App/test/route_timeline_test.dart: shows every milestone with its name, kind, exact time and date
+00:48 +946: D:/RouteNote App/test/route_timeline_test.dart: shows every milestone with its name, kind, exact time and date
+00:48 +947: D:/RouteNote App/test/route_timeline_test.dart: shows every milestone with its name, kind, exact time and date
+00:48 +948: D:/RouteNote App/test/route_timeline_test.dart: shows every milestone with its name, kind, exact time and date
+00:48 +949: D:/RouteNote App/test/route_timeline_test.dart: shows every milestone with its name, kind, exact time and date
+00:48 +949: D:/RouteNote App/test/route_preview_card_test.dart: connects the device to the place with a straight path
+  [1m[flutter_map][0m
+    We want to help keep OpenStreetMap available for everyone. Our examples
+    and demo app use the public tile servers, but they are NOT free to use by
+    everyone! Please review whether the OpenStreetMap tile servers are suitable
+    for your project.
+    See:
+      * https://operations.osmfoundation.org/policies/tiles (OSM Tile Usage Policy)
+      * https://docs.fleaflet.dev/osm-warn for more information about this warning
+00:48 +950: D:/RouteNote App/test/route_timeline_test.dart: shows every milestone with its name, kind, exact time and date
+00:48 +951: D:/RouteNote App/test/route_timeline_test.dart: shows every milestone with its name, kind, exact time and date
+00:48 +952: D:/RouteNote App/test/saved_places_vault_screen_test.dart: prompts for verification, then lists the vaulted places
+00:48 +953: D:/RouteNote App/test/saved_places_vault_screen_test.dart: prompts for verification, then lists the vaulted places
+00:49 +954: D:/RouteNote App/test/saved_places_vault_screen_test.dart: prompts for verification, then lists the vaulted places
+00:49 +955: D:/RouteNote App/test/saved_places_vault_screen_test.dart: prompts for verification, then lists the vaulted places
+00:49 +956: D:/RouteNote App/test/saved_places_vault_screen_test.dart: prompts for verification, then lists the vaulted places
+00:49 +957: D:/RouteNote App/test/saved_places_vault_screen_test.dart: prompts for verification, then lists the vaulted places
+00:49 +957: D:/RouteNote App/test/route_preview_card_test.dart: fits the camera around both markers
+  [1m[flutter_map][0m
+    We want to help keep OpenStreetMap available for everyone. Our examples
+    and demo app use the public tile servers, but they are NOT free to use by
+    everyone! Please review whether the OpenStreetMap tile servers are suitable
+    for your project.
+    See:
+      * https://operations.osmfoundation.org/policies/tiles (OSM Tile Usage Policy)
+      * https://docs.fleaflet.dev/osm-warn for more information about this warning
+00:49 +958: D:/RouteNote App/test/saved_places_vault_screen_test.dart: prompts for verification, then lists the vaulted places
+00:49 +959: D:/RouteNote App/test/saved_places_vault_screen_test.dart: prompts for verification, then lists the vaulted places
+00:49 +960: D:/RouteNote App/test/saved_places_vault_screen_test.dart: prompts for verification, then lists the vaulted places
+00:49 +961: D:/RouteNote App/test/saved_places_vault_screen_test.dart: prompts for verification, then lists the vaulted places
+00:49 +961: D:/RouteNote App/test/route_preview_card_test.dart: keeps the offline grid under a transparent map
+  [1m[flutter_map][0m
+    We want to help keep OpenStreetMap available for everyone. Our examples
+    and demo app use the public tile servers, but they are NOT free to use by
+    everyone! Please review whether the OpenStreetMap tile servers are suitable
+    for your project.
+    See:
+      * https://operations.osmfoundation.org/policies/tiles (OSM Tile Usage Policy)
+      * https://docs.fleaflet.dev/osm-warn for more information about this warning
+00:49 +962: D:/RouteNote App/test/saved_places_vault_screen_test.dart: prompts for verification, then lists the vaulted places
+00:49 +963: D:/RouteNote App/test/saved_places_vault_screen_test.dart: prompts for verification, then lists the vaulted places
+00:49 +964: D:/RouteNote App/test/saved_places_vault_screen_test.dart: prompts for verification, then lists the vaulted places
+00:49 +965: D:/RouteNote App/test/saved_places_vault_screen_test.dart: prompts for verification, then lists the vaulted places
+00:49 +965: D:/RouteNote App/test/route_preview_card_test.dart: marks only the saved place when location is off
+  [1m[flutter_map][0m
+    We want to help keep OpenStreetMap available for everyone. Our examples
+    and demo app use the public tile servers, but they are NOT free to use by
+    everyone! Please review whether the OpenStreetMap tile servers are suitable
+    for your project.
+    See:
+      * https://operations.osmfoundation.org/policies/tiles (OSM Tile Usage Policy)
+      * https://docs.fleaflet.dev/osm-warn for more information about this warning
+00:49 +966: D:/RouteNote App/test/saved_places_vault_screen_test.dart: prompts for verification, then lists the vaulted places
+00:49 +967: D:/RouteNote App/test/saved_places_vault_screen_test.dart: prompts for verification, then lists the vaulted places
+00:49 +968: D:/RouteNote App/test/saved_places_vault_screen_test.dart: prompts for verification, then lists the vaulted places
+00:50 +969: D:/RouteNote App/test/saved_places_vault_screen_test.dart: prompts for verification, then lists the vaulted places
+00:50 +970: D:/RouteNote App/test/saved_places_vault_screen_test.dart: prompts for verification, then lists the vaulted places
+00:50 +971: D:/RouteNote App/test/saved_places_vault_screen_test.dart: prompts for verification, then lists the vaulted places
+00:50 +972: D:/RouteNote App/test/saved_places_vault_screen_test.dart: prompts for verification, then lists the vaulted places
+00:50 +973: D:/RouteNote App/test/saved_places_vault_screen_test.dart: prompts for verification, then lists the vaulted places
+00:50 +974: D:/RouteNote App/test/saved_places_vault_screen_test.dart: prompts for verification, then lists the vaulted places
+00:50 +975: D:/RouteNote App/test/saved_places_vault_screen_test.dart: prompts for verification, then lists the vaulted places
+00:50 +976: D:/RouteNote App/test/saved_places_vault_screen_test.dart: prompts for verification, then lists the vaulted places
+00:50 +976: D:/RouteNote App/test/route_preview_card_test.dart: tapping the card opens the larger preview sheet
+  [1m[flutter_map][0m
+    We want to help keep OpenStreetMap available for everyone. Our examples
+    and demo app use the public tile servers, but they are NOT free to use by
+    everyone! Please review whether the OpenStreetMap tile servers are suitable
+    for your project.
+    See:
+      * https://operations.osmfoundation.org/policies/tiles (OSM Tile Usage Policy)
+      * https://docs.fleaflet.dev/osm-warn for more information about this warning
+  [1m[flutter_map][0m
+    We want to help keep OpenStreetMap available for everyone. Our examples
+    and demo app use the public tile servers, but they are NOT free to use by
+    everyone! Please review whether the OpenStreetMap tile servers are suitable
+    for your project.
+    See:
+      * https://operations.osmfoundation.org/policies/tiles (OSM Tile Usage Policy)
+      * https://docs.fleaflet.dev/osm-warn for more information about this warning
+00:50 +977: D:/RouteNote App/test/saved_places_vault_screen_test.dart: prompts for verification, then lists the vaulted places
+00:50 +978: D:/RouteNote App/test/saved_places_vault_screen_test.dart: prompts for verification, then lists the vaulted places
+00:50 +979: D:/RouteNote App/test/saved_places_vault_screen_test.dart: prompts for verification, then lists the vaulted places
+00:51 +980: D:/RouteNote App/test/route_history_screen_test.dart: RouteHistoryScreen — map view the toggle swaps the timeline for the colour-coded map
+  [1m[flutter_map][0m
+    We want to help keep OpenStreetMap available for everyone. Our examples
+    and demo app use the public tile servers, but they are NOT free to use by
+    everyone! Please review whether the OpenStreetMap tile servers are suitable
+    for your project.
+    See:
+      * https://operations.osmfoundation.org/policies/tiles (OSM Tile Usage Policy)
+      * https://docs.fleaflet.dev/osm-warn for more information about this warning
+00:51 +981: D:/RouteNote App/test/share_flow_test.dart: a shared Google Maps link opens the save screen pre-filled
+00:51 +982: D:/RouteNote App/test/share_flow_test.dart: a shared Google Maps link opens the save screen pre-filled
+00:51 +983: D:/RouteNote App/test/share_flow_test.dart: a shared Google Maps link opens the save screen pre-filled
+00:51 +984: D:/RouteNote App/test/share_flow_test.dart: a shared Google Maps link opens the save screen pre-filled
+00:51 +985: D:/RouteNote App/test/share_flow_test.dart: a shared Google Maps link opens the save screen pre-filled
+00:51 +986: D:/RouteNote App/test/share_flow_test.dart: a shared Google Maps link opens the save screen pre-filled
+00:51 +987: D:/RouteNote App/test/share_flow_test.dart: a shared Google Maps link opens the save screen pre-filled
+00:51 +988: D:/RouteNote App/test/share_flow_test.dart: a shared Google Maps link opens the save screen pre-filled
+00:51 +989: D:/RouteNote App/test/share_flow_test.dart: a shared Google Maps link opens the save screen pre-filled
+00:51 +990: D:/RouteNote App/test/share_flow_test.dart: a shared Google Maps link opens the save screen pre-filled
+00:51 +991: D:/RouteNote App/test/share_flow_test.dart: a shared Google Maps link opens the save screen pre-filled
+00:51 +992: D:/RouteNote App/test/share_flow_test.dart: a shared Google Maps link opens the save screen pre-filled
+00:52 +993: D:/RouteNote App/test/share_flow_test.dart: a shared Google Maps link opens the save screen pre-filled
+00:52 +994: D:/RouteNote App/test/share_flow_test.dart: a shared Google Maps link opens the save screen pre-filled
+00:52 +995: D:/RouteNote App/test/share_flow_test.dart: a shared Google Maps link opens the save screen pre-filled
+00:52 +996: D:/RouteNote App/test/share_flow_test.dart: a shared Google Maps link opens the save screen pre-filled
+00:52 +997: D:/RouteNote App/test/share_flow_test.dart: a shared Google Maps link opens the save screen pre-filled
+00:52 +998: D:/RouteNote App/test/share_flow_test.dart: a shared Google Maps link opens the save screen pre-filled
+00:52 +999: D:/RouteNote App/test/share_flow_test.dart: a shared Google Maps link opens the save screen pre-filled
+00:52 +1000: D:/RouteNote App/test/share_flow_test.dart: a shared Google Maps link opens the save screen pre-filled
+00:52 +1001: D:/RouteNote App/test/share_flow_test.dart: a shared Google Maps link opens the save screen pre-filled
+00:53 +1002: D:/RouteNote App/test/share_flow_test.dart: a shared Google Maps link opens the save screen pre-filled
+00:53 +1003: D:/RouteNote App/test/share_flow_test.dart: a shared Google Maps link opens the save screen pre-filled
+00:53 +1004: D:/RouteNote App/test/share_flow_test.dart: a shared Google Maps link opens the save screen pre-filled
+00:53 +1005: D:/RouteNote App/test/share_flow_test.dart: a shared Google Maps link opens the save screen pre-filled
+00:53 +1006: D:/RouteNote App/test/share_flow_test.dart: a shared Google Maps link opens the save screen pre-filled
+00:53 +1007: D:/RouteNote App/test/share_flow_test.dart: a shared Google Maps link opens the save screen pre-filled
+00:54 +1008: D:/RouteNote App/test/share_flow_test.dart: a shared Google Maps link opens the save screen pre-filled
+00:54 +1009: D:/RouteNote App/test/share_flow_test.dart: a shared Google Maps link opens the save screen pre-filled
+00:54 +1010: D:/RouteNote App/test/share_flow_test.dart: a shared Google Maps link opens the save screen pre-filled
+00:54 +1011: D:/RouteNote App/test/share_flow_test.dart: a shared Google Maps link opens the save screen pre-filled
+00:54 +1012: D:/RouteNote App/test/share_flow_test.dart: a shared Google Maps link opens the save screen pre-filled
+00:54 +1013: D:/RouteNote App/test/share_flow_test.dart: a shared Google Maps link opens the save screen pre-filled
+00:54 +1014: D:/RouteNote App/test/share_flow_test.dart: a shared Google Maps link opens the save screen pre-filled
+00:54 +1015: D:/RouteNote App/test/share_flow_test.dart: a shared Google Maps link opens the save screen pre-filled
+00:54 +1016: D:/RouteNote App/test/share_flow_test.dart: a shared Google Maps link opens the save screen pre-filled
+00:54 +1017: D:/RouteNote App/test/share_flow_test.dart: a shared Google Maps link opens the save screen pre-filled
+00:54 +1018: D:/RouteNote App/test/share_flow_test.dart: a shared Google Maps link opens the save screen pre-filled
+00:54 +1019: D:/RouteNote App/test/share_flow_test.dart: a shared Google Maps link opens the save screen pre-filled
+00:54 +1020: D:/RouteNote App/test/share_flow_test.dart: a shared Google Maps link opens the save screen pre-filled
+00:54 +1021: D:/RouteNote App/test/share_flow_test.dart: a shared Google Maps link opens the save screen pre-filled
+00:54 +1022: D:/RouteNote App/test/share_flow_test.dart: a shared Google Maps link opens the save screen pre-filled
+00:54 +1023: D:/RouteNote App/test/share_flow_test.dart: a shared Google Maps link opens the save screen pre-filled
+00:54 +1024: D:/RouteNote App/test/share_flow_test.dart: a shared Google Maps link opens the save screen pre-filled
+00:55 +1025: D:/RouteNote App/test/smart_insights_toggle_test.dart: home shows Smart Insights by default
+00:55 +1026: D:/RouteNote App/test/smart_insights_toggle_test.dart: home shows Smart Insights by default
+00:55 +1027: D:/RouteNote App/test/smart_insights_toggle_test.dart: home shows Smart Insights by default
+00:55 +1028: D:/RouteNote App/test/smart_insights_toggle_test.dart: home shows Smart Insights by default
+00:55 +1029: D:/RouteNote App/test/smart_insights_toggle_test.dart: home shows Smart Insights by default
+00:55 +1030: D:/RouteNote App/test/smart_insights_toggle_test.dart: home shows Smart Insights by default
+00:55 +1031: D:/RouteNote App/test/smart_insights_toggle_test.dart: home shows Smart Insights by default
+00:55 +1032: D:/RouteNote App/test/smart_insights_toggle_test.dart: home shows Smart Insights by default
+00:55 +1033: D:/RouteNote App/test/smart_insights_toggle_test.dart: home shows Smart Insights by default
+00:55 +1034: D:/RouteNote App/test/smart_insights_toggle_test.dart: home shows Smart Insights by default
+00:55 +1035: D:/RouteNote App/test/smart_insights_toggle_test.dart: home shows Smart Insights by default
+00:55 +1036: D:/RouteNote App/test/smart_insights_toggle_test.dart: home shows Smart Insights by default
+00:55 +1037: D:/RouteNote App/test/smart_insights_toggle_test.dart: home shows Smart Insights by default
+00:56 +1037: D:/RouteNote App/test/share_flow_test.dart: shared text without coordinates shows a message
+[2026-11-19T18:32:03.384037] [WARNING] [LOCATION_PARSER] Failed to parse shared map text
+  ErrorDetails: "just a plain note with no location" did not match the maps/regex patterns
+
+00:56 +1038: D:/RouteNote App/test/smart_insights_toggle_test.dart: home shows Smart Insights by default
+00:56 +1039: D:/RouteNote App/test/smart_insights_toggle_test.dart: home shows Smart Insights by default
+00:56 +1040: D:/RouteNote App/test/sync_conflict_ui_test.dart: conflict sheet offers all three resolutions and resolves one
+00:56 +1041: D:/RouteNote App/test/sync_conflict_ui_test.dart: conflict sheet offers all three resolutions and resolves one
+00:56 +1042: D:/RouteNote App/test/sync_conflict_ui_test.dart: conflict sheet offers all three resolutions and resolves one
+00:56 +1043: D:/RouteNote App/test/sync_conflict_ui_test.dart: conflict sheet offers all three resolutions and resolves one
+00:56 +1044: D:/RouteNote App/test/sync_conflict_ui_test.dart: conflict sheet offers all three resolutions and resolves one
+00:56 +1045: D:/RouteNote App/test/sync_conflict_ui_test.dart: conflict sheet offers all three resolutions and resolves one
+00:56 +1046: D:/RouteNote App/test/sync_conflict_ui_test.dart: conflict sheet offers all three resolutions and resolves one
+00:56 +1047: D:/RouteNote App/test/sync_conflict_ui_test.dart: conflict sheet offers all three resolutions and resolves one
+00:56 +1048: D:/RouteNote App/test/sync_conflict_ui_test.dart: conflict sheet offers all three resolutions and resolves one
+00:57 +1049: D:/RouteNote App/test/sync_conflict_ui_test.dart: conflict sheet offers all three resolutions and resolves one
+00:57 +1050: D:/RouteNote App/test/sync_conflict_ui_test.dart: conflict sheet offers all three resolutions and resolves one
+00:57 +1051: D:/RouteNote App/test/sync_conflict_ui_test.dart: conflict sheet offers all three resolutions and resolves one
+00:57 +1052: D:/RouteNote App/test/sync_conflict_ui_test.dart: conflict sheet offers all three resolutions and resolves one
+00:57 +1053: D:/RouteNote App/test/sync_conflict_ui_test.dart: conflict sheet offers all three resolutions and resolves one
+00:57 +1054: D:/RouteNote App/test/sync_conflict_ui_test.dart: conflict sheet offers all three resolutions and resolves one
+00:57 +1055: D:/RouteNote App/test/sync_conflict_ui_test.dart: conflict sheet offers all three resolutions and resolves one
+00:57 +1056: D:/RouteNote App/test/sync_conflict_ui_test.dart: conflict sheet offers all three resolutions and resolves one
+00:57 +1057: D:/RouteNote App/test/sync_conflict_ui_test.dart: conflict sheet offers all three resolutions and resolves one
+00:57 +1058: D:/RouteNote App/test/sync_conflict_ui_test.dart: conflict sheet offers all three resolutions and resolves one
+00:58 +1059: D:/RouteNote App/test/tracking_settings_test.dart: the today report refreshes as fixes arrive (no toggle needed)
+00:58 +1060: D:/RouteNote App/test/tracking_settings_test.dart: the today report refreshes as fixes arrive (no toggle needed)
+00:58 +1061: D:/RouteNote App/test/tracking_settings_test.dart: the today report refreshes as fixes arrive (no toggle needed)
+00:58 +1062: D:/RouteNote App/test/tracking_settings_test.dart: the today report refreshes as fixes arrive (no toggle needed)
+00:58 +1063: D:/RouteNote App/test/tracking_settings_test.dart: the today report refreshes as fixes arrive (no toggle needed)
+00:58 +1064: D:/RouteNote App/test/tracking_settings_test.dart: the today report refreshes as fixes arrive (no toggle needed)
+00:58 +1065: D:/RouteNote App/test/tracking_settings_test.dart: the today report refreshes as fixes arrive (no toggle needed)
+00:58 +1066: D:/RouteNote App/test/tracking_settings_test.dart: the today report refreshes as fixes arrive (no toggle needed)
+00:58 +1067: D:/RouteNote App/test/tracking_settings_test.dart: the today report refreshes as fixes arrive (no toggle needed)
+00:58 +1068: D:/RouteNote App/test/tracking_settings_test.dart: the today report refreshes as fixes arrive (no toggle needed)
+00:58 +1069: D:/RouteNote App/test/tracking_settings_test.dart: the today report refreshes as fixes arrive (no toggle needed)
+00:58 +1070: D:/RouteNote App/test/tracking_settings_test.dart: the today report refreshes as fixes arrive (no toggle needed)
+00:58 +1071: D:/RouteNote App/test/tracking_settings_test.dart: the today report refreshes as fixes arrive (no toggle needed)
+00:58 +1072: D:/RouteNote App/test/tracking_settings_test.dart: the today report refreshes as fixes arrive (no toggle needed)
+00:58 +1073: D:/RouteNote App/test/tracking_settings_test.dart: the today report refreshes as fixes arrive (no toggle needed)
+00:58 +1074: D:/RouteNote App/test/tracking_settings_test.dart: the today report refreshes as fixes arrive (no toggle needed)
+00:58 +1075: D:/RouteNote App/test/tracking_settings_test.dart: the today report refreshes as fixes arrive (no toggle needed)
+00:59 +1076: D:/RouteNote App/test/tracking_settings_test.dart: the today report refreshes as fixes arrive (no toggle needed)
+00:59 +1077: D:/RouteNote App/test/tracking_settings_test.dart: the today report refreshes as fixes arrive (no toggle needed)
+00:59 +1078: D:/RouteNote App/test/tracking_settings_test.dart: the today report refreshes as fixes arrive (no toggle needed)
+00:59 +1079: D:/RouteNote App/test/tracking_settings_test.dart: the today report refreshes as fixes arrive (no toggle needed)
+00:59 +1080: D:/RouteNote App/test/tracking_settings_test.dart: the today report refreshes as fixes arrive (no toggle needed)
+00:59 +1081: D:/RouteNote App/test/tracking_settings_test.dart: the today report refreshes as fixes arrive (no toggle needed)
+00:59 +1082: D:/RouteNote App/test/tracking_settings_test.dart: the today report refreshes as fixes arrive (no toggle needed)
+00:59 +1083: D:/RouteNote App/test/tracking_settings_test.dart: the today report refreshes as fixes arrive (no toggle needed)
+00:59 +1084: D:/RouteNote App/test/tracking_settings_test.dart: the today report refreshes as fixes arrive (no toggle needed)
+00:59 +1085: D:/RouteNote App/test/tracking_settings_test.dart: the today report refreshes as fixes arrive (no toggle needed)
+00:59 +1086: D:/RouteNote App/test/tracking_settings_test.dart: the today report refreshes as fixes arrive (no toggle needed)
+00:59 +1087: D:/RouteNote App/test/tracking_settings_test.dart: the today report refreshes as fixes arrive (no toggle needed)
+00:59 +1088: D:/RouteNote App/test/tracking_settings_test.dart: the today report refreshes as fixes arrive (no toggle needed)
+00:59 +1089: D:/RouteNote App/test/tracking_settings_test.dart: the today report refreshes as fixes arrive (no toggle needed)
+00:59 +1090: D:/RouteNote App/test/tracking_settings_test.dart: the today report refreshes as fixes arrive (no toggle needed)
+00:59 +1091: D:/RouteNote App/test/tracking_settings_test.dart: the today report refreshes as fixes arrive (no toggle needed)
+00:59 +1092: D:/RouteNote App/test/tracking_settings_test.dart: the today report refreshes as fixes arrive (no toggle needed)
+00:59 +1093: D:/RouteNote App/test/tracking_settings_test.dart: the today report refreshes as fixes arrive (no toggle needed)
+00:59 +1094: D:/RouteNote App/test/tracking_settings_test.dart: the today report refreshes as fixes arrive (no toggle needed)
+00:59 +1095: D:/RouteNote App/test/tracking_settings_test.dart: the today report refreshes as fixes arrive (no toggle needed)
+01:00 +1096: D:/RouteNote App/test/trip_route_card_test.dart: renders the OpenStreetMap tile view over the offline grid
+01:01 +1097: D:/RouteNote App/test/trip_route_card_test.dart: renders the OpenStreetMap tile view over the offline grid
+01:01 +1098: D:/RouteNote App/test/trip_route_card_test.dart: renders the OpenStreetMap tile view over the offline grid
+01:01 +1099: D:/RouteNote App/test/trip_route_card_test.dart: renders the OpenStreetMap tile view over the offline grid
+01:01 +1100: D:/RouteNote App/test/trip_route_card_test.dart: renders the OpenStreetMap tile view over the offline grid
+01:01 +1101: D:/RouteNote App/test/trip_route_card_test.dart: renders the OpenStreetMap tile view over the offline grid
+01:01 +1102: D:/RouteNote App/test/trip_route_card_test.dart: renders the OpenStreetMap tile view over the offline grid
+01:02 +1103: D:/RouteNote App/test/trip_route_card_test.dart: renders the OpenStreetMap tile view over the offline grid
+  [1m[flutter_map][0m
+    We want to help keep OpenStreetMap available for everyone. Our examples
+    and demo app use the public tile servers, but they are NOT free to use by
+    everyone! Please review whether the OpenStreetMap tile servers are suitable
+    for your project.
+    See:
+      * https://operations.osmfoundation.org/policies/tiles (OSM Tile Usage Policy)
+      * https://docs.fleaflet.dev/osm-warn for more information about this warning
+01:03 +1104: D:/RouteNote App/test/unlock_flow_test.dart: unlock persists isLocked=false and refreshes the UI
+01:03 +1105: D:/RouteNote App/test/unlock_flow_test.dart: unlock persists isLocked=false and refreshes the UI
+01:03 +1106: D:/RouteNote App/test/unlock_flow_test.dart: unlock persists isLocked=false and refreshes the UI
+01:03 +1107: D:/RouteNote App/test/unlock_flow_test.dart: unlock persists isLocked=false and refreshes the UI
+01:03 +1108: D:/RouteNote App/test/unlock_flow_test.dart: unlock persists isLocked=false and refreshes the UI
+01:03 +1108: D:/RouteNote App/test/trip_route_card_test.dart: auto-fits the camera around the whole recorded route
+  [1m[flutter_map][0m
+    We want to help keep OpenStreetMap available for everyone. Our examples
+    and demo app use the public tile servers, but they are NOT free to use by
+    everyone! Please review whether the OpenStreetMap tile servers are suitable
+    for your project.
+    See:
+      * https://operations.osmfoundation.org/policies/tiles (OSM Tile Usage Policy)
+      * https://docs.fleaflet.dev/osm-warn for more information about this warning
+01:03 +1109: D:/RouteNote App/test/unlock_flow_test.dart: unlock persists isLocked=false and refreshes the UI
+01:03 +1110: D:/RouteNote App/test/unlock_flow_test.dart: unlock persists isLocked=false and refreshes the UI
+01:03 +1111: D:/RouteNote App/test/unlock_flow_test.dart: unlock persists isLocked=false and refreshes the UI
+01:03 +1112: D:/RouteNote App/test/unlock_flow_test.dart: unlock persists isLocked=false and refreshes the UI
+01:03 +1113: D:/RouteNote App/test/unlock_flow_test.dart: unlock persists isLocked=false and refreshes the UI
+01:03 +1114: D:/RouteNote App/test/unlock_flow_test.dart: unlock persists isLocked=false and refreshes the UI
+01:03 +1115: D:/RouteNote App/test/unlock_flow_test.dart: unlock persists isLocked=false and refreshes the UI
+01:03 +1115: D:/RouteNote App/test/trip_route_card_test.dart: offline fallback: grid and route render when tiles never arrive
+  [1m[flutter_map][0m
+    We want to help keep OpenStreetMap available for everyone. Our examples
+    and demo app use the public tile servers, but they are NOT free to use by
+    everyone! Please review whether the OpenStreetMap tile servers are suitable
+    for your project.
+    See:
+      * https://operations.osmfoundation.org/policies/tiles (OSM Tile Usage Policy)
+      * https://docs.fleaflet.dev/osm-warn for more information about this warning
+01:04 +1116: D:/RouteNote App/test/unlock_flow_test.dart: unlock persists isLocked=false and refreshes the UI
+01:04 +1116: D:/RouteNote App/test/trip_route_card_test.dart: stop milestones are pinned on the map
+  [1m[flutter_map][0m
+    We want to help keep OpenStreetMap available for everyone. Our examples
+    and demo app use the public tile servers, but they are NOT free to use by
+    everyone! Please review whether the OpenStreetMap tile servers are suitable
+    for your project.
+    See:
+      * https://operations.osmfoundation.org/policies/tiles (OSM Tile Usage Policy)
+      * https://docs.fleaflet.dev/osm-warn for more information about this warning
+01:04 +1117: D:/RouteNote App/test/unlock_flow_test.dart: unlock persists isLocked=false and refreshes the UI
+01:04 +1118: D:/RouteNote App/test/unlock_flow_test.dart: unlock persists isLocked=false and refreshes the UI
+01:04 +1119: D:/RouteNote App/test/unlock_flow_test.dart: unlock persists isLocked=false and refreshes the UI
+01:04 +1120: D:/RouteNote App/test/unlock_flow_test.dart: unlock persists isLocked=false and refreshes the UI
+01:04 +1121: D:/RouteNote App/test/unlock_flow_test.dart: unlock persists isLocked=false and refreshes the UI
+01:04 +1122: D:/RouteNote App/test/unlock_flow_test.dart: unlock persists isLocked=false and refreshes the UI
+01:04 +1123: D:/RouteNote App/test/unlock_flow_test.dart: unlock persists isLocked=false and refreshes the UI
+01:04 +1124: D:/RouteNote App/test/unlock_flow_test.dart: unlock persists isLocked=false and refreshes the UI
+01:06 +1125: D:/RouteNote App/test/vault_privacy_dimmer_test.dart: hand-held keeps the vault content fully legible
+01:06 +1126: D:/RouteNote App/test/widget_test.dart: MapNoteApp renders the empty home screen
+01:06 +1127: D:/RouteNote App/test/widget_test.dart: MapNoteApp renders the empty home screen
+01:06 +1128: D:/RouteNote App/test/widget_test.dart: MapNoteApp renders the empty home screen
+01:06 +1129: D:/RouteNote App/test/widget_test.dart: MapNoteApp renders the empty home screen
+01:06 +1130: D:/RouteNote App/test/widget_test.dart: MapNoteApp renders the empty home screen
+01:06 +1131: D:/RouteNote App/test/widget_test.dart: MapNoteApp renders the empty home screen
+01:07 +1132: D:/RouteNote App/test/widget_test.dart: MapNoteApp renders the empty home screen
+01:07 +1133: D:/RouteNote App/test/widget_test.dart: MapNoteApp renders the empty home screen
+01:07 +1134: D:/RouteNote App/test/widget_test.dart: MapNoteApp renders the empty home screen
+01:08 +1135: D:/RouteNote App/test/unlock_flow_test.dart: navigate from a locked place opens the maps app after successful verification
+01:08 +1136: D:/RouteNote App/test/widget_test.dart: a saved place appears in the list
+01:08 +1137: D:/RouteNote App/test/unlock_flow_test.dart: navigate from a locked place falls back on a no-security device
+01:08 +1138: All tests passed!
+✅ All tests passed successfully.
+
+[3/5] Building Release APK (flutter build apk --release --flavor work --dart-define=MAPNOTE_EDITION=work)...
+Running Gradle task 'assembleWorkRelease'...                    
+powershell : WARNING: Your app uses the following plugins that apply Kotlin Gradle Plugin (KGP): firebase_analytics, 
+firebase_core, firebase_crashlytics, flutter_dynamic_icon_plus, pedometer, workmanager_android
+At line:1 char:1
++ powershell -Command "Set-Location 'D:\RouteNote App'; .\scripts\verif ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (WARNING: Your a...manager_android:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+Future versions of Flutter will fail to build if your app uses plugins that apply KGP.
+
+Please check the changelogs of these plugins and upgrade to a version that supports Built-in Kotlin.
+If no such version exists, report the issue to the plugin. If necessary, here is a guide on filing
+an issue against a plugin: https://docs.flutter.dev/release/breaking-changes/migrate-to-built-in-kotlin/for-app-develop
+ers#report-incompatible-kotlin-gradle-plugin-usage-to-plugin-authors
+
+If you are a plugin author, please migrate your plugin to Built-in Kotlin using this guide: 
+https://docs.flutter.dev/release/breaking-changes/migrate-to-built-in-kotlin/for-plugin-authors
+Font asset "MaterialIcons-Regular.otf" was tree-shaken, reducing it from 1645184 to 18352 bytes (98.9% reduction). Tree-shaking can be disabled by providing the --no-tree-shake-icons flag when building your app.
+Running Gradle task 'assembleWorkRelease'...                      ٢٨١٫٤s
+√ Built build\app\outputs\flutter-apk\app-work-release.apk (67.2MB)
+✅ Release APK built successfully.
+
+[4/5] Checking Connected ADB Device...
+❌ No active ADB device found! Please connect your phone via USB with Debugging ON.

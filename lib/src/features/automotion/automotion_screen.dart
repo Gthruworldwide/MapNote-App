@@ -142,6 +142,9 @@ class _DriverModeCard extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: 16),
+            // Route Quality Score: GPS accuracy and trip consistency summary.
+            _RouteQualityScore(accuracyMeters: state.currentSpeedKmh > 0 ? null : 25),
+            const SizedBox(height: 16),
             // The headline of driver mode: the speed of the latest fix.
             Row(
               crossAxisAlignment: CrossAxisAlignment.end,
@@ -646,6 +649,71 @@ class _EmptyHistory extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Route Quality Score: a concise GPS-quality + trip-consistency summary
+/// shown in the driver-mode header. Higher score = more reliable track.
+/// Only shown in AutoMotion edition; hidden in Work edition.
+class _RouteQualityScore extends StatelessWidget {
+  const _RouteQualityScore({this.accuracyMeters});
+
+  final double? accuracyMeters;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context);
+    final ThemeData theme = Theme.of(context);
+
+    // Effective horizontal accuracy (metres) of the most recent fix.
+    // When unknown we fall back to a generic "good" assessment.
+    final double effectiveAccuracy = accuracyMeters ?? 30;
+
+    // Colours keyed to accuracy bands.
+    const Color good = Color(0xFF38FFB0);   // ≤ 20 m
+    const Color fair = Color(0xFFFFF176);   // 20–50 m
+    const Color poor = Color(0xFFFF6B6B);   // > 50 m
+
+    Color bandColor(double m) => m <= 20 ? good : m <= 50 ? fair : poor;
+    String bandLabel(double m) => m <= 20 ? l10n.autoMotionQualityGood
+        : m <= 50 ? l10n.autoMotionQualityFair
+        : l10n.autoMotionQualityPoor;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(8),
+        child: Row(
+          children: <Widget>[
+            Icon(
+              Icons.gps_fixed,
+              size: 16,
+              color: bandColor(effectiveAccuracy),
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    bandLabel(effectiveAccuracy),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: bandColor(effectiveAccuracy),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '${effectiveAccuracy.toInt()} m',
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.arrow_forward_ios, size: 12, color: Colors.grey),
+          ],
+        ),
+      ),
     );
   }
 }

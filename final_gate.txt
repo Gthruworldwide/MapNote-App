@@ -1,0 +1,13 @@
+﻿powershell : At line:1 char:59
+At line:1 char:1
++ powershell -Command "Set-Location 'D:\RouteNote App'; flutter analyze ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (At line:1 char:59:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
++ Set-Location 'D:\RouteNote App'; flutter analyze lib test && flutter  ...
++                                                           ~~
+The token '&&' is not a valid statement separator in this version.
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : InvalidEndOfLine
+ 

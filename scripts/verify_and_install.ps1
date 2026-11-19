@@ -2,7 +2,16 @@
 # Location: scripts/verify_and_install.ps1
 # Strict Verification Sequence: analyze → test → build → install → launch
 
-$ErrorActionPreference = "Stop"
+param(
+  [Parameter(Mandatory=$false)]
+  [ValidateSet('work', 'automotion')]
+  [string]$Edition = 'work'
+)
+
+if ($Edition -notin 'work', 'automotion') {
+    Write-Host "❌ Invalid edition '$Edition'. Use -Edition work or -Edition automotion." -ForegroundColor Red
+    exit 1
+}
 
 Write-Host "==================================================" -ForegroundColor Cyan
 Write-Host "🚀 Starting MapNote Local Verification & Install " -ForegroundColor Cyan
@@ -26,9 +35,9 @@ if ($LASTEXITCODE -ne 0) {
 }
 Write-Host "✅ All tests passed successfully." -ForegroundColor Green
 
-# Step 3: Release APK Build
-Write-Host "`n[3/5] Building Release APK (flutter build apk --release)..." -ForegroundColor Yellow
-flutter build apk --release
+# Step 3: Release APK Build with edition flavor
+Write-Host "`n[3/5] Building Release APK (flutter build apk --release --flavor $Edition --dart-define=MAPNOTE_EDITION=$Edition)..." -ForegroundColor Yellow
+flutter build apk --release --flavor $Edition --dart-define=MAPNOTE_EDITION=$Edition
 if ($LASTEXITCODE -ne 0) {
     Write-Host "❌ APK Build failed!" -ForegroundColor Red
     exit 1
@@ -46,7 +55,7 @@ Write-Host "✅ Connected Device Found." -ForegroundColor Green
 
 # Step 5: Install and Launch App
 Write-Host "`n[5/5] Installing APK and Launching App on Device..." -ForegroundColor Yellow
-$apkPath = "build\app\outputs\flutter-apk\app-release.apk"
+$apkPath = "build\app\outputs\flutter-apk\app-release-$Edition.apk"
 adb install -r $apkPath
 if ($LASTEXITCODE -ne 0) {
     Write-Host "❌ ADB Installation failed!" -ForegroundColor Red

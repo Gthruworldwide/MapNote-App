@@ -44,17 +44,25 @@ on:
 
 jobs:
   build:
-    name: Build release APK
+    name: Build release APK (${{ matrix.edition }})
     # The distributed binary is the one this job analyzes, tests and hashes;
     # the distribute job refuses to upload an artifact whose digest changed.
-    outputs:
-      apk_sha256: ${{ steps.digest.outputs.sha256 }}
+    # The digest travels with the artifact because a matrix job's outputs are
+    # overwritten by each of its instances.
     # Pinned, never `ubuntu-latest`. The `ubuntu-latest` label is migrating to
     # Ubuntu 26.04 through November 2026, which changes the default JDK, Docker
     # (28 -> 29) and preinstalled runtime patch versions under a workflow that
     # did not change — a silent, moving target. See
     # https://github.com/actions/runner-images/issues/14748
     runs-on: ubuntu-24.04
+    # One build/distribution lane per build-bound edition. Work never receives
+    # the AutoMotion-only permissions because its flavour manifest removes them.
+    strategy:
+      fail-fast: false
+      matrix:
+        edition: [work, automotion]
+    env:
+      MAPNOTE_EDITION: ${{ matrix.edition }}
     steps:
       - name: Check out
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -86,17 +94,18 @@ jobs:
         # interpolation into the shell script evaluates secret metacharacters.
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          APP_EDITION: personal
         run: >
           flutter build apk --release
+          --flavor "$MAPNOTE_EDITION"
           --dart-define="GEMINI_API_KEY=$GEMINI_API_KEY"
-          --dart-define="APP_EDITION=$APP_EDITION"
+          --dart-define="MAPNOTE_EDITION=$MAPNOTE_EDITION"
 
       - name: Record artifact digest
         id: digest
         shell: bash
         run: |
-          sha="$(sha256sum build/app/outputs/flutter-apk/app-release.apk | cut -d' ' -f1)"
+          sha="$(sha256sum "build/app/outputs/flutter-apk/app-$MAPNOTE_EDITION-release.apk" | cut -d' ' -f1)"
+          printf '%s\n' "$sha" > apk.sha256
           echo "sha256=$sha" >> "$GITHUB_OUTPUT"
 
       # The APK is ~67 MB and only needs to outlive the distribute job that
@@ -104,15 +113,23 @@ jobs:
       - name: Upload release APK
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
-          name: release-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: release-apk-${{ matrix.edition }}
+          path: |
+            build/app/outputs/flutter-apk/app-${{ matrix.edition }}-release.apk
+            apk.sha256
           retention-days: 1
           if-no-files-found: error
 
   distribute:
-    name: Distribute to testers
+    name: Distribute ${{ matrix.edition }} to testers
     needs: build
     runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        edition: [work, automotion]
+    env:
+      MAPNOTE_EDITION: ${{ matrix.edition }}
     steps:
       # Nothing here needs the repository, Java or Flutter — the artifact is the
       # only input besides the two secrets — so this job skips all of that and
@@ -120,16 +137,15 @@ jobs:
       - name: Download release APK
         uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
         with:
-          name: release-apk
+          name: release-apk-${{ matrix.edition }}
           path: build/app/outputs/flutter-apk
 
       - name: Verify distributed APK digest
         shell: bash
-        env:
-          EXPECTED_SHA256: ${{ needs.build.outputs.apk_sha256 }}
         run: |
-          actual="$(sha256sum build/app/outputs/flutter-apk/app-release.apk | cut -d' ' -f1)"
-          if [ -z "$EXPECTED_SHA256" ] || [ "$actual" != "$EXPECTED_SHA256" ]; then
+          expected="$(tr -d '[:space:]' < build/app/outputs/flutter-apk/apk.sha256)"
+          actual="$(sha256sum "build/app/outputs/flutter-apk/app-$MAPNOTE_EDITION-release.apk" | cut -d' ' -f1)"
+          if [ -z "$expected" ] || [ "$actual" != "$expected" ]; then
             echo "::error::APK digest does not match the analyzed build."
             exit 1
           fi
@@ -197,7 +213,7 @@ jobs:
           # and the app id via `--app`. Flags verified against firebase-tools.
           args: >-
             appdistribution:distribute
-            build/app/outputs/flutter-apk/app-release.apk
+            build/app/outputs/flutter-apk/app-${{ matrix.edition }}-release.apk
             --app ${{ env.FIREBASE_APP_ID }}
             --groups testers
             --release-notes ${{ github.ref_type == 'tag' && github.ref_name || github.sha }}

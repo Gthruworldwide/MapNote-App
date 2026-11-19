@@ -1226,6 +1226,24 @@ abstract class AppLocalizations {
   /// **'{from} – {to}'**
   String autoMotionRangeLabel(String from, String to);
 
+  /// No description provided for @autoMotionQualityGood.
+  ///
+  /// In en, this message translates to:
+  /// **'Good'**
+  String get autoMotionQualityGood;
+
+  /// No description provided for @autoMotionQualityFair.
+  ///
+  /// In en, this message translates to:
+  /// **'Fair'**
+  String get autoMotionQualityFair;
+
+  /// No description provided for @autoMotionQualityPoor.
+  ///
+  /// In en, this message translates to:
+  /// **'Poor'**
+  String get autoMotionQualityPoor;
+
   /// No description provided for @autoMotionViewDetails.
   ///
   /// In en, this message translates to:
@@ -1652,6 +1670,30 @@ abstract class AppLocalizations {
   /// **'Privacy & security'**
   String get sectionPrivacy;
 
+  /// No description provided for @sectionPrivacyData.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy & Data'**
+  String get sectionPrivacyData;
+
+  /// No description provided for @sectionPrivacyDataSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Review and manage your data'**
+  String get sectionPrivacyDataSubtitle;
+
+  /// No description provided for @sectionAppLock.
+  ///
+  /// In en, this message translates to:
+  /// **'App Lock'**
+  String get sectionAppLock;
+
+  /// No description provided for @sessionTimeoutMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes, plural, =1{1 minute} other{{minutes} minutes}}'**
+  String sessionTimeoutMinutes(int minutes);
+
   /// No description provided for @hiddenVault.
   ///
   /// In en, this message translates to:
@@ -1699,12 +1741,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The vault re-locks after this long without use.'**
   String get sessionTimeoutSubtitle;
-
-  /// No description provided for @sessionTimeoutMinutes.
-  ///
-  /// In en, this message translates to:
-  /// **'{minutes, plural, =1{1 minute} other{{minutes} minutes}}'**
-  String sessionTimeoutMinutes(int minutes);
 
   /// No description provided for @lockOnDeviceLockTitle.
   ///

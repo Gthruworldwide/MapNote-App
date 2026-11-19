@@ -11,6 +11,7 @@ import '../data/models/daily_motion_summary.dart';
 import '../data/models/track_point.dart';
 import 'dead_reckoning_service.dart';
 import 'gap_recovery_service.dart';
+import 'gps_sample_validator.dart';
 import 'location_service.dart';
 import 'motion_classifier_service.dart';
 import 'motion_profiler.dart';
@@ -435,6 +436,23 @@ class DailyTrackEngine {
   /// never shows stale numbers. While tracking, a periodic flush also runs
   /// (see [persistInterval]) so a long outage cannot stall persistence.
   void recordPosition(Position position) {
+    // Strict GPS sample integrity — reject NaN, backwards timestamps, and
+    /// impossible jumps before any other processing. This protects both the
+    /// daily-GPS tracker and AutoMotion from corrupt fixes that would otherwise
+    /// pollute distance totals, speed records, and the motion analyzer.
+    final GpsSampleValidator validator = GpsSampleValidator();
+    final GpsSampleRejection rejection = validator.validate(
+      latitude: position.latitude,
+      longitude: position.longitude,
+      timestamp: position.timestamp,
+      accuracyMeters: position.accuracy,
+      speedMetersPerSecond: position.hasSpeed ? position.speed : null,
+      previousTimestamp: _lastAt,
+      previousLatitude: _lastLat,
+      previousLongitude: _lastLon,
+    );
+    if (rejection != GpsSampleRejection.none) return;
+
     // Only trust fixes with a real accuracy measurement that is good enough.
     if (!position.hasAccuracy || position.accuracy > maxAccuracyMeters) return;
 

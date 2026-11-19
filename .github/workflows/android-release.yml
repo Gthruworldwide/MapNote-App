@@ -32,6 +32,15 @@ jobs:
     # did not change — a silent, moving target. See
     # https://github.com/actions/runner-images/issues/14748
     runs-on: ubuntu-24.04
+    # One job per build-bound edition. The edition is baked into the binary via
+    # MAPNOTE_EDITION and selects the Android product flavour (and therefore the
+    # permissions present in the installed manifest).
+    strategy:
+      fail-fast: false
+      matrix:
+        edition: [work, automotion]
+    env:
+      MAPNOTE_EDITION: ${{ matrix.edition }}
     steps:
       - name: Check out
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -64,18 +73,18 @@ jobs:
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_MODEL: ${{ vars.GEMINI_MODEL || 'gemini-2.0-flash' }}
-          APP_EDITION: personal
         run: >
           flutter build apk --release
+          --flavor "$MAPNOTE_EDITION"
           --dart-define="GEMINI_API_KEY=$GEMINI_API_KEY"
           --dart-define="GEMINI_MODEL=$GEMINI_MODEL"
-          --dart-define="APP_EDITION=$APP_EDITION"
+          --dart-define="MAPNOTE_EDITION=$MAPNOTE_EDITION"
 
       - name: Upload APK
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
-          name: routenote-release-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: routenote-${{ matrix.edition }}-release-apk
+          path: build/app/outputs/flutter-apk/app-${{ matrix.edition }}-release.apk
           if-no-files-found: error
           # The APK embeds the optional key; keep the secret-bearing artifact
           # only as long as this job's validation result is useful.

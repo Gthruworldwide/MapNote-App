@@ -613,6 +613,15 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get autoMotionQualityGood => 'Good';
+
+  @override
+  String get autoMotionQualityFair => 'Fair';
+
+  @override
+  String get autoMotionQualityPoor => 'Poor';
+
+  @override
   String get autoMotionViewDetails => 'View details';
 
   @override
@@ -842,6 +851,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sectionPrivacy => 'Privacy & security';
 
   @override
+  String get sectionPrivacyData => 'Privacy & Data';
+
+  @override
+  String get sectionPrivacyDataSubtitle => 'Review and manage your data';
+
+  @override
+  String get sectionAppLock => 'App Lock';
+
+  @override
+  String sessionTimeoutMinutes(int minutes) {
+    String _temp0 = intl.Intl.pluralLogic(
+      minutes,
+      locale: localeName,
+      other: '$minutes minutes',
+      one: '1 minute',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get hiddenVault => 'Hidden Vault';
 
   @override
@@ -876,17 +905,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get sessionTimeoutSubtitle =>
       'The vault re-locks after this long without use.';
-
-  @override
-  String sessionTimeoutMinutes(int minutes) {
-    String _temp0 = intl.Intl.pluralLogic(
-      minutes,
-      locale: localeName,
-      other: '$minutes minutes',
-      one: '1 minute',
-    );
-    return '$_temp0';
-  }
 
   @override
   String get lockOnDeviceLockTitle => 'Lock when the device locks';

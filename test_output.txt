@@ -1,0 +1,79 @@
+﻿00:00 +0: loading D:/RouteNote App/test/motion_overlay_test.dart
+00:00 +0: a detected maneuver is pinned on the map at its route vertex
+  [1m[flutter_map][0m
+    We want to help keep OpenStreetMap available for everyone. Our examples
+    and demo app use the public tile servers, but they are NOT free to use by
+    everyone! Please review whether the OpenStreetMap tile servers are suitable
+    for your project.
+    See:
+      * https://operations.osmfoundation.org/policies/tiles (OSM Tile Usage Policy)
+      * https://docs.fleaflet.dev/osm-warn for more information about this warning
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: a numeric value within <0.002> of <0.009>
+  Actual: <0.0007586870239794517>
+   Which:  differs by <0.008241312976020548>
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///D:/RouteNote%20App/test/motion_overlay_test.dart:148:5)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1953:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///D:/RouteNote%20App/test/motion_overlay_test.dart line 148
+The test description was:
+  a detected maneuver is pinned on the map at its route vertex
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:01 +0 -1: a detected maneuver is pinned on the map at its route vertex [E]
+  Test failed. See exception logs above.
+  The test description was: a detected maneuver is pinned on the map at its route vertex
+  
+00:01 +0 -1: every maneuver kind lands on the map, none falls through
+  [1m[flutter_map][0m
+    We want to help keep OpenStreetMap available for everyone. Our examples
+    and demo app use the public tile servers, but they are NOT free to use by
+    everyone! Please review whether the OpenStreetMap tile servers are suitable
+    for your project.
+    See:
+      * https://operations.osmfoundation.org/policies/tiles (OSM Tile Usage Policy)
+      * https://docs.fleaflet.dev/osm-warn for more information about this warning
+00:02 +1 -1: a new trip clears the map markers and the score
+  [1m[flutter_map][0m
+    We want to help keep OpenStreetMap available for everyone. Our examples
+    and demo app use the public tile servers, but they are NOT free to use by
+    everyone! Please review whether the OpenStreetMap tile servers are suitable
+    for your project.
+    See:
+      * https://operations.osmfoundation.org/policies/tiles (OSM Tile Usage Policy)
+      * https://docs.fleaflet.dev/osm-warn for more information about this warning
+00:02 +2 -1: a maneuver with no route evidence is never misplaced
+  [1m[flutter_map][0m
+    We want to help keep OpenStreetMap available for everyone. Our examples
+    and demo app use the public tile servers, but they are NOT free to use by
+    everyone! Please review whether the OpenStreetMap tile servers are suitable
+    for your project.
+    See:
+      * https://operations.osmfoundation.org/policies/tiles (OSM Tile Usage Policy)
+      * https://docs.fleaflet.dev/osm-warn for more information about this warning
+00:02 +3 -1: tapping an event marker explains the maneuver
+  [1m[flutter_map][0m
+    We want to help keep OpenStreetMap available for everyone. Our examples
+    and demo app use the public tile servers, but they are NOT free to use by
+    everyone! Please review whether the OpenStreetMap tile servers are suitable
+    for your project.
+    See:
+      * https://operations.osmfoundation.org/policies/tiles (OSM Tile Usage Policy)
+      * https://docs.fleaflet.dev/osm-warn for more information about this warning
+00:03 +4 -1: the summary sheet renders the score and per-kind tallies
+00:03 +5 -1: the summary sheet collapses to its header and keeps the score
+00:03 +6 -1: the motion summary renders in Arabic RTL
+00:03 +7 -1: the motion summary renders in dark mode without hardcoded colors
+00:03 +8 -1: Some tests failed.
+
+Failing tests:
+  D:/RouteNote App/test/motion_overlay_test.dart: a detected maneuver is pinned on the map at its route vertex

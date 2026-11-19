@@ -24,6 +24,10 @@ class AutoMotionCard extends ConsumerWidget {
     final AppLocalizations l10n = AppLocalizations.of(context);
     final ThemeData theme = Theme.of(context);
     final AutoMotionState state = ref.watch(autoMotionControllerProvider);
+    // GPS quality indicator is AutoMotion-only; the card itself is only
+    // meaningful when AutoMotion is available, but we double-check here
+    // so the badge does not leak into Work Edition UI.
+    final bool showGpsQuality = ref.watch(automotionAvailableProvider);
 
     return Card(
       margin: const EdgeInsetsDirectional.fromSTEB(16, 4, 16, 8),
@@ -57,6 +61,7 @@ class AutoMotionCard extends ConsumerWidget {
                     isActive: state.active,
                     isUnavailable: state.unavailable,
                     size: 28,
+                    showGpsQuality: showGpsQuality,
                   ),
                   const SizedBox(width: 4),
                   Icon(

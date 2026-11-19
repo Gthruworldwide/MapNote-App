@@ -83,16 +83,20 @@ void main() {
   }
 
   /// Records a straight three-fix route so every vertex carries a timestamp.
+  /// The fixes simulate slow highway driving with plausible implied speeds
+  /// (≈80–90 km/h), well below the validator's impossible-jump threshold
+  /// of 160 km/h, so all three are accepted and the motion overlay works as
+  /// expected.
   Future<void> recordRoute(
     ScriptedMotion motion, {
     required DateTime t0,
   }) async {
     motion.recordPosition(fix(0, 0, speed: 8, at: t0));
     motion.recordPosition(
-      fix(0.009, 0.001, speed: 12, at: t0.add(const Duration(seconds: 5))),
+      fix(0.001, 0.0005, speed: 12, at: t0.add(const Duration(seconds: 5))),
     );
     motion.recordPosition(
-      fix(0.018, -0.001, speed: 15, at: t0.add(const Duration(seconds: 10))),
+      fix(0.002, 0.001, speed: 15, at: t0.add(const Duration(seconds: 10))),
     );
   }
 
@@ -141,7 +145,7 @@ void main() {
     expect(markers.markers, hasLength(3));
     // Placed on the second vertex (the 5 s fix), which the Kalman filter has
     // smoothed — so match the neighbourhood, not the raw input exactly.
-    expect(located.single.point.latitude, closeTo(0.009, 0.002));
+    expect(located.single.point.latitude, closeTo(0.001, 0.002));
     expect(tester.takeException(), isNull);
   });
 

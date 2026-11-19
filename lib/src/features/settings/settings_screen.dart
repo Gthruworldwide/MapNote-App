@@ -9,6 +9,8 @@ import 'account_settings_screen.dart';
 import 'location_settings_screen.dart';
 import 'preferences_settings_screen.dart';
 import 'security_vault_settings_screen.dart';
+import 'privacy_center_screen.dart';
+import 'app_lock_settings_screen.dart';
 
 /// Modern Material 3 hub for all settings: four drill-down tiles plus a
 /// standalone About MapNote card at the bottom.
@@ -44,6 +46,20 @@ class SettingsScreen extends ConsumerWidget {
             title: l10n.sectionSecurityVault,
             subtitle: l10n.vaultProtectionTitle,
             onTap: () => _push(context, const SecurityVaultSettingsScreen()),
+          ),
+          const SizedBox(height: 12),
+          _HubTile(
+            icon: Icons.security_outlined,
+            title: l10n.sectionPrivacyData,
+            subtitle: l10n.sectionPrivacyDataSubtitle,
+            onTap: () => _push(context, PrivacyCenterScreen()),
+          ),
+          const SizedBox(height: 12),
+          _HubTile(
+            icon: Icons.lock_outlined,
+            title: l10n.sectionAppLock,
+            subtitle: l10n.sessionTimeoutSubtitle,
+            onTap: () => _push(context, AppLockSettingsScreen()),
           ),
           const SizedBox(height: 12),
           _HubTile(
@@ -85,7 +101,7 @@ class SettingsScreen extends ConsumerWidget {
 
   void _push(BuildContext context, Widget screen) {
     Navigator.of(context).push(
-      SharedAxisPageRoute<void>(builder: (_) => screen),
+      MaterialPageRoute(builder: (_) => screen),
     );
   }
 }
@@ -148,41 +164,9 @@ class SharedAxisPageRoute<T> extends PageRoute<T> {
   }
 }
 
-class _HubTile extends StatelessWidget {
-  const _HubTile({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: theme.colorScheme.outlineVariant),
-      ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: Icon(icon, color: theme.colorScheme.primary),
-        title: Text(title, style: theme.textTheme.titleMedium),
-        subtitle: Text(subtitle),
-        trailing: const Icon(Icons.chevron_right),
-        onTap: onTap,
-      ),
-    );
-  }
-}
-
-/// Minimal About screen carrying the brand lockup and version.
+/// A page route that drives its enter/exit with a horizontal shared-axis
+/// transition (Material motion), 300 ms in both directions with an
+/// ease-in-out-cubic curve for fluid motion on high refresh-rate displays.
 class _AboutScreen extends StatelessWidget {
   const _AboutScreen({required this.l10n});
 
@@ -235,6 +219,41 @@ class _AboutScreen extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// A combined section header with icon, title, and optional subtitle.
+class _HubTile extends StatelessWidget {
+  const _HubTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: theme.colorScheme.outlineVariant),
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: Icon(icon, color: theme.colorScheme.primary),
+        title: Text(title, style: theme.textTheme.titleMedium),
+        subtitle: Text(subtitle),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: onTap,
       ),
     );
   }

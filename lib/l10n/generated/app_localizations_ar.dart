@@ -612,6 +612,15 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String get autoMotionQualityGood => 'جيد';
+
+  @override
+  String get autoMotionQualityFair => 'عادلة';
+
+  @override
+  String get autoMotionQualityPoor => 'ضعيف';
+
+  @override
   String get autoMotionViewDetails => 'عرض التفاصيل';
 
   @override
@@ -836,6 +845,29 @@ class AppLocalizationsAr extends AppLocalizations {
   String get sectionPrivacy => 'الخصوصية والأمان';
 
   @override
+  String get sectionPrivacyData => 'الخصوصية والبيانات';
+
+  @override
+  String get sectionPrivacyDataSubtitle => 'مراجعة وإدارة بياناتك';
+
+  @override
+  String get sectionAppLock => 'قفل التطبيق';
+
+  @override
+  String sessionTimeoutMinutes(int minutes) {
+    String _temp0 = intl.Intl.pluralLogic(
+      minutes,
+      locale: localeName,
+      other: '$minutes دقيقة',
+      many: '$minutes دقيقة',
+      few: '$minutes دقائق',
+      two: 'دقيقتان',
+      one: 'دقيقة واحدة',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get hiddenVault => 'الخزنة المخفية';
 
   @override
@@ -873,20 +905,6 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get sessionTimeoutSubtitle =>
       'تُقفل الخزنة مرة أخرى بعد هذه المدة من عدم الاستخدام.';
-
-  @override
-  String sessionTimeoutMinutes(int minutes) {
-    String _temp0 = intl.Intl.pluralLogic(
-      minutes,
-      locale: localeName,
-      other: '$minutes دقيقة',
-      many: '$minutes دقيقة',
-      few: '$minutes دقائق',
-      two: 'دقيقتان',
-      one: 'دقيقة واحدة',
-    );
-    return '$_temp0';
-  }
 
   @override
   String get lockOnDeviceLockTitle => 'القفل عند قفل الجهاز';

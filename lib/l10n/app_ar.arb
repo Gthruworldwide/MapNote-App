@@ -222,6 +222,18 @@
       "to": { "type": "String" }
     }
   },
+  "autoMotionQualityGood": "جيد",
+  "@autoMotionQualityGood": {
+    "placeholders": {}
+  },
+  "autoMotionQualityFair": "عادلة",
+  "@autoMotionQualityFair": {
+    "placeholders": {}
+  },
+  "autoMotionQualityPoor": "ضعيف",
+  "@autoMotionQualityPoor": {
+    "placeholders": {}
+  },
   "autoMotionViewDetails": "عرض التفاصيل",
   "autoMotionRoute": "مسار اليوم",
   "autoMotionRouteEmpty": "لم يُسجَّل أي مسار بعد — فعّل التتبع ثم قُد أو امشِ ليظهر هنا.",
@@ -314,6 +326,16 @@
   "noDeviceSecurityWarning": "لا توجد شاشة قفل أو تحقق حيوي على هذا الجهاز، لذلك تم تخطي التحقق",
 
   "sectionPrivacy": "الخصوصية والأمان",
+  "sectionPrivacyData": "الخصوصية والبيانات",
+  "sectionPrivacyDataSubtitle": "مراجعة وإدارة بياناتك",
+  "sectionAppLock": "قفل التطبيق",
+  "sessionTimeoutMinutes": "{minutes, plural, =1{دقيقة واحدة} other{{minutes} دقائق}}",
+  "@sessionTimeoutMinutes": {
+    "placeholders": {
+      "minutes": { "type": "int" }
+    }
+  },
+
   "hiddenVault": "الخزنة المخفية",
   "hiddenVaultSubtitle": "{count, plural, =0{لا توجد أماكن مخفية} =1{مكان مخفي واحد} =2{مكانان مخفيان} few{{count} أماكن مخفية} many{{count} مكانًا مخفيًا} other{{count} مكان مخفي}}",
   "hiddenVaultEmpty": "لا توجد أماكن مخفية",
