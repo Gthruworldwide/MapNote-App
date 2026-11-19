@@ -176,6 +176,14 @@
 
   "editionFeatureUnavailable": "This feature is not available in this edition.",
 
+  "welcomeTitle": "Welcome to MapNote",
+  "welcomeSubtitle": "Save your favourite places and track your trips",
+  "welcomeEditionWork": "Work Edition",
+  "welcomeEditionWorkSubtitle": "Focus on saving and organizing places",
+  "welcomeEditionAutoMotion": "AutoMotion Edition",
+  "welcomeEditionAutoMotionSubtitle": "Track drives, runs and stops with AutoMotion",
+  "welcomeGetStarted": "Get Started",
+
   "locationPermissionTitle": "Location permission needed",
   "locationPermissionMessage": "MapNote needs access to your location to save places.",
   "locationServicesDisabled": "Please enable location services on your device.",
@@ -376,6 +384,18 @@
   "sectionPrivacyDataSubtitle": "Review and manage your data",
   "sectionAppLock": "App Lock",
   "sessionTimeoutMinutes": "{minutes, plural, =1{1 minute} other{{minutes} minutes}}",
+  "exportMotionData": "Export motion data",
+  "exportFormatCsv": "CSV",
+  "exportFormatJson": "JSON",
+  "exportMotionDataSubtitle": "Export your motion data and trip history",
+  "deleteLocalData": "Delete local data",
+  "deleteLocalDataConfirmation": "This will remove all places and motion history from this device. Places in the encrypted vault will be preserved.",
+  "deleteCloudBackup": "Delete cloud backup",
+  "deleteCloudBackupConfirmation": "This will remove your Google Drive backup. Local places will remain on this device.",
+  "disconnectGoogle": "Disconnect Google",
+  "disconnectGoogleConfirmation": "Sign out of Google account (does not delete local places)",
+  "diagnostics": "Diagnostics",
+  "diagnosticsReport": "Copyable report with scrubbed PII",
   "@sessionTimeoutMinutes": {
     "placeholders": {
       "minutes": { "type": "int" }

@@ -385,6 +385,30 @@ class AppLocalizationsEn extends AppLocalizations {
       'This feature is not available in this edition.';
 
   @override
+  String get welcomeTitle => 'Welcome to MapNote';
+
+  @override
+  String get welcomeSubtitle =>
+      'Save your favourite places and track your trips';
+
+  @override
+  String get welcomeEditionWork => 'Work Edition';
+
+  @override
+  String get welcomeEditionWorkSubtitle =>
+      'Focus on saving and organizing places';
+
+  @override
+  String get welcomeEditionAutoMotion => 'AutoMotion Edition';
+
+  @override
+  String get welcomeEditionAutoMotionSubtitle =>
+      'Track drives, runs and stops with AutoMotion';
+
+  @override
+  String get welcomeGetStarted => 'Get Started';
+
+  @override
   String get locationPermissionTitle => 'Location permission needed';
 
   @override
@@ -869,6 +893,37 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get exportMotionDataSubtitle =>
+      'Export your motion data and trip history';
+
+  @override
+  String get deleteLocalData => 'Delete local data';
+
+  @override
+  String get deleteLocalDataConfirmation =>
+      'This will remove all places and motion history from this device. Places in the encrypted vault will be preserved.';
+
+  @override
+  String get deleteCloudBackup => 'Delete cloud backup';
+
+  @override
+  String get deleteCloudBackupConfirmation =>
+      'This will remove your Google Drive backup. Local places will remain on this device.';
+
+  @override
+  String get disconnectGoogle => 'Disconnect Google';
+
+  @override
+  String get disconnectGoogleConfirmation =>
+      'Sign out of Google account (does not delete local places)';
+
+  @override
+  String get diagnostics => 'Diagnostics';
+
+  @override
+  String get diagnosticsReport => 'Copyable report with scrubbed PII';
 
   @override
   String get hiddenVault => 'Hidden Vault';

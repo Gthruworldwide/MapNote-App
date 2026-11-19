@@ -6,6 +6,13 @@ import '../../core/security/session_guard.dart';
 /// The four font-size presets selectable in Settings.
 enum FontScalePreset { small, standard, large, extraLarge }
 
+/// Battery mode selectable in Settings → Preferences.
+///
+/// Affects the base sampling interval and accuracy tier before transport
+/// mode adjustments are applied. Does not override vehicle/train/ walking
+/// profiles — it only shifts the baseline.
+enum BatteryMode { max, balanced, saver }
+
 /// Small key/value store for app preferences backed by a Hive box.
 class SettingsRepository {
   SettingsRepository(this._box);
@@ -30,7 +37,9 @@ class SettingsRepository {
   static const String _hapticFeedbackKey = 'haptic_feedback';
   static const String _uiDensityCompactKey = 'ui_density_compact';
   static const String _smartBatterySaverKey = 'smart_battery_saver';
+  static const String _batteryModeKey = 'battery_mode';
   static const String _biometricVaultEnabledKey = 'enable_biometric_vault';
+  static const String _firstLaunchKey = 'first_launch';
 
   /// BCP-47 language code of the selected locale, or null for system default.
   String? get localeCode => _box.get(_localeKey) as String?;
@@ -264,7 +273,31 @@ class SettingsRepository {
     await _box.put(_smartBatterySaverKey, enabled);
   }
 
-  /// Whether the biometric (encrypted) vault is offered (default on).
+  /// Selected battery mode for adaptive sampling baseline.
+  BatteryMode get batteryMode {
+    final Object? raw = _box.get(_batteryModeKey);
+    if (raw is String) {
+      return BatteryMode.values.firstWhere(
+        (BatteryMode m) => m.name == raw,
+        orElse: () => BatteryMode.balanced,
+      );
+    }
+    return BatteryMode.balanced;
+  }
+
+  Future<void> setBatteryMode(BatteryMode mode) async {
+    await _box.put(_batteryModeKey, mode.name);
+  }
+
+  /// True on the very first app launch; after the welcome screen is dismissed
+/// it is set to false so it does not appear again.
+bool get firstLaunch => _box.get(_firstLaunchKey) == true;
+
+  Future<void> setFirstLaunch(bool launched) async {
+    await _box.put(_firstLaunchKey, launched);
+  }
+
+/// Whether the biometric (encrypted) vault is offered (default on).
   ///
   /// Turning it off hides the encrypted-vault entry points. It never deletes
   /// anything: places already moved into the encrypted box stay encrypted on

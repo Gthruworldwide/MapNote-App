@@ -130,6 +130,14 @@
 
   "editionFeatureUnavailable": "هذه الميزة غير متاحة في هذه النسخة.",
 
+  "welcomeTitle": "مرحبًا بك في MapNote",
+  "welcomeSubtitle": "حفظ أماكنك المفضلة ومتابعة رحلاتك",
+  "welcomeEditionWork": "ملاحظة العمل",
+  "welcomeEditionWorkSubtitle": "التركيز على حفظ وتنظيم الأماكن",
+  "welcomeEditionAutoMotion": "ملاحظة Automotive",
+  "welcomeEditionAutoMotionSubtitle": "تتبع القيادة والجري والتوقف باستخدام AutoMotion",
+  "welcomeGetStarted": "البدء",
+
   "locationPermissionTitle": "مطلوب إذن الموقع",
   "locationPermissionMessage": "يحتاج MapNote إلى الوصول لموقعك لحفظ الأماكن.",
   "locationServicesDisabled": "يرجى تفعيل خدمات الموقع على جهازك.",
@@ -330,6 +338,18 @@
   "sectionPrivacyDataSubtitle": "مراجعة وإدارة بياناتك",
   "sectionAppLock": "قفل التطبيق",
   "sessionTimeoutMinutes": "{minutes, plural, =1{دقيقة واحدة} other{{minutes} دقائق}}",
+  "exportMotionData": "تصدير بيانات الحركة",
+  "exportFormatCsv": "CSV",
+  "exportFormatJson": "JSON",
+  "exportMotionDataSubtitle": "تصدير بيانات الحركة والتاريخ",
+  "deleteLocalData": "حذف البيانات المحلية",
+  "deleteLocalDataConfirmation": "سيتم إزالة جميع الأماكن وسجل الحركة من هذا الجهاز. الأماكن في الخزنة المشفرة ستحفظ.",
+  "deleteCloudBackup": "حذف نسخة الاحتياطية السحابية",
+  "deleteCloudBackupConfirmation": "سيتم إزالة نسخة الاحتياطية من جوجل درايف. ستبقى الأماكن المحلية على الجهاز.",
+  "disconnectGoogle": "فك ارتباط حساب جوجل",
+  "disconnectGoogleConfirmation": "تسجيل الخروج من حساب جوجل (لا يحذف الأماكن المحلية)",
+  "diagnostics": "التشخيصات",
+  "diagnosticsReport": "تقرير قابل للنسخ مع إزالة persönliche Daten",
   "@sessionTimeoutMinutes": {
     "placeholders": {
       "minutes": { "type": "int" }

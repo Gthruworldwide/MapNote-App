@@ -800,6 +800,48 @@ abstract class AppLocalizations {
   /// **'This feature is not available in this edition.'**
   String get editionFeatureUnavailable;
 
+  /// No description provided for @welcomeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome to MapNote'**
+  String get welcomeTitle;
+
+  /// No description provided for @welcomeSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Save your favourite places and track your trips'**
+  String get welcomeSubtitle;
+
+  /// No description provided for @welcomeEditionWork.
+  ///
+  /// In en, this message translates to:
+  /// **'Work Edition'**
+  String get welcomeEditionWork;
+
+  /// No description provided for @welcomeEditionWorkSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Focus on saving and organizing places'**
+  String get welcomeEditionWorkSubtitle;
+
+  /// No description provided for @welcomeEditionAutoMotion.
+  ///
+  /// In en, this message translates to:
+  /// **'AutoMotion Edition'**
+  String get welcomeEditionAutoMotion;
+
+  /// No description provided for @welcomeEditionAutoMotionSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Track drives, runs and stops with AutoMotion'**
+  String get welcomeEditionAutoMotionSubtitle;
+
+  /// No description provided for @welcomeGetStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Get Started'**
+  String get welcomeGetStarted;
+
   /// No description provided for @locationPermissionTitle.
   ///
   /// In en, this message translates to:
@@ -1693,6 +1735,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{minutes, plural, =1{1 minute} other{{minutes} minutes}}'**
   String sessionTimeoutMinutes(int minutes);
+
+  /// No description provided for @exportMotionDataSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Export your motion data and trip history'**
+  String get exportMotionDataSubtitle;
+
+  /// No description provided for @deleteLocalData.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete local data'**
+  String get deleteLocalData;
+
+  /// No description provided for @deleteLocalDataConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'This will remove all places and motion history from this device. Places in the encrypted vault will be preserved.'**
+  String get deleteLocalDataConfirmation;
+
+  /// No description provided for @deleteCloudBackup.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete cloud backup'**
+  String get deleteCloudBackup;
+
+  /// No description provided for @deleteCloudBackupConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'This will remove your Google Drive backup. Local places will remain on this device.'**
+  String get deleteCloudBackupConfirmation;
+
+  /// No description provided for @disconnectGoogle.
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect Google'**
+  String get disconnectGoogle;
+
+  /// No description provided for @disconnectGoogleConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out of Google account (does not delete local places)'**
+  String get disconnectGoogleConfirmation;
+
+  /// No description provided for @diagnostics.
+  ///
+  /// In en, this message translates to:
+  /// **'Diagnostics'**
+  String get diagnostics;
+
+  /// No description provided for @diagnosticsReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Copyable report with scrubbed PII'**
+  String get diagnosticsReport;
 
   /// No description provided for @hiddenVault.
   ///

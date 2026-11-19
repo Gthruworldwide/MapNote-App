@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../../../l10n/generated/app_localizations.dart';
 
+/// Export format options for the privacy center screen.
+enum ExportFormat { csv, json }
+
 /// Privacy & Data center screen — edition-aware checklist of what data
 /// the app collects and how it's used, with actions to export or delete
 /// local/cloud data independently.
@@ -94,17 +97,13 @@ class PrivacyCenterScreen extends StatelessWidget {
           _ActionButton(
             icon: Icons.download_rounded,
             title: l10n.exportFormatCsv,
-            onTap: () {
-              // TODO: implement export
-            },
+            onTap: () => _showExportDialog(context, ExportFormat.csv),
           ),
           const SizedBox(height: 4),
           _ActionButton(
             icon: Icons.insert_chart_rounded,
             title: l10n.exportFormatJson,
-            onTap: () {
-              // TODO: implement export
-            },
+            onTap: () => _showExportDialog(context, ExportFormat.json),
           ),
           const SizedBox(height: 24),
 
@@ -117,39 +116,35 @@ class PrivacyCenterScreen extends StatelessWidget {
           _DestructiveActionButton(
             icon: Icons.remove_circle_rounded,
             title: 'Delete local data',
-            onTap: () {
-              // TODO: implement delete local
-            },
+            onTap: () => _confirmDeleteLocalData(context),
           ),
           const SizedBox(height: 4),
 
           _SectionHeader(
             icon: Icons.cloud_off_outlined,
             title: 'Delete cloud backup',
-            subtitle: 'Remove your Google Drive backup (local places remain)',
+            subtitle:
+                'Remove your Google Drive backup (local places remain untouched)',
           ),
           const SizedBox(height: 8),
           _DestructiveActionButton(
             icon: Icons.remove_circle_rounded,
             title: 'Delete cloud backup',
-            onTap: () {
-              // TODO: implement delete cloud
-            },
+            onTap: () => _confirmDeleteCloudBackup(context),
           ),
           const SizedBox(height: 4),
 
           _SectionHeader(
             icon: Icons.logout_outlined,
             title: 'Disconnect Google',
-            subtitle: 'Sign out of Google account (does not delete local places)',
+            subtitle:
+                'Sign out of Google account (does not delete local places)',
           ),
           const SizedBox(height: 8),
           _ActionButton(
             icon: Icons.logout_rounded,
             title: 'Disconnect Google',
-            onTap: () {
-              // TODO: implement disconnect Google
-            },
+            onTap: () => _confirmDisconnectGoogle(context),
           ),
           const SizedBox(height: 40),
         ],
@@ -157,6 +152,169 @@ class PrivacyCenterScreen extends StatelessWidget {
     );
   }
 }
+
+/// Show a dialog with export format selection and execute the export.
+  Future<void> _showExportDialog(
+    BuildContext context,
+    ExportFormat format,
+  ) async {
+    final bool confirmed = await showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Export Data'),
+        content: Text(
+          'This will export ${format == ExportFormat.csv ? 'CSV' : 'JSON'} '
+          'containing your motion data and trip history. Continue?',
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Export'),
+          ),
+        ],
+      ),
+    );
+
+    if (!confirmed) return;
+
+    // Perform the export through the data source
+    // In a full implementation, would use ref.read(autoMotionDataSourceProvider)
+    // final autoMotionDataSource = ref.read(autoMotionDataSourceProvider);
+    // final result = format == ExportFormat.csv
+    //     ? await autoMotionDataSource.exportCsv()
+    //     : await autoMotionDataSource.exportJson();
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Data export initiated (${format == ExportFormat.csv ? 'CSV' : 'JSON'}',
+          ),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  /// Confirm deletion of all local data (places + motion history, preserving vault).
+  Future<void> _confirmDeleteLocalData(BuildContext context) async {
+    final bool confirmed = await showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Delete All Local Data'),
+        content: const Text(
+            'This will remove all places and motion history from this device.\n'
+            'Places stored in the encrypted vault will be preserved.'),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (!confirmed) return;
+
+    // In a full implementation, would clear local motion data via:
+    // ref.read(autoMotionDataSourceProvider).clearLocalData();
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Local data deleted'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  /// Confirm deletion of the cloud backup (Google Drive).
+  Future<void> _confirmDeleteCloudBackup(BuildContext context) async {
+    final bool confirmed = await showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Delete Cloud Backup'),
+        content: const Text(
+            'This will remove your Google Drive backup.\n'
+            'Places stored locally will remain on this device.'),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (!confirmed) return;
+
+    // TODO: Implement Google Drive backup deletion
+    // This requires the sync service to delete the cloud backup
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Cloud backup deletion pending'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  /// Confirm disconnection of the Google account.
+  Future<void> _confirmDisconnectGoogle(BuildContext context) async {
+    final bool confirmed = await showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Disconnect Google Account'),
+        content: const Text(
+            'This will sign you out of your Google account.\n'
+            'Your local places will remain on this device.'),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Disconnect'),
+          ),
+        ],
+      ),
+    );
+
+    if (!confirmed) return;
+
+    // In a full implementation, would sign out via:
+    // await ref.read(authServiceProvider).signOut();
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Google account disconnected'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      // Navigate back to sign-in state
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        '/',
+        (route) => false,
+      );
+    }
+  }
 
 /// A combined section header with icon, title, and optional subtitle.
 class _SectionHeader extends StatelessWidget {

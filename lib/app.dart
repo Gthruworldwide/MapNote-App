@@ -17,6 +17,7 @@ import 'src/features/add_place/add_place_screen.dart';
 import 'src/features/home/home_screen.dart';
 import 'src/features/saved_places/presentation/providers/saved_places_providers.dart';
 import 'src/features/splash/brand_splash.dart';
+import 'src/features/welcome/welcome_screen.dart';
 import 'src/providers/app_providers.dart';
 import 'src/services/app_health_logger.dart';
 import 'src/services/app_logger.dart';
@@ -518,6 +519,7 @@ class _MapNoteAppState extends ConsumerState<MapNoteApp>
     final Locale? locale = ref.watch(localeControllerProvider);
     final ThemeMode themeMode = ref.watch(themeModeProvider);
     final FontScalePreset fontScale = ref.watch(fontScaleProvider);
+    final bool firstLaunch = ref.read(settingsRepositoryProvider).firstLaunch;
 
     double fontScaleFactor(FontScalePreset preset) {
       switch (preset) {
@@ -557,7 +559,7 @@ class _MapNoteAppState extends ConsumerState<MapNoteApp>
           child: BrandSplash(child: child ?? const SizedBox.shrink()),
         );
       },
-      home: const HomeScreen(),
+      home: firstLaunch ? const WelcomeScreen() : const HomeScreen(),
     );
   }
 }

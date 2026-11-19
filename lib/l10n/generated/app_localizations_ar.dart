@@ -386,6 +386,28 @@ class AppLocalizationsAr extends AppLocalizations {
   String get editionFeatureUnavailable => 'هذه الميزة غير متاحة في هذه النسخة.';
 
   @override
+  String get welcomeTitle => 'مرحبًا بك في MapNote';
+
+  @override
+  String get welcomeSubtitle => 'حفظ أماكنك المفضلة ومتابعة رحلاتك';
+
+  @override
+  String get welcomeEditionWork => 'ملاحظة العمل';
+
+  @override
+  String get welcomeEditionWorkSubtitle => 'التركيز على حفظ وتنظيم الأماكن';
+
+  @override
+  String get welcomeEditionAutoMotion => 'ملاحظة Automotive';
+
+  @override
+  String get welcomeEditionAutoMotionSubtitle =>
+      'تتبع القيادة والجري والتوقف باستخدام AutoMotion';
+
+  @override
+  String get welcomeGetStarted => 'البدء';
+
+  @override
   String get locationPermissionTitle => 'مطلوب إذن الموقع';
 
   @override
@@ -866,6 +888,36 @@ class AppLocalizationsAr extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get exportMotionDataSubtitle => 'تصدير بيانات الحركة والتاريخ';
+
+  @override
+  String get deleteLocalData => 'حذف البيانات المحلية';
+
+  @override
+  String get deleteLocalDataConfirmation =>
+      'سيتم إزالة جميع الأماكن وسجل الحركة من هذا الجهاز. الأماكن في الخزنة المشفرة ستحفظ.';
+
+  @override
+  String get deleteCloudBackup => 'حذف نسخة الاحتياطية السحابية';
+
+  @override
+  String get deleteCloudBackupConfirmation =>
+      'سيتم إزالة نسخة الاحتياطية من جوجل درايف. ستبقى الأماكن المحلية على الجهاز.';
+
+  @override
+  String get disconnectGoogle => 'فك ارتباط حساب جوجل';
+
+  @override
+  String get disconnectGoogleConfirmation =>
+      'تسجيل الخروج من حساب جوجل (لا يحذف الأماكن المحلية)';
+
+  @override
+  String get diagnostics => 'التشخيصات';
+
+  @override
+  String get diagnosticsReport => 'تقرير قابل للنسخ مع إزالة persönliche Daten';
 
   @override
   String get hiddenVault => 'الخزنة المخفية';

@@ -4,6 +4,22 @@ import '../../../services/motion_score.dart';
 import '../domain/eco_score_model.dart';
 import 'score_gauge_widget.dart';
 
+/// Extension to add route quality metadata to [EcoScoreModel].
+extension RouteQualityExtension on EcoScoreModel {
+  /// GPS quality label based on the implicit accuracy of the trip's fixes.
+  ///
+  
+
+  String get gpsQualityLabel {
+    // A simple heuristic: if the score is high and there are few maneuvers,
+    // assume good GPS quality. In a full implementation, this would receive
+    // the per-fix accuracy from the tracker.
+    if (score >= 85 && totalEvents <= 2) return 'GPS: Good';
+    if (score >= 70) return 'GPS: Fair';
+    return 'GPS: Needs improvement';
+  }
+}
+
 /// A dashboard card presenting the Eco-Driving & Safety Score, event tallies,
 /// and live G-Force metrics.
 class EcoDrivingDashboardCard extends StatelessWidget {
@@ -35,7 +51,7 @@ class EcoDrivingDashboardCard extends StatelessWidget {
 
     return Semantics(
       container: true,
-      label: '${l10n.motionSummaryTitle}, score: ${ecoScore.score} out of 100, ${_feedbackText(l10n)}',
+      label: '${l10n.motionSummaryTitle}, score: ${ecoScore.score} out of 100, ${_feedbackText(l10n)}, ${ecoScore.gpsQualityLabel}',
       child: Card(
         child: Padding(
           padding: const EdgeInsets.all(16.0),

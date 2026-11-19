@@ -28,6 +28,9 @@ class AutoMotionCard extends ConsumerWidget {
     // meaningful when AutoMotion is available, but we double-check here
     // so the badge does not leak into Work Edition UI.
     final bool showGpsQuality = ref.watch(automotionAvailableProvider);
+    // Mock-location warning is AutoMotion-only; suppressed in Work Edition
+    // where GPS quality is not meaningful and mock locations are not expected.
+    final bool showMockLocationWarning = ref.watch(automotionAvailableProvider);
 
     return Card(
       margin: const EdgeInsetsDirectional.fromSTEB(16, 4, 16, 8),
@@ -62,6 +65,7 @@ class AutoMotionCard extends ConsumerWidget {
                     isUnavailable: state.unavailable,
                     size: 28,
                     showGpsQuality: showGpsQuality,
+                    showMockLocationWarning: showMockLocationWarning,
                   ),
                   const SizedBox(width: 4),
                   Icon(

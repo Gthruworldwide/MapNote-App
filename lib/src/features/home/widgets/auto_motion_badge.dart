@@ -8,6 +8,10 @@ import 'package:flutter/material.dart';
 /// Includes an optional GPS quality indicator that shows the fix status of the
 /// most recent GPS fix. This indicator is only meaningful in the AutoMotion
 /// edition; it is hidden in the Work edition.
+///
+/// Additionally, [showMockLocationWarning] can be set to `true` to display a
+/// small warning icon when the device is using mock GPS locations (e.g. debug
+/// settings, emulators). This is AutoMotion-only and respects the edition gate.
 class AutoMotionBadge extends StatelessWidget {
   const AutoMotionBadge({
     super.key,
@@ -15,6 +19,7 @@ class AutoMotionBadge extends StatelessWidget {
     required this.isUnavailable,
     required this.size,
     this.showGpsQuality = true,
+    this.showMockLocationWarning = false,
   });
 
   final bool isActive;
@@ -24,6 +29,10 @@ class AutoMotionBadge extends StatelessWidget {
   /// beneath the location pin that reflects the most recent fix's accuracy
   /// tier. Set to `false` to hide the quality indicator (e.g. in Work Edition).
   final bool showGpsQuality;
+  /// When `true`, renders a warning icon alongside the GPS quality dot to
+  /// indicate that the device is using mock GPS locations. Set to `false`
+  /// by default; enable when the app detects mock location streams.
+  final bool showMockLocationWarning;
 
   @override
   Widget build(BuildContext context) {
@@ -35,6 +44,7 @@ class AutoMotionBadge extends StatelessWidget {
           isActive: isActive,
           isUnavailable: isUnavailable,
           showGpsQuality: showGpsQuality,
+          showMockLocationWarning: showMockLocationWarning,
         ),
         child: Center(
           child: Icon(
@@ -49,17 +59,19 @@ class AutoMotionBadge extends StatelessWidget {
 }
 
 /// The [CustomPainter] that draws the AutoMotion badge ring and the optional
-/// GPS quality dot.
+/// GPS quality dot and mock-location warning.
 class _AutoMotionBadgePainter extends CustomPainter {
   _AutoMotionBadgePainter({
     required this.isActive,
     required this.isUnavailable,
     required this.showGpsQuality,
+    required this.showMockLocationWarning,
   });
 
   final bool isActive;
   final bool isUnavailable;
   final bool showGpsQuality;
+  final bool showMockLocationWarning;
 
   static const Gradient _activeRing = SweepGradient(
     colors: <Color>[
@@ -97,10 +109,12 @@ class _AutoMotionBadgePainter extends CustomPainter {
   );
 
   // GPS quality dot: a small filled circle beneath the location pin.
-  // When accuracy is high (≤ 20 m) it appears green; medium (20–50 m) yellow;
-  // low (> 50 m) red. When the quality cannot be determined it is grey.
+  // When accuracy is high (≤ 20 m) it appears green; when unknown it is grey.
   static const Color _highQualityColor = Color(0xFF38FFB0);
   static const Color _unknownQualityColor = Color(0xFFBDC3C7);
+
+  // Mock location warning: a small orange exclamation mark beneath the pin.
+  static const double _warningSizeRatio = 0.18;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -147,9 +161,7 @@ class _AutoMotionBadgePainter extends CustomPainter {
     if (showGpsQuality) {
       // The GPS quality is derived from the most recent fix's accuracy.
       // In a real implementation this would read from the tracker's current
-      // fix, but for the badge we use a static hint: when the app is in
-      // AutoMotion edition and tracking is active, we show a green dot;
-      // otherwise grey.
+      // fix, but for the badge we use a static heuristic.
       final double dotRadius = size.width * 0.12;
       final Offset dotOffset = Offset(center, center + ringInner + dotRadius + 4);
       final Color dotColor = _determineQualityColor(isActive);
@@ -158,6 +170,38 @@ class _AutoMotionBadgePainter extends CustomPainter {
         ..style = PaintingStyle.fill
         ..isAntiAlias = true;
       canvas.drawCircle(dotOffset, dotRadius, dotPaint);
+    }
+
+    // Optional mock-location data-quality warning: a small exclamation icon.
+    if (showMockLocationWarning) {
+      final double warningRadius = size.width * _warningSizeRatio;
+      final Offset warningOffset =
+          Offset(center - warningRadius - 2, center - warningRadius - 2);
+      final Paint warningPaint = Paint()
+        ..color = Colors.orangeAccent
+        ..style = PaintingStyle.fill
+        ..isAntiAlias = true;
+      // Draw the warning icon as a simple "!" using a Text widget approach
+      // via DirectCanvas would be complex; instead we draw a minimal orange
+      // circle with a white "!" using a custom approach.
+      // For now, render a small orange dot with white plus pattern.
+      final Paint plusPaint = Paint()..color = Colors.white;
+      canvas.drawCircle(Offset(warningOffset.dx + warningRadius / 2, warningOffset.dy), 1.5, plusPaint);
+      canvas.drawCircle(Offset(warningOffset.dx + warningRadius / 2, warningOffset.dy + warningRadius), 1.5, plusPaint);
+      // Draw orange background circle
+      canvas.drawCircle(warningOffset, warningRadius, warningPaint);
+      // Draw white "!" - vertical line
+      canvas.drawLine(
+        Offset(warningOffset.dx + warningRadius / 2, warningOffset.dy),
+        Offset(warningOffset.dx + warningRadius / 2, warningOffset.dy + warningRadius - 4),
+        plusPaint,
+      );
+      // Draw white "!" - horizontal line
+      canvas.drawLine(
+        Offset(warningOffset.dx, warningOffset.dy + warningRadius - 4),
+        Offset(warningOffset.dx + warningRadius, warningOffset.dy + warningRadius - 4),
+        plusPaint,
+      );
     }
   }
 
@@ -174,6 +218,7 @@ class _AutoMotionBadgePainter extends CustomPainter {
   bool shouldRepaint(covariant _AutoMotionBadgePainter oldDelegate) {
     return oldDelegate.isActive != isActive ||
         oldDelegate.isUnavailable != isUnavailable ||
-        oldDelegate.showGpsQuality != showGpsQuality;
+        oldDelegate.showGpsQuality != showGpsQuality ||
+        oldDelegate.showMockLocationWarning != showMockLocationWarning;
   }
 }
