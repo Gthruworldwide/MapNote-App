@@ -12,7 +12,7 @@ name: Firebase App Distribution
 # (or a re-dispatch once the artifact exists) is seconds, not minutes.
 #
 # This workflow only distributes — it does not analyze or test. Validation lives
-# in `android-release.yml`, which also fires on `v*` tags and runs
+# in `android-release.yml`, which also fires on semver release tags and runs
 # `flutter analyze lib test` + `flutter test` before uploading an artifact.
 # Both run on a release tag, each with a distinct purpose.
 #
@@ -28,6 +28,9 @@ name: Firebase App Distribution
 # with `403 The caller does not have permission` even though authentication
 # succeeds.
 
+permissions:
+  contents: read
+
 on:
   workflow_dispatch:
   push:
@@ -42,6 +45,10 @@ on:
 jobs:
   build:
     name: Build release APK
+    # The distributed binary is the one this job analyzes, tests and hashes;
+    # the distribute job refuses to upload an artifact whose digest changed.
+    outputs:
+      apk_sha256: ${{ steps.digest.outputs.sha256 }}
     # Pinned, never `ubuntu-latest`. The `ubuntu-latest` label is migrating to
     # Ubuntu 26.04 through November 2026, which changes the default JDK, Docker
     # (28 -> 29) and preinstalled runtime patch versions under a workflow that
@@ -50,36 +57,57 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Check out
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
 
       - name: Set up Java 17
-        uses: actions/setup-java@v6
+        uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6
         with:
           distribution: 'temurin'
           java-version: '17'
 
       - name: Set up Flutter
-        uses: subosito/flutter-action@v2
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
+          flutter-version: '3.47.7'
           channel: 'stable'
           cache: true
 
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Analyze
+        run: flutter analyze lib test
+
+      - name: Test
+        run: flutter test
+
       - name: Build release APK
+        # Inject through the environment and quote the expansion. Direct
+        # interpolation into the shell script evaluates secret metacharacters.
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          APP_EDITION: personal
         run: >
           flutter build apk --release
-          --dart-define=GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
+          --dart-define="GEMINI_API_KEY=$GEMINI_API_KEY"
+          --dart-define="APP_EDITION=$APP_EDITION"
+
+      - name: Record artifact digest
+        id: digest
+        shell: bash
+        run: |
+          sha="$(sha256sum build/app/outputs/flutter-apk/app-release.apk | cut -d' ' -f1)"
+          echo "sha256=$sha" >> "$GITHUB_OUTPUT"
 
       # The APK is ~67 MB and only needs to outlive the distribute job that
       # consumes it, so retention is one day rather than the 90-day default.
       - name: Upload release APK
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
           retention-days: 1
+          if-no-files-found: error
 
   distribute:
     name: Distribute to testers
@@ -90,10 +118,21 @@ jobs:
       # only input besides the two secrets — so this job skips all of that and
       # starts at the download.
       - name: Download release APK
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
         with:
           name: release-apk
           path: build/app/outputs/flutter-apk
+
+      - name: Verify distributed APK digest
+        shell: bash
+        env:
+          EXPECTED_SHA256: ${{ needs.build.outputs.apk_sha256 }}
+        run: |
+          actual="$(sha256sum build/app/outputs/flutter-apk/app-release.apk | cut -d' ' -f1)"
+          if [ -z "$EXPECTED_SHA256" ] || [ "$actual" != "$EXPECTED_SHA256" ]; then
+            echo "::error::APK digest does not match the analyzed build."
+            exit 1
+          fi
 
       # A secret is stored exactly as pasted, and a trailing newline (easy to
       # paste by accident) previously split the argument list below across two
@@ -117,51 +156,42 @@ jobs:
       # The action only checks that the secret parses as JSON (`jq empty`), so a
       # google-services.json — also valid JSON — is accepted and then fails
       # later with a bare "Failed to authenticate". Validate the credential's
-      # shape here instead, and report why. Prints field NAMES only; never a
-      # value, so the key stays secret.
+      # shape here instead. Report pass/fail only: never print a key length,
+      # prefix, email domain or project id from the secret.
       - name: Validate service account key
         shell: bash
         run: |
           key="$(printf '%s' "$SA_KEY_RAW")"
-          echo "length: ${#key} bytes"
-          echo "first 1 char: $(printf '%s' "$key" | cut -c1)"
 
-          if ! printf '%s' "$key" | jq -e . >/dev/null 2>&1; then
-            echo "::error::FIREBASE_SERVICE_ACCOUNT_KEY is not valid JSON."
+          if ! printf '%s' "$key" | jq -e 'type == "object"' >/dev/null 2>&1; then
+            echo "::error::FIREBASE_SERVICE_ACCOUNT_KEY is not a JSON object."
             exit 1
           fi
-
-          echo "top-level fields: $(printf '%s' "$key" | jq -r 'keys | join(", ")')"
-
-          type="$(printf '%s' "$key" | jq -r '.type // "MISSING"')"
-          if [ "$type" != "service_account" ]; then
-            echo "::error::FIREBASE_SERVICE_ACCOUNT_KEY has type='$type', expected 'service_account'."
+          if ! printf '%s' "$key" | jq -e '.type == "service_account"' >/dev/null 2>&1; then
+            echo "::error::FIREBASE_SERVICE_ACCOUNT_KEY is not a service account key."
             echo "::error::A google-services.json also parses as JSON and will land here."
             echo "::error::Get a key from Cloud Console > IAM & Admin > Service Accounts > Keys > Add key > JSON."
             exit 1
           fi
-
-          printf '%s' "$key" | jq -e '.private_key and .client_email and .project_id' >/dev/null 2>&1 || {
-            echo "::error::FIREBASE_SERVICE_ACCOUNT_KEY is missing private_key, client_email or project_id."
+          if ! printf '%s' "$key" | jq -e '.private_key and .client_email and .project_id' >/dev/null 2>&1; then
+            echo "::error::FIREBASE_SERVICE_ACCOUNT_KEY is missing a required field."
             exit 1
-          }
+          fi
 
           # The PEM must keep its literal \n escapes; if a paste turned them into
           # real newlines the JSON would already have failed above, and if they
           # were stripped the PEM cannot be parsed.
           if ! printf '%s' "$key" | jq -r '.private_key' | grep -q '^-----BEGIN PRIVATE KEY-----'; then
-            echo "::error::private_key does not start with '-----BEGIN PRIVATE KEY-----'; the paste likely mangled its line breaks."
+            echo "::error::private_key is malformed; the paste likely mangled its line breaks."
             exit 1
           fi
 
-          echo "client_email domain: $(printf '%s' "$key" | jq -r '.client_email | split("@")[1]')"
-          echo "project_id matches repo project: $(printf '%s' "$key" | jq -r '.project_id')"
           echo "OK: service account key looks structurally valid."
         env:
           SA_KEY_RAW: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}
 
       - name: Distribute to Firebase App Distribution
-        uses: w9jds/firebase-action@v15.34.0
+        uses: w9jds/firebase-action@6dfb7fd58bb600d7857dac0519ac11946e501bec # v15.34.0
         with:
           # `appdistribution:distribute` takes the APK as a positional argument
           # and the app id via `--app`. Flags verified against firebase-tools.

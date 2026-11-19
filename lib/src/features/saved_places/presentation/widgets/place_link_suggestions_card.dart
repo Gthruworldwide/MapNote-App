@@ -6,6 +6,7 @@ import '../../../../../l10n/generated/app_localizations.dart';
 import '../../../../core/utils/plus_code.dart';
 import '../../../../data/models/place.dart';
 import '../../../../providers/app_providers.dart';
+import '../../../../services/lock_gate.dart';
 import '../../domain/entities/place_link_suggestion.dart';
 import '../providers/saved_places_providers.dart';
 
@@ -75,7 +76,7 @@ class _SuggestionTile extends ConsumerWidget {
     final AppLocalizations l10n = AppLocalizations.of(context);
     final ThemeData theme = Theme.of(context);
     final Place? place = suggestion.place;
-    final bool matches = place != null;
+    final bool matches = place != null && !place.isLocked;
 
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 4),
@@ -115,10 +116,25 @@ class _SuggestionTile extends ConsumerWidget {
     if (place == null) return;
     final AppLocalizations l10n = AppLocalizations.of(context);
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+
+    // Defence in depth: a stale suggestion must never reveal or navigate to a
+    // locked place without a successful device-credential prompt.
+    if (place.isLocked &&
+        !await ensureUnlocked(
+          ref,
+          l10n: l10n,
+          reason: l10n.unlockToNavigate,
+          messenger: messenger,
+          allowWhenUnavailable: true,
+        )) {
+      return;
+    }
+    if (!context.mounted) return;
+
     final bool launched = await ref
         .read(navigationServiceProvider)
         .navigate(place.latitude, place.longitude);
-    if (!launched) {
+    if (!launched && context.mounted) {
       messenger.showSnackBar(SnackBar(content: Text(l10n.locationUnavailable)));
     }
   }

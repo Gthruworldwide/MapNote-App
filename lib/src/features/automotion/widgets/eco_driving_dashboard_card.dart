@@ -99,7 +99,7 @@ class EcoDrivingDashboardCard extends StatelessWidget {
                   ),
                   _MetricItem(
                     icon: Icons.check_circle_outline,
-                    label: 'Smoothness',
+                    label: l10n.smoothness,
                     value: '${ecoScore.smoothnessPercentage.toInt()}%',
                   ),
                 ],

@@ -59,6 +59,7 @@ import '../services/fused_location_service.dart';
 import '../services/gap_recovery_service.dart';
 import '../services/gemini_client.dart';
 import '../services/geocoding_service.dart';
+import '../services/geoapify_client.dart';
 import '../services/gps_tracker_service.dart';
 import '../services/home_shortcut_service.dart';
 import '../services/key_rotation_service.dart';
@@ -82,6 +83,15 @@ import '../services/step_meter.dart';
 import '../services/transport_classifier.dart';
 
 // ---------------------------------------------------------------------------
+// Build-bound edition identity
+// ---------------------------------------------------------------------------
+
+/// Capabilities fixed at build time. This provider deliberately has no
+/// consumer overridable at runtime: a release binary's edition is part of its
+/// identity, not a preference.
+final Provider<EditionCapabilities> editionCapabilitiesProvider =
+    Provider<EditionCapabilities>((Ref ref) => EditionCapabilities.fromBuild());
+
 // Storage & repositories
 // ---------------------------------------------------------------------------
 
@@ -492,8 +502,13 @@ final Provider<SmartClipboardService> smartClipboardServiceProvider =
 ///
 /// Constructed lazily and best-effort: [GeocodingService] never touches the
 /// platform geocoder until it is asked to, and returns `null` offline.
+/// When cloud AI is enabled and a Geoapify key is configured, attempts Geoapify
+/// reverse geocoding first, then falls back to the native geocoder automatically.
 final Provider<GeocodingService> geocodingServiceProvider =
-    Provider<GeocodingService>((Ref ref) => GeocodingService());
+    Provider<GeocodingService>((Ref ref) => GeocodingService(
+      isCloudEnabled: ref.watch(cloudGeocodingEnabledProvider),
+      geoApifyClient: ref.watch(geoApifyClientProvider),
+    ));
 
 final Provider<BiometricService> biometricServiceProvider =
     Provider<BiometricService>((Ref ref) => const BiometricService());
@@ -855,7 +870,30 @@ final Provider<GeminiClient> geminiClientProvider = Provider<GeminiClient>((
   final GeminiClient client = GeminiClient(
     keyRotation: ref.watch(keyRotationServiceProvider),
   );
-  ref.onDispose(client.close);
+  ref.onDispose(() => client.close());
+  return client;
+});
+
+/// Optional Geoapify client (only active when an API key is configured AND
+/// cloud AI is enabled in Settings). Falls back to native [package:geocoding].
+final Provider<GeoapifyClient> geoApifyClientProvider = Provider<GeoapifyClient>((
+  Ref ref,
+) {
+  final bool geocodingEnabled = ref.watch(cloudGeocodingEnabledProvider);
+  final String geoApiKey = AppConfig.geoApiKey;
+
+  if (!geocodingEnabled || geoApiKey.isEmpty) {
+    // Return a client that immediately reports unconfigured.
+    // The caller checks `isConfigured` before making requests.
+    return GeoapifyClient(
+      apiKey: '',
+    );
+  }
+
+  final GeoapifyClient client = GeoapifyClient(
+    apiKey: geoApiKey,
+  );
+  ref.onDispose(() => client.close());
   return client;
 });
 
@@ -915,6 +953,16 @@ final AsyncNotifierProvider<AgentNotifier, List<AgentInsight>> agentProvider =
 /// Whether optional cloud (Gemini) suggestions are enabled.
 final NotifierProvider<CloudAiController, bool> cloudAiEnabledProvider =
     NotifierProvider<CloudAiController, bool>(CloudAiController.new);
+
+/// Whether optional Geoapify reverse geocoding may send a coordinate off-device.
+///
+/// Deliberately separate from [cloudAiEnabledProvider]: consent is per third
+/// party, and both default to off.
+final NotifierProvider<CloudGeocodingController, bool>
+cloudGeocodingEnabledProvider =
+    NotifierProvider<CloudGeocodingController, bool>(
+      CloudGeocodingController.new,
+    );
 
 /// The app used to launch turn-by-turn navigation from place cards.
 final NotifierProvider<PreferredNavAppController, PreferredNavApp>
@@ -1559,6 +1607,18 @@ class CloudAiController extends Notifier<bool> {
     await ref.read(settingsRepositoryProvider).setCloudAiEnabled(enabled);
     state = enabled;
     await ref.read(agentProvider.notifier).refresh();
+  }
+}
+
+/// Persists the Geoapify consent flag independently of Gemini consent.
+class CloudGeocodingController extends Notifier<bool> {
+  @override
+  bool build() =>
+      ref.watch(settingsRepositoryProvider).isCloudGeocodingEnabled;
+
+  Future<void> setEnabled(bool enabled) async {
+    await ref.read(settingsRepositoryProvider).setCloudGeocodingEnabled(enabled);
+    state = enabled;
   }
 }
 

@@ -14,8 +14,52 @@
 /// The Gemini API key is the one real secret here. It is read from the
 /// environment only (`--dart-define`, or the `GEMINI_API_KEY` CI secret) and is
 /// never written into the repository or a release artifact.
+/// Build-bound product edition. The value comes from `--dart-define`, never
+/// from a runtime provider override, so a distributed binary's capabilities
+/// cannot be widened after it is built.
+enum AppEdition { personal, work }
+
+/// Immutable capability set derived only from [AppConfig.appEditionRaw].
+class EditionCapabilities {
+  const EditionCapabilities(this.edition);
+
+  factory EditionCapabilities.fromBuild() =>
+      EditionCapabilities(AppConfig.appEdition);
+
+  final AppEdition edition;
+
+  /// Whether an admin surface may be shown at all. Fail-closed on unknown
+  /// edition strings: the parser maps them to [AppEdition.personal].
+  bool get allowAdminUi => edition == AppEdition.work;
+
+  /// Work Edition station administration is not shipped in this branch. Keep
+  /// the privileged capability off until the work-edition branch wires it to a
+  /// server-enforced custom claim.
+  bool get allowFirebaseStationAdmin => false;
+}
+
 class AppConfig {
   const AppConfig._();
+
+  /// Edition identity injected by the release workflow. Unknown values are
+  /// fail-closed to `personal` by [AppConfig.appEdition].
+  static const String appEditionRaw = String.fromEnvironment(
+    'APP_EDITION',
+    defaultValue: 'personal',
+  );
+
+  static AppEdition get appEdition => parseEdition(appEditionRaw);
+
+  /// Fail-closed parser so an unknown build string can never grant privileges.
+  static AppEdition parseEdition(String raw) {
+    switch (raw.toLowerCase()) {
+      case 'work':
+        return AppEdition.work;
+      case 'personal':
+      default:
+        return AppEdition.personal;
+    }
+  }
 
   /// Web / server OAuth client id. Required on Android for `google_sign_in`.
   ///
@@ -51,6 +95,18 @@ class AppConfig {
   static const String backupFileName = 'routenote_backup.json';
 
   static const String backupMimeType = 'application/json';
+
+  /// Restore is a write into local Hive storage, so every downloaded payload is
+  /// bounded before decoding and every record is validated before persistence.
+  static const int maxBackupBytes = 8 * 1024 * 1024;
+  static const int maxBackupPlaces = 20000;
+  static const int maxBackupJsonDepth = 64;
+  static const int maxPlaceIdLength = 128;
+  static const int maxPlaceNameLength = 300;
+  static const int maxPlaceNotesLength = 4000;
+  static const int maxPlacePlusCodeLength = 32;
+  static const Duration maxBackupTimestampSkew = Duration(days: 1);
+  static const int minBackupTimestampMs = 946684800000; // 2000-01-01 UTC.
 
   /// Hive box names.
   static const String placesBoxName = 'places';
@@ -149,6 +205,54 @@ class AppConfig {
 
   /// Maximum number of insights shown at once (the rest are queued away).
   static const int maxAgentInsights = 3;
+
+  /// Optional Geoapify API key for optional enhanced geocoding.
+  ///
+  /// The app is **offline-first by default**: when this is empty (or the user
+  /// turns cloud AI off in Settings), the app uses the native [package:geocoding]
+  /// geocoder only. No network calls are made on core paths.
+  ///
+  /// The value is read from the environment only — never committed to the repo —
+  /// e.g. locally:
+  ///
+  /// ```sh
+  /// flutter run --dart-define=GEOAPIFY_API_KEY=your-geoapify-key
+  /// ```
+  ///
+  /// and in CI from the `GEOAPIFY_API_KEY` secret (see
+  /// `.github/workflows/android-release.yml`).
+  ///
+  /// Only anonymous counts and structural summaries are ever sent — never place
+  /// names, notes, or coordinates beyond what the user explicitly shares.
+  ///
+  /// The key travels as the `apiKey` query parameter in the request URL only.
+  static const String geoApiKeysRaw = String.fromEnvironment('GEOAPIFY_API_KEY');
+
+  /// The parsed, de-duplicated key pool (may be empty).
+  static List<String> get geoApiKeys => parseGeoApiKeys(geoApiKeysRaw);
+
+  /// The first configured key, or an empty string when none is configured.
+  static String get geoApiKey {
+    final List<String> keys = geoApiKeys;
+    return keys.isEmpty ? '' : keys.first;
+  }
+
+  /// Splits a raw `GEOAPIFY_API_KEY` value into a clean key pool.
+  ///
+  /// Accepts a single key (no separators needed). Trims whitespace and drops blanks.
+  static List<String> parseGeoApiKeys(String raw) {
+    final List<String> keys = <String>[];
+    final String trimmed = raw.trim();
+    if (trimmed.isEmpty) return keys;
+    if (!keys.contains(trimmed)) keys.add(trimmed);
+    return keys;
+  }
+
+  /// Whether at least one Geoapify API key was compiled in.
+  static bool get isGeoApifyConfigured => geoApiKeys.isNotEmpty;
+
+  /// Network timeout for a single cloud geocoding request.
+  static const Duration geocodeTimeout = Duration(seconds: 12);
 
   /// Key used to persist the bounded health-event log in the settings box.
   static const String healthLogKey = 'health_events';

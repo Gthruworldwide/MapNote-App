@@ -1,7 +1,9 @@
 import 'dart:convert';
 
+import '../local/place_local_data_source.dart';
 import '../local/settings_repository.dart';
 import '../models/backup_data.dart';
+import '../models/backup_validator.dart';
 import '../models/place.dart';
 import '../remote/auth_service.dart';
 import '../remote/drive_service.dart';
@@ -47,10 +49,24 @@ class SyncRepository {
     if (!_auth.isSignedIn) return SyncOutcome.skippedNotSignedIn;
 
     final List<Place> local = await _places.getAll();
-    if (local.isEmpty && await _drive.backupExists()) {
-      await restoreFromDrive();
+    if (local.isNotEmpty) {
+      await backupToDrive();
+      return SyncOutcome.uploaded;
+    }
+
+    // One download only. The local-empty precondition is re-checked inside
+    // applyBackup, after every await, so a place saved while the network was
+    // busy is never erased by a stale decision.
+    final _RestoreApplication application = await _downloadAndApply(
+      baselineIds: const <String>{},
+      requireEmptyLocal: true,
+    );
+    if (application.result == RestoreApplyResult.applied) {
+      await _stampLocalSyncEvidence();
       return SyncOutcome.restored;
     }
+
+    // Local data appeared mid-download: the device wins and gets backed up.
     await backupToDrive();
     return SyncOutcome.uploaded;
   }
@@ -64,24 +80,50 @@ class SyncRepository {
     await _settings.setLastSynced(now);
   }
 
-  /// Downloads the Drive backup and replaces local data. Returns the number of
-  /// restored places.
+  /// Downloads, validates and applies a Drive backup. Returns the number of
+  /// restored places. Existing content is only replaced by an explicitly
+  /// confirmed restore, and concurrent additions are preserved.
   Future<int> restoreFromDrive() async {
-    final String? raw = await _drive.downloadBackup();
-    if (raw == null || raw.isEmpty) return 0;
+    final Set<String> baseline =
+        (await _places.getAll()).map((Place place) => place.id).toSet();
+    final _RestoreApplication application = await _downloadAndApply(
+      baselineIds: baseline,
+      requireEmptyLocal: false,
+    );
+    if (application.result == RestoreApplyResult.applied) {
+      await _stampLocalSyncEvidence();
+    }
+    return application.places.length;
+  }
 
-    final Object? decoded = jsonDecode(raw);
-    if (decoded is! Map) {
-      throw const FormatException(
-        'Google Drive backup is not a valid JSON object',
-      );
+  Future<_RestoreApplication> _downloadAndApply({
+    required Set<String> baselineIds,
+    required bool requireEmptyLocal,
+  }) async {
+    final String? raw = await _drive.downloadBackup();
+    if (raw == null || raw.isEmpty) {
+      return _RestoreApplication(const <Place>[], null);
     }
 
-    final BackupData data = BackupData.fromJson(
-      Map<String, dynamic>.from(decoded),
+    // Strict external-input validation happens before any Hive write. The
+    // backup's own `last_synced` is ignored: it is attacker-controlled and must
+    // never become session-trust evidence.
+    final List<Place> places = parseBackup(raw);
+    final RestoreApplyResult result = await _places.applyBackup(
+      backupPlaces: places,
+      baselineIds: baselineIds,
+      requireEmptyLocal: requireEmptyLocal,
     );
-    await _places.replaceAll(data.places);
-    await _settings.setLastSynced(data.lastSynced ?? DateTime.now().toUtc());
-    return data.places.length;
+    return _RestoreApplication(places, result);
   }
+
+  Future<void> _stampLocalSyncEvidence() =>
+      _settings.setLastSynced(DateTime.now().toUtc());
+}
+
+class _RestoreApplication {
+  const _RestoreApplication(this.places, this.result);
+
+  final List<Place> places;
+  final RestoreApplyResult? result;
 }

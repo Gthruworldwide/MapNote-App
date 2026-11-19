@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce/hive.dart';
 
+import 'package:routenote/src/core/config/app_config.dart';
 import 'package:routenote/src/services/app_health_logger.dart';
 
 void main() {
@@ -101,6 +102,35 @@ void main() {
 
     final AppHealthLogger second = AppHealthLogger(box);
     expect(second.count(HealthEventType.placeSaved), 1);
+  });
+
+  test('redacts credentials in messages and payloads before persisting',
+      () async {
+    const String secret = 'AIzaSyTESTTESTTESTTESTTESTTESTTESTTESTTEST';
+    final AppHealthLogger logger = AppHealthLogger(box);
+
+    logger.log(
+      HealthEventType.agentFailure,
+      message: 'request failed with x-goog-api-key=$secret',
+      data: <String, Object?>{'detail': 'token=$secret'},
+    );
+    await pumpEventQueue();
+
+    final String persisted = box.get(AppConfig.healthLogKey).toString();
+    expect(logger.recent().single.message, isNot(contains(secret)));
+    expect(persisted, isNot(contains(secret)));
+    expect(persisted, contains('[redacted]'));
+
+    // A legacy plaintext entry is cleaned on read, not re-exposed by `recent()`.
+    await box.put(AppConfig.healthLogKey, <Object?>[
+      <String, Object?>{
+        'type': HealthEventType.agentFailure.name,
+        'timestamp': DateTime.utc(2026, 1, 10, 12).toIso8601String(),
+        'message': 'x-goog-api-key=$secret',
+      },
+    ]);
+    final AppHealthLogger legacy = AppHealthLogger(box);
+    expect(legacy.recent().single.message, isNot(contains(secret)));
   });
 
   test('caps the in-memory log', () {

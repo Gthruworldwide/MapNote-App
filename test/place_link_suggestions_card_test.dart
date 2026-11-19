@@ -21,13 +21,14 @@ void main() {
     dwell: const Duration(minutes: 12),
   );
 
-  Place place() => Place(
+  Place place({bool isLocked = false}) => Place(
     id: 'place-1',
     name: 'Coffee Corner',
     notes: '',
     latitude: 30.0444,
     longitude: 31.2357,
     timestamp: DateTime.utc(2026, 1, 1),
+    isLocked: isLocked,
   );
 
   late AppLocalizations l10n;
@@ -88,6 +89,24 @@ void main() {
     expect(find.textContaining('12'), findsOneWidget);
     expect(find.text(l10n.suggestedPlaceOpenAction), findsOneWidget);
     expect(find.text(l10n.suggestedPlaceSaveAction), findsNothing);
+  });
+
+  testWidgets('a locked matched place never appears as a saved suggestion', (
+    WidgetTester tester,
+  ) async {
+    await pumpCard(tester, <PlaceLinkSuggestion>[
+      PlaceLinkSuggestion(
+        kind: PlaceLinkSuggestionKind.linkToExisting,
+        stop: stop(),
+        place: place(isLocked: true),
+        distanceMeters: 42,
+      ),
+    ]);
+
+    expect(find.textContaining('Coffee Corner'), findsNothing);
+    expect(find.text(l10n.suggestedPlaceOpenAction), findsNothing);
+    expect(find.text(l10n.suggestedPlaceNoMatch), findsOneWidget);
+    expect(find.text(l10n.suggestedPlaceSaveAction), findsOneWidget);
   });
 
   testWidgets('offers to save an unmatched stop', (WidgetTester tester) async {

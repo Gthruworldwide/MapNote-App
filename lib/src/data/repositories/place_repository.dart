@@ -16,4 +16,15 @@ class PlaceRepository {
   Future<void> delete(String id) => _local.delete(id);
 
   Future<void> replaceAll(Iterable<Place> places) => _local.replaceAll(places);
+
+  Future<RestoreApplyResult> applyBackup({
+    required Iterable<Place> backupPlaces,
+    required Set<String> baselineIds,
+    required bool requireEmptyLocal,
+  }) =>
+      _local.applyBackup(
+        backupPlaces: backupPlaces,
+        baselineIds: baselineIds,
+        requireEmptyLocal: requireEmptyLocal,
+      );
 }

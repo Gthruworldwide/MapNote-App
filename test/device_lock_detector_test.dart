@@ -23,6 +23,7 @@ AccelerometerSample _tremorSample(int index, DateTime at) {
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   final DateTime epoch = DateTime.utc(2026, 1, 1);
 
   group('verdict', () {
@@ -199,6 +200,49 @@ void main() {
       expect(detector.sampleCount, seen);
 
       await source.close();
+    });
+
+    test('stop clears the verdict so it cannot cross a session boundary',
+        () async {
+      final StreamController<AccelerometerSample> source =
+          StreamController<AccelerometerSample>();
+      final DeviceLockDetector detector = DeviceLockDetector(
+        hub: _hub(),
+        stillnessThreshold: const Duration(seconds: 20),
+        accelerationStream: source.stream,
+      );
+      final List<InteractionContext> seen = <InteractionContext>[];
+      final StreamSubscription<InteractionContext> subscription =
+          detector.contextChanges.listen(seen.add);
+      addTearDown(subscription.cancel);
+
+      await detector.start();
+      source.add(_stillSample(epoch));
+      source.add(_stillSample(epoch.add(const Duration(seconds: 30))));
+      await Future<void>.delayed(Duration.zero);
+      expect(detector.context, InteractionContext.surfaceIdle);
+
+      await detector.stop();
+      expect(detector.context, InteractionContext.unknown);
+      expect(detector.sampleCount, 0);
+      expect(seen.last, InteractionContext.unknown);
+
+      await source.close();
+    });
+
+    test('start/stop balances the shared hub consumer', () async {
+      final MotionSensorHub hub = MotionSensorHub();
+      final DeviceLockDetector detector = DeviceLockDetector(hub: hub);
+
+      expect(hub.userCount, 0);
+      await detector.start();
+      // No stream override: this is the production path that reference-counts
+      // the hub and opens the platform sensor channel on first use.
+      expect(hub.userCount, 1);
+
+      await detector.stop();
+      expect(hub.userCount, 0);
+      await hub.dispose();
     });
 
     test('start is idempotent', () async {

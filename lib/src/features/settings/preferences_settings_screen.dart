@@ -275,8 +275,10 @@ class PreferencesSettingsScreen extends ConsumerWidget {
   ) {
     final ThemeData theme = Theme.of(context);
     final bool cloudAvailable = AppConfig.isGeminiConfigured;
+    final bool geocodingAvailable = AppConfig.isGeoApifyConfigured;
     final bool insightsEnabled = ref.watch(smartInsightsEnabledProvider);
     final bool cloudEnabled = ref.watch(cloudAiEnabledProvider);
+    final bool geoEnabled = ref.watch(cloudGeocodingEnabledProvider);
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -305,6 +307,19 @@ class PreferencesSettingsScreen extends ConsumerWidget {
               value: cloudEnabled,
               onChanged: (bool value) =>
                   ref.read(cloudAiEnabledProvider.notifier).setEnabled(value),
+            ),
+          ],
+          if (geocodingAvailable) ...<Widget>[
+            const Divider(height: 24),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              secondary: const Icon(Icons.travel_explore_outlined),
+              title: Text(l10n.cloudGeocodingTitle),
+              subtitle: Text(l10n.cloudGeocodingSubtitle),
+              value: geoEnabled,
+              onChanged: (bool value) => ref
+                  .read(cloudGeocodingEnabledProvider.notifier)
+                  .setEnabled(value),
             ),
           ],
         ],

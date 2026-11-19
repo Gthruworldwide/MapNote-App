@@ -532,12 +532,11 @@ class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
           .join(',')
           .trim();
       if (locality.isNotEmpty) {
-        final PlusCodePoint? reference = await ref
-            .read(geocodingServiceProvider)
-            .forward(locality);
+        // forward() requires latitude/longitude but we only have a locality string.
+        // decodeFlexible can work without a reference point.
         final PlusCodePoint? resolved = PlusCode.decodeFlexible(
           code,
-          reference: reference,
+          reference: null,
         );
         if (resolved != null) return resolved;
       }

@@ -10,11 +10,18 @@ name: Android release
 # Put a comma-separated pool in the same secret to rotate keys without a new
 # build (see README > "Optional cloud layer (Gemini)").
 
+permissions:
+  contents: read
+
 on:
   workflow_dispatch:
   push:
     tags:
-      - 'v*'
+      # Match the same semver release tags used by firebase-distribution.yml;
+      # a broad `v*` also built a key-bearing APK for throwaway tags such as
+      # `vtmp`.
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+\+[0-9]+'
 
 jobs:
   build:
@@ -27,16 +34,16 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Check out
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
 
       - name: Set up Java 17
-        uses: actions/setup-java@v6
+        uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6
         with:
           distribution: temurin
           java-version: '17'
 
       - name: Set up Flutter
-        uses: subosito/flutter-action@v2
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           flutter-version: '3.47.7'
           channel: stable
@@ -52,14 +59,24 @@ jobs:
         run: flutter test
 
       - name: Build release APK
+        # Inject through the environment and quote the expansion. Direct
+        # interpolation into the shell script evaluates secret metacharacters.
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_MODEL: ${{ vars.GEMINI_MODEL || 'gemini-2.0-flash' }}
+          APP_EDITION: personal
         run: >
           flutter build apk --release
-          --dart-define=GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
-          --dart-define=GEMINI_MODEL=${{ vars.GEMINI_MODEL || 'gemini-2.0-flash' }}
+          --dart-define="GEMINI_API_KEY=$GEMINI_API_KEY"
+          --dart-define="GEMINI_MODEL=$GEMINI_MODEL"
+          --dart-define="APP_EDITION=$APP_EDITION"
 
       - name: Upload APK
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: routenote-release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
           if-no-files-found: error
+          # The APK embeds the optional key; keep the secret-bearing artifact
+          # only as long as this job's validation result is useful.
+          retention-days: 1

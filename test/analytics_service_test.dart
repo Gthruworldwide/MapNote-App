@@ -41,11 +41,21 @@ class _RecordingAnalytics extends AnalyticsService {
       logged.map((_LoggedEvent event) => event.name).toList(growable: false);
 
   @override
-  Future<void> logEvent(
-    String name, {
-    Map<String, Object>? parameters,
+  Future<void> logEvent(String name) async {
+    logged.add(_LoggedEvent(name, const <String, Object>{}));
+  }
+}
+
+/// Observes the real [AnalyticsService] boundary, not an overridden method.
+class _RecordingSink implements AnalyticsEventSink {
+  final List<_LoggedEvent> events = <_LoggedEvent>[];
+
+  @override
+  Future<void> logEvent({
+    required String name,
+    required Map<String, Object> parameters,
   }) async {
-    logged.add(_LoggedEvent(name, parameters));
+    events.add(_LoggedEvent(name, parameters));
   }
 }
 
@@ -216,6 +226,18 @@ void main() {
       completes,
       reason: 'a build without google-services.json must still boot and run',
     );
+  });
+
+  test('unknown event names and parameter maps cannot reach the sink', () async {
+    final _RecordingSink sink = _RecordingSink();
+    final AnalyticsService service = AnalyticsService(sink: sink);
+
+    await service.logEvent(AnalyticsEvents.placeSaved);
+    await service.logEvent('place_saved_with_notes');
+
+    expect(sink.events, hasLength(1));
+    expect(sink.events.single.name, AnalyticsEvents.placeSaved);
+    expect(sink.events.single.parameters, isEmpty);
   });
 
   test('the observer list stays empty when Firebase is unavailable', () {

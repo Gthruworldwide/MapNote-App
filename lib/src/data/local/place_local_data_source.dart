@@ -1,6 +1,16 @@
 import '../models/place.dart';
 import 'hive_database.dart';
 
+/// Outcome of applying a validated backup after its download.
+enum RestoreApplyResult {
+  /// The validated backup was written to Hive.
+  applied,
+
+  /// Local data appeared while the download was in flight; the automatic
+  /// restore precondition no longer holds and nothing was written.
+  abortedLocalNotEmpty,
+}
+
 /// Local persistence for [Place] records. All reads/writes go through Hive,
 /// making the app fully offline-first.
 class PlaceLocalDataSource {
@@ -40,7 +50,8 @@ class PlaceLocalDataSource {
     await _database.placesBox.flush();
   }
 
-  /// Atomically replaces the whole local store (used by restore-from-Drive).
+  /// Legacy full replace. New restore paths use [applyBackup], which re-checks
+  /// the local-empty precondition and preserves places added during download.
   Future<void> replaceAll(Iterable<Place> places) async {
     final Map<String, Map<String, dynamic>> entries =
         <String, Map<String, dynamic>>{
@@ -49,5 +60,50 @@ class PlaceLocalDataSource {
     await _database.placesBox.clear();
     await _database.placesBox.putAll(entries);
     await _database.placesBox.flush();
+  }
+
+  /// Applies [backupPlaces] after the network download has completed.
+  ///
+  /// The precondition is checked against the box immediately before the write.
+  /// From the first synchronous read to the `putAll` enqueue there is no
+  /// `await`, so no other save can interleave on this isolate. Places created
+  /// after [baselineIds] was captured are merged back instead of being erased.
+  Future<RestoreApplyResult> applyBackup({
+    required Iterable<Place> backupPlaces,
+    required Set<String> baselineIds,
+    required bool requireEmptyLocal,
+  }) async {
+    final box = _database.placesBox;
+    final Set<String> currentIds = box.keys.whereType<String>().toSet();
+    if (requireEmptyLocal && currentIds.isNotEmpty) {
+      return RestoreApplyResult.abortedLocalNotEmpty;
+    }
+
+    final Map<String, Map<String, dynamic>> entries =
+        <String, Map<String, dynamic>>{
+          for (final Place place in backupPlaces) place.id: place.toMap(),
+        };
+
+    // Preserve rows added by the user while the backup was being downloaded.
+    for (final String id in currentIds.difference(baselineIds)) {
+      final Object? raw = box.get(id);
+      if (raw is Map) {
+        entries[id] = Map<String, dynamic>.from(raw);
+      }
+    }
+
+    final Set<String> stale = baselineIds.difference(entries.keys.toSet());
+
+    // Put first, delete second: a crash between them leaves stale rows rather
+    // than losing anything the user added. Both calls are enqueued without an
+    // await so the whole critical section is one Hive write batch.
+    if (entries.isNotEmpty) {
+      box.putAll(entries);
+    }
+    if (stale.isNotEmpty) {
+      box.deleteAll(stale);
+    }
+    await box.flush();
+    return RestoreApplyResult.applied;
   }
 }

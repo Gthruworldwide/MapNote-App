@@ -5,7 +5,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:geocoding/geocoding.dart';
 import 'package:hive_ce/hive.dart';
 
 import 'package:routenote/l10n/generated/app_localizations.dart';
@@ -17,6 +16,7 @@ import 'package:routenote/src/features/add_place/add_place_screen.dart';
 import 'package:routenote/src/providers/app_providers.dart';
 import 'package:routenote/src/services/app_health_logger.dart';
 import 'package:routenote/src/services/geocoding_service.dart';
+import 'package:routenote/src/services/geoapify_client.dart';
 import 'package:routenote/src/services/location_service.dart';
 
 /// A [LocationService] that never touches the geolocator platform channel.
@@ -58,6 +58,46 @@ class _MemoryDataSource extends PlaceLocalDataSource {
       ..clear()
       ..addEntries(places.map((Place p) => MapEntry<String, Place>(p.id, p)));
   }
+
+  @override
+  Future<RestoreApplyResult> applyBackup({
+    required Iterable<Place> backupPlaces,
+    required Set<String> baselineIds,
+    required bool requireEmptyLocal,
+  }) async {
+    if (requireEmptyLocal && store.isNotEmpty) {
+      return RestoreApplyResult.abortedLocalNotEmpty;
+    }
+    final Map<String, Place> entries = <String, Place>{
+      for (final Place place in backupPlaces) place.id: place,
+    };
+    for (final String id in store.keys.toSet().difference(baselineIds)) {
+      entries[id] = store[id]!;
+    }
+    store
+      ..clear()
+      ..addEntries(entries.entries);
+    return RestoreApplyResult.applied;
+  }
+}
+
+/// A current-API [GeocodingService] stand-in. Production now injects a
+/// [GeoapifyClient]; tests override [resolve] so no platform channel or network
+/// is involved.
+class _FakeGeocodingService extends GeocodingService {
+  _FakeGeocodingService(this._lookup)
+    : super(geoApifyClient: GeoapifyClient(apiKey: ''));
+
+  final Future<PlaceSuggestion?> Function(double latitude, double longitude)
+  _lookup;
+
+  @override
+  Future<PlaceSuggestion?> resolve({
+    required double latitude,
+    required double longitude,
+    String localeCode = 'en',
+  }) =>
+      _lookup(latitude, longitude);
 }
 
 /// Hosts [child] on a pushed route so screens can pop themselves, and so a
@@ -310,16 +350,13 @@ void main() {
   testWidgets('a reverse-geocoded suggestion auto-fills Name & Notes', (
     WidgetTester tester,
   ) async {
-    final GeocodingService geocoding = GeocodingService(
-      placemarkLookup: (double latitude, double longitude) async =>
-          <Placemark>[
-            const Placemark(
-              name: 'Cairo Tower',
-              street: '26th of July Corridor',
-              locality: 'Cairo',
-              country: 'Egypt',
-            ),
-          ],
+    final GeocodingService geocoding = _FakeGeocodingService(
+      (double latitude, double longitude) async => const PlaceSuggestion(
+        name: 'Cairo Tower',
+        street: '26th of July Corridor',
+        locality: 'Cairo',
+        country: 'Egypt',
+      ),
     );
 
     await pumpScreen(
@@ -362,9 +399,9 @@ void main() {
   testWidgets('a suggestion can be dismissed without filling anything', (
     WidgetTester tester,
   ) async {
-    final GeocodingService geocoding = GeocodingService(
-      placemarkLookup: (double latitude, double longitude) async =>
-          <Placemark>[const Placemark(name: 'Cairo Tower')],
+    final GeocodingService geocoding = _FakeGeocodingService(
+      (double latitude, double longitude) async =>
+          const PlaceSuggestion(name: 'Cairo Tower'),
     );
 
     await pumpScreen(

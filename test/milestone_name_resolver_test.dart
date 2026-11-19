@@ -1,7 +1,7 @@
 import 'package:fake_async/fake_async.dart'; // ignore: depend_on_referenced_packages
 import 'package:flutter_test/flutter_test.dart';
-import 'package:geocoding/geocoding.dart';
 
+import 'package:routenote/src/services/geoapify_client.dart';
 import 'package:routenote/src/services/geocoding_service.dart';
 import 'package:routenote/src/services/milestone_name_resolver.dart';
 import 'package:routenote/src/services/route_milestones.dart';
@@ -19,17 +19,30 @@ RouteMilestone _milestone({
   longitude: longitude,
 );
 
-/// A [GeocodingService] whose reverse lookup is [lookup] with every call
-/// recorded in [calls] as `[latitude, longitude]`.
+/// A current-API [GeocodingService] whose reverse lookup is [lookup], with every
+/// call recorded in [calls] as `[latitude, longitude]`.
+class _FakeGeocodingService extends GeocodingService {
+  _FakeGeocodingService(this._lookup, {required this.calls})
+    : super(geoApifyClient: GeoapifyClient(apiKey: ''));
+
+  final Future<PlaceSuggestion?> Function(double lat, double lon) _lookup;
+  final List<List<double>> calls;
+
+  @override
+  Future<PlaceSuggestion?> resolve({
+    required double latitude,
+    required double longitude,
+    String localeCode = 'en',
+  }) async {
+    calls.add(<double>[latitude, longitude]);
+    return _lookup(latitude, longitude);
+  }
+}
+
 GeocodingService _service(
-  Future<List<Placemark>> Function(double lat, double lon) lookup, {
+  Future<PlaceSuggestion?> Function(double lat, double lon) lookup, {
   required List<List<double>> calls,
-}) => GeocodingService(
-  placemarkLookup: (double lat, double lon) {
-    calls.add(<double>[lat, lon]);
-    return lookup(lat, lon);
-  },
-);
+}) => _FakeGeocodingService(lookup, calls: calls);
 
 void main() {
   group('MilestoneNameResolver.labelFor', () {
@@ -109,7 +122,7 @@ void main() {
       final List<List<double>> calls = <List<double>>[];
       final MilestoneNameResolver resolver = MilestoneNameResolver(
         geocoding: _service(
-          (_, _) async => <Placemark>[const Placemark(subLocality: 'Zamalek')],
+          (_, _) async => const PlaceSuggestion(subLocality: 'Zamalek'),
           calls: calls,
         ),
         lookupGap: Duration.zero,
@@ -129,9 +142,9 @@ void main() {
       final List<List<double>> calls = <List<double>>[];
       final MilestoneNameResolver resolver = MilestoneNameResolver(
         geocoding: _service(
-          (double lat, _) async => <Placemark>[
-            Placemark(subLocality: lat == 30.0 ? 'Zamalek' : 'Giza'),
-          ],
+          (double lat, _) async => PlaceSuggestion(
+            subLocality: lat == 30.0 ? 'Zamalek' : 'Giza',
+          ),
           calls: calls,
         ),
         lookupGap: Duration.zero,
@@ -156,7 +169,7 @@ void main() {
       final List<List<double>> calls = <List<double>>[];
       DateTime now = DateTime(2026, 10, 19, 8);
       final MilestoneNameResolver resolver = MilestoneNameResolver(
-        geocoding: _service((_, _) async => <Placemark>[], calls: calls),
+        geocoding: _service((_, _) async => null, calls: calls),
         now: () => now,
         lookupGap: Duration.zero,
       );
@@ -198,7 +211,7 @@ void main() {
       final List<List<double>> calls = <List<double>>[];
       final MilestoneNameResolver resolver = MilestoneNameResolver(
         geocoding: _service(
-          (_, _) async => <Placemark>[const Placemark(locality: 'Giza')],
+          (_, _) async => const PlaceSuggestion(locality: 'Giza'),
           calls: calls,
         ),
         lookupGap: Duration.zero,
@@ -217,7 +230,7 @@ void main() {
       final List<List<double>> calls = <List<double>>[];
       final MilestoneNameResolver resolver = MilestoneNameResolver(
         geocoding: _service(
-          (_, _) async => <Placemark>[const Placemark(locality: 'Giza')],
+          (_, _) async => const PlaceSuggestion(locality: 'Giza'),
           calls: calls,
         ),
         lookupGap: Duration.zero,
@@ -246,7 +259,7 @@ void main() {
         final List<List<double>> calls = <List<double>>[];
         final MilestoneNameResolver resolver = MilestoneNameResolver(
           geocoding: _service(
-            (_, _) async => <Placemark>[const Placemark(locality: 'Giza')],
+            (_, _) async => const PlaceSuggestion(locality: 'Giza'),
             calls: calls,
           ),
           lookupGap: const Duration(milliseconds: 300),

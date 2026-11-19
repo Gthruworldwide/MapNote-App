@@ -26,14 +26,18 @@ class AgentService {
     required this.settings,
     this.engine = const LocalInsightEngine(),
     GeminiClient? cloudClient,
-  }) : _cloud = cloudClient ?? GeminiClient();
+    LocationParser? parser,
+  })  : _cloud = cloudClient ?? GeminiClient(),
+        parser = parser ?? const LocationParser();
 
   final AppHealthLogger logger;
   final SettingsRepository settings;
   final LocalInsightEngine engine;
   final GeminiClient _cloud;
 
-  static const LocationParser _parser = LocationParser();
+  /// Shared with the main app so the Gemini tool inherits the same strict
+  /// short-link host validation and redirect policy.
+  final LocationParser parser;
 
   /// Whether the cloud path can currently run.
   bool get isCloudAvailable => settings.isCloudAiEnabled && _cloud.isConfigured;
@@ -93,9 +97,9 @@ class AgentService {
     if (input.isEmpty) {
       return <String, Object?>{'success': false, 'reason': 'empty_input'};
     }
-    ParsedLocation? parsed = _parser.parse(input);
-    if (parsed == null && _parser.looksLikeShortMapLink(input)) {
-      parsed = await _parser.resolveShortLink(input);
+    ParsedLocation? parsed = parser.parse(input);
+    if (parsed == null && parser.looksLikeShortMapLink(input)) {
+      parsed = await parser.resolveShortLink(input);
     }
     if (parsed == null) {
       return <String, Object?>{'success': false, 'reason': 'no_location_found'};

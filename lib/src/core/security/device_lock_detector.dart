@@ -56,6 +56,10 @@ class DeviceLockDetector {
 
   StreamSubscription<AccelerometerSample>? _subscription;
 
+  /// Whether this detector holds a reference to the shared sensor hub. The hub
+  /// is only used on the production path; injected streams own their hardware.
+  bool _hubHeld = false;
+
   /// Emits the verdict whenever it changes (broadcast).
   ///
   /// A stream rather than a poll: the privacy dimmer listens to it, so the cue
@@ -114,7 +118,17 @@ class DeviceLockDetector {
     if (_running) return;
     _running = true;
     final Stream<AccelerometerSample>? override = accelerationStream;
-    if (override == null) await hub.start();
+    if (override == null) {
+      await hub.start();
+      _hubHeld = true;
+      // `stop()` may have run while `hub.start()` was awaiting. Close the
+      // reference again instead of subscribing to a hub nobody wants.
+      if (!_running) {
+        await hub.stop();
+        _hubHeld = false;
+        return;
+      }
+    }
     _subscription = (override ?? hub.accelerometer).listen(
       handleSample,
       onError: (Object _) {
@@ -193,12 +207,22 @@ class DeviceLockDetector {
     _setContext(InteractionContext.unknown);
   }
 
-  /// Stops listening and releases the sensor reference.
+  /// Stops listening, clears the last session's verdict and releases the
+  /// shared sensor reference.
+  ///
+  /// Both halves matter: a stale surface-idle verdict would arm the vault's
+  /// short timeout in the next session, and a leaked hub consumer would keep
+  /// the accelerometer open after the session ended.
   Future<void> stop() async {
     _running = false;
+    reset();
     final StreamSubscription<AccelerometerSample>? subscription = _subscription;
     _subscription = null;
     await subscription?.cancel();
+    if (_hubHeld) {
+      _hubHeld = false;
+      await hub.stop();
+    }
   }
 
   Future<void> dispose() async {

@@ -34,7 +34,10 @@ class ParsedLocation {
 /// Parsing is intentionally lenient: the first supported pattern found in the
 /// text wins, and any result is range-checked before it is returned.
 class LocationParser {
-  const LocationParser();
+  const LocationParser({this.injectedClient});
+
+  /// Test-only HTTP seam. Production callers use a fresh client per resolution.
+  final http.Client? injectedClient;
 
   /// The whole string is exactly `lat, lng` (optionally signed).
   static final RegExp _rawCoordinates = RegExp(
@@ -84,10 +87,30 @@ class LocationParser {
 
   static final RegExp _url = RegExp(r'https?://\S+', caseSensitive: false);
 
-  static final RegExp _shortLink = RegExp(
-    r'https?://(?:maps\.app\.goo\.gl|goo\.gl/maps|g\.co/kgs)/',
-    caseSensitive: false,
-  );
+  /// Short links are the only URLs this class is allowed to fetch. The exact
+  /// host set prevents lookalike domains and user-info host confusion from
+  /// turning a pasted string into an outbound request.
+  static const Set<String> _shortLinkHosts = <String>{
+    'maps.app.goo.gl',
+    'goo.gl',
+    'g.co',
+  };
+
+  /// Redirect targets must stay inside Google's map hosts. The short-link
+  /// hosts are included so a provider may chain through itself.
+  static const Set<String> _redirectHosts = <String>{
+    'maps.app.goo.gl',
+    'goo.gl',
+    'g.co',
+    'google.com',
+    'www.google.com',
+    'maps.google.com',
+  };
+
+  static const int _maxUrlLength = 2048;
+  static const int _maxRedirectHops = 6;
+  static const Duration _requestTimeout = Duration(seconds: 10);
+  static const Duration _resolutionTimeout = Duration(seconds: 12);
 
   static final RegExp _coordinateOnly = RegExp(
     r'^-?\d+(?:\.\d+)?\s*[,;]\s*-?\d+(?:\.\d+)?$',
@@ -155,9 +178,14 @@ class LocationParser {
     return null;
   }
 
-  /// Whether [raw] contains a Google Maps short link that needs the network to
-  /// be resolved into coordinates.
-  bool looksLikeShortMapLink(String raw) => _shortLink.hasMatch(raw.trim());
+  /// Whether [raw] leads with a supported Google Maps short link that needs
+  /// the network to be resolved into coordinates.
+  ///
+  /// Only the first URL in the text is considered. This prevents a string such
+  /// as `https://evil.example/?next=https://maps.app.goo.gl/...` from arming
+  /// the resolver while the actual request target would be the attacker host.
+  bool looksLikeShortMapLink(String raw) =>
+      _extractAllowedShortLink(raw) != null;
 
   /// Finds the first full Plus Code in [text] and decodes it.
   ///
@@ -172,49 +200,101 @@ class LocationParser {
     return null;
   }
 
-  /// Follows the redirect chain of a Google Maps short link and parses the
-  /// final destination URL.
+  /// Follows the redirect chain of a supported Google Maps short link and
+  /// parses the final destination URL.
   ///
   /// Returns `null` when the link cannot be resolved (for example while
-  /// offline). The optional [client] makes the method testable.
+  /// offline). The optional [client] makes the method testable. All failures
+  /// are intentionally opaque: the source text may be model/share controlled
+  /// and must never be echoed through logs or exceptions.
   Future<ParsedLocation?> resolveShortLink(
     String raw, {
     http.Client? client,
   }) async {
-    final Match? match = _url.firstMatch(raw.trim());
-    if (match == null) return null;
+    final Uri? shortLink = _extractAllowedShortLink(raw);
+    if (shortLink == null) return null;
 
-    final Uri? parsed = Uri.tryParse(match.group(0)!);
-    if (parsed == null) return null;
-    Uri current = parsed;
-
-    final http.Client httpClient = client ?? http.Client();
+    final http.Client httpClient = client ?? injectedClient ?? http.Client();
     try {
-      for (int hop = 0; hop < 6; hop++) {
-        final ParsedLocation? direct = parse(current.toString());
-        if (direct != null) return direct;
-
-        final http.Request request = http.Request('GET', current)
-          ..followRedirects = false;
-        final http.StreamedResponse response = await httpClient
-            .send(request)
-            .timeout(const Duration(seconds: 10));
-        await response.stream.drain<void>();
-
-        final String? location = response.headers['location'];
-        if (location == null ||
-            response.statusCode < 300 ||
-            response.statusCode >= 400) {
-          break;
-        }
-        current = current.resolve(location);
-      }
-      return parse(current.toString());
+      return await _resolveShortLink(shortLink, httpClient).timeout(
+        _resolutionTimeout,
+      );
     } catch (_) {
       return null;
     } finally {
-      if (client == null) httpClient.close();
+      if (client == null && injectedClient == null) httpClient.close();
     }
+  }
+
+  Future<ParsedLocation?> _resolveShortLink(
+    Uri shortLink,
+    http.Client client,
+  ) async {
+    Uri current = shortLink;
+    for (int hop = 0; hop < _maxRedirectHops; hop++) {
+      final ParsedLocation? direct = parse(current.toString());
+      if (direct != null) return direct;
+
+      final http.Request request = http.Request('GET', current)
+        ..followRedirects = false;
+      final http.StreamedResponse response = await client
+          .send(request)
+          .timeout(_requestTimeout);
+      await response.stream.drain<void>();
+
+      final String? location = response.headers['location'];
+      if (location == null ||
+          location.length > _maxUrlLength ||
+          response.statusCode < 300 ||
+          response.statusCode >= 400) {
+        break;
+      }
+
+      final Uri? next = Uri.tryParse(current.resolve(location).toString());
+      if (next == null || !_isAllowedRedirect(next)) return null;
+      current = next;
+    }
+    return parse(current.toString());
+  }
+
+  Uri? _extractAllowedShortLink(String raw) {
+    final String text = raw.trim();
+    if (text.isEmpty || text.length > _maxUrlLength) return null;
+
+    final Match? match = _url.firstMatch(text);
+    if (match == null) return null;
+
+    final Uri? uri = Uri.tryParse(match.group(0)!);
+    if (uri == null || !_isAllowedShortLink(uri)) return null;
+    return uri;
+  }
+
+  bool _isAllowedShortLink(Uri uri) {
+    if (!_isAllowedUri(uri)) return false;
+    final String host = uri.host.toLowerCase();
+    if (!_shortLinkHosts.contains(host)) return false;
+
+    final String path = uri.path;
+    if (host == 'maps.app.goo.gl') return path.length > 1;
+    if (host == 'goo.gl') {
+      return path.startsWith('/maps/') && path.length > '/maps/'.length;
+    }
+    return path.startsWith('/kgs/') && path.length > '/kgs/'.length;
+  }
+
+  bool _isAllowedRedirect(Uri uri) {
+    if (!_isAllowedUri(uri)) return false;
+    final String host = uri.host.toLowerCase();
+    if (!_redirectHosts.contains(host)) return false;
+    if (_shortLinkHosts.contains(host)) return _isAllowedShortLink(uri);
+    return true;
+  }
+
+  bool _isAllowedUri(Uri uri) {
+    if (uri.scheme != 'https') return false;
+    if (uri.userInfo.isNotEmpty) return false;
+    if (uri.port != 443 && uri.port != 0) return false;
+    return uri.toString().length <= _maxUrlLength;
   }
 
   /// Best-effort place name for share text that pairs a title with a link,

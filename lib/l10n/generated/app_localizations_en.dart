@@ -589,6 +589,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sharpTurn => 'Sharp turn';
 
   @override
+  String get smoothness => 'Smoothness';
+
+  @override
   String get speedBump => 'Speed bump';
 
   @override
@@ -747,6 +750,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Verify your identity to open the Hidden Vault';
 
   @override
+  String get verifyToChangeVaultPin =>
+      'Verify your identity to change the vault PIN';
+
+  @override
   String get authenticationFailed => 'Authentication failed';
 
   @override
@@ -883,6 +890,20 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get smartInsightsCloudAiSubtitle =>
       'Let Google Gemini add optional tips. Only anonymous counts are sent — never your places, notes or coordinates.';
+
+  @override
+  String get geocodingCloudUnavailable =>
+      'Cloud address service unavailable, using local lookup';
+
+  @override
+  String get geocodingNotFound => 'No address found for this location';
+
+  @override
+  String get cloudGeocodingTitle => 'Enhanced Address Lookup (Geoapify)';
+
+  @override
+  String get cloudGeocodingSubtitle =>
+      'Use cloud geocoding for richer place names when online';
 
   @override
   String get insightWelcomeTitle => 'Save your first place';
@@ -1173,6 +1194,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get vaultPinSet => 'Vault PIN set.';
+
+  @override
+  String get vaultPinUpdatedWithoutVerification =>
+      'Verification was skipped; the vault PIN was updated.';
+
+  @override
+  String get vaultPinRemovedWithoutVerification =>
+      'Verification was skipped; the vault PIN was removed.';
 
   @override
   String get vaultPinChanged => 'Vault PIN changed.';

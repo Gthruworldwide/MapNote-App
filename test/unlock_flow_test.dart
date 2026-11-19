@@ -46,6 +46,27 @@ class _MemoryDataSource extends PlaceLocalDataSource {
       ..clear()
       ..addEntries(places.map((Place p) => MapEntry<String, Place>(p.id, p)));
   }
+
+  @override
+  Future<RestoreApplyResult> applyBackup({
+    required Iterable<Place> backupPlaces,
+    required Set<String> baselineIds,
+    required bool requireEmptyLocal,
+  }) async {
+    if (requireEmptyLocal && store.isNotEmpty) {
+      return RestoreApplyResult.abortedLocalNotEmpty;
+    }
+    final Map<String, Place> entries = <String, Place>{
+      for (final Place place in backupPlaces) place.id: place,
+    };
+    for (final String id in store.keys.toSet().difference(baselineIds)) {
+      entries[id] = store[id]!;
+    }
+    store
+      ..clear()
+      ..addEntries(entries.entries);
+    return RestoreApplyResult.applied;
+  }
 }
 
 class _FakeAuthService implements AuthService {

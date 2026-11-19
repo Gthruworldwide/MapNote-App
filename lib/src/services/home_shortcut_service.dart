@@ -6,6 +6,13 @@ import 'package:quick_actions/quick_actions.dart';
 
 import '../data/models/place.dart';
 
+/// Places eligible for an OS launcher shortcut. Locked places are excluded:
+/// the launcher label would disclose masked content before any unlock prompt.
+List<Place> shortcutEligiblePlaces(List<Place> places) => places
+    .where((Place p) => p.isPinned && !p.isHidden && !p.isLocked)
+    .take(4)
+    .toList(growable: false);
+
 /// Bridges native home-screen shortcuts and `quick_actions` dynamic shortcuts
 /// into a single stream of place ids.
 ///
@@ -70,6 +77,7 @@ class HomeShortcutService {
   /// Asks Android to pin a home-screen shortcut for [place]. Returns `false`
   /// when the device does not support pinned shortcuts.
   Future<bool> pinToHomeScreen(Place place) async {
+    if (place.isLocked) return false;
     if (defaultTargetPlatform != TargetPlatform.android) return false;
     try {
       final bool? result = await _channel.invokeMethod<bool>(
@@ -86,10 +94,7 @@ class HomeShortcutService {
   Future<void> syncDynamicShortcuts(List<Place> places) async {
     if (!_isMobile) return;
     try {
-      final List<Place> pinned = places
-          .where((Place p) => p.isPinned && !p.isHidden)
-          .take(4)
-          .toList(growable: false);
+      final List<Place> pinned = shortcutEligiblePlaces(places);
       if (pinned.isEmpty) {
         await _quickActions.clearShortcutItems();
         return;

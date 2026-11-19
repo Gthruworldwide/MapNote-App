@@ -226,6 +226,18 @@ class _CompactActionBar extends ConsumerWidget {
     AppLocalizations l10n,
   ) async {
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    if (place.isLocked &&
+        !await ensureUnlocked(
+          ref,
+          l10n: l10n,
+          reason: l10n.unlockToContinue,
+          messenger: messenger,
+          allowWhenUnavailable: true,
+        )) {
+      return;
+    }
+    if (!context.mounted) return;
+
     final bool? confirmed = await showDialog<bool>(
       context: context,
       builder: (BuildContext dialogContext) => AlertDialog(

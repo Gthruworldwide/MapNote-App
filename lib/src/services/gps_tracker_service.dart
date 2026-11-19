@@ -216,6 +216,10 @@ class GpsTrackerService implements SamplingTarget {
     await _engine.flush();
     final LocationService? locations = _activeLocations;
     if (!_engine.isTracking || locations == null) return;
+    // A paused stream is owned by the FSM, not by visibility: backgrounding
+    // only changes the tier a *live* stream would use. Reopening here would
+    // re-register the OS client that idleStandby deliberately closed.
+    if (_streamPaused) return;
     await _engine.reopen(_openFixes(locations));
   }
 

@@ -13,6 +13,7 @@ import 'package:routenote/src/services/agent_service.dart';
 import 'package:routenote/src/services/app_health_logger.dart';
 import 'package:routenote/src/services/gemini_client.dart';
 import 'package:routenote/src/services/local_insight_engine.dart';
+import 'package:routenote/src/services/location_parser.dart';
 
 void main() {
   late Directory tempDir;
@@ -32,6 +33,10 @@ void main() {
   });
 
   test('cloud insights send only anonymous aggregate metrics', () async {
+    // Cloud AI is opt-in by default (P0 consent split); this test is exercising
+    // the enabled path, so it must explicitly grant consent first.
+    await settings.setCloudAiEnabled(true);
+
     String? capturedText;
     final MockClient mock = MockClient((http.Request request) async {
       final Map<String, dynamic> body =
@@ -219,5 +224,34 @@ void main() {
     });
     expect(bad['success'], isFalse);
     expect(bad['reason'], 'no_location_found');
+  });
+
+  test('parseLocationLink makes no outbound request to a non-allowlisted host',
+      () async {
+    int calls = 0;
+    final MockClient client = MockClient((http.Request request) async {
+      calls++;
+      return http.Response('', 302, headers: <String, String>{
+        'location': 'https://www.google.com/maps/@30.0,31.0,17z',
+      });
+    });
+    final AgentService service = AgentService(
+      logger: AppHealthLogger(box),
+      settings: settings,
+      cloudClient: GeminiClient(apiKey: 'test-key'),
+      parser: LocationParser(injectedClient: client),
+    );
+    final AgentTool tool = service.tools.firstWhere(
+      (AgentTool t) => t.name == 'parseLocationLink',
+    );
+
+    final Map<String, Object?> result = await tool.execute(<String, Object?>{
+      'inputUrl':
+          'https://evil.example/?next=https://maps.app.goo.gl/abcdEFG',
+    });
+
+    expect(result['success'], isFalse);
+    expect(result['reason'], 'no_location_found');
+    expect(calls, 0);
   });
 }

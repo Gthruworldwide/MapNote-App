@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -20,6 +21,20 @@ class _MemorySecretStore implements SecretStore {
 
   @override
   Future<void> delete(String key) async => values.remove(key);
+}
+
+/// A keystore whose first read can be held open, to exercise the lock/unlock
+/// race with a real encrypted box rather than a mock repository.
+class _GatedSecretStore extends _MemorySecretStore {
+  final Completer<void> gate = Completer<void>();
+  int reads = 0;
+
+  @override
+  Future<String?> read(String key) async {
+    reads++;
+    await gate.future;
+    return values[key];
+  }
 }
 
 /// Verifies the vault against a real encrypted Hive box on disk (the same
@@ -143,6 +158,44 @@ void main() {
     // the entry count — never a name, note or coordinate. Asserted explicitly
     // so a future Hive upgrade that changes this behaviour is noticed.
     expect(_boxBytes(tempDir).contains('vault-1'), isTrue);
+  });
+
+  test('a lock during unlock stops the stale open from being published',
+      () async {
+    final _GatedSecretStore gated = _GatedSecretStore();
+    final HiveVaultRepository raced = HiveVaultRepository(
+      keyStore: VaultKeyStore(gated),
+      boxName: '${boxName}_race',
+    );
+
+    final Future<void> opening = raced.unlock();
+    await pumpEventQueue();
+    expect(gated.reads, 1, reason: 'the open is waiting on the keystore');
+
+    // Do not await the lock here: it is serialized behind the in-flight open
+    // and would deadlock the gated keystore read.
+    final Future<void> locking = raced.lock();
+    gated.gate.complete();
+    await Future.wait<void>(<Future<void>>[opening, locking]);
+
+    expect(raced.isUnlocked, isFalse);
+    await expectLater(raced.getAll(), throwsStateError);
+  });
+
+  test('concurrent unlocks open the encrypted box only once', () async {
+    final _GatedSecretStore gated = _GatedSecretStore();
+    final HiveVaultRepository raced = HiveVaultRepository(
+      keyStore: VaultKeyStore(gated),
+      boxName: '${boxName}_concurrent',
+    );
+
+    final Future<void> first = raced.unlock();
+    final Future<void> second = raced.unlock();
+    gated.gate.complete();
+    await Future.wait<void>(<Future<void>>[first, second]);
+
+    expect(gated.reads, 1);
+    expect(raced.isUnlocked, isTrue);
   });
 }
 

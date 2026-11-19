@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:http/http.dart' as http;
@@ -50,12 +51,7 @@ class GoogleDriveService implements DriveService {
       downloadOptions: drive.DownloadOptions.fullMedia,
     );
     if (response is! drive.Media) return null;
-
-    final List<int> bytes = <int>[];
-    await for (final List<int> chunk in response.stream) {
-      bytes.addAll(chunk);
-    }
-    return utf8.decode(bytes);
+    return readBoundedBackup(response.stream, response.length ?? 0);
   }
 
   @override
@@ -95,6 +91,31 @@ class GoogleDriveService implements DriveService {
     if (files == null || files.isEmpty) return null;
     return files.first;
   }
+}
+
+/// Reads a Drive media stream with a hard byte cap before decoding it.
+///
+/// Throwing out of the `await for` cancels the underlying subscription, so an
+/// oversized backup never finishes buffering — and never reaches Hive.
+Future<String> readBoundedBackup(
+  Stream<List<int>> stream,
+  int length, {
+  int maxBytes = AppConfig.maxBackupBytes,
+}) async {
+  if (length > maxBytes) {
+    throw const FormatException('Backup exceeds size limit');
+  }
+
+  final BytesBuilder bytes = BytesBuilder(copy: false);
+  int total = 0;
+  await for (final List<int> chunk in stream) {
+    total += chunk.length;
+    if (total > maxBytes) {
+      throw const FormatException('Backup exceeds size limit');
+    }
+    bytes.add(chunk);
+  }
+  return utf8.decode(bytes.takeBytes(), allowMalformed: false);
 }
 
 /// An [http.Client] that injects a fresh Google authorization header on every

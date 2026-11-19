@@ -103,9 +103,11 @@
             android:name="com.solusibejo.flutter_dynamic_icon_plus.FlutterDynamicIconPlusService"
             android:stopWithTask="false"/>
         <!-- Keeps the daily GPS trackers alive while MapNote is backgrounded.
-             Started/stopped from Dart (ForegroundTrackingService). -->
+             The Kotlin service class is LocationTrackingService; the manifest
+             component name must match it or Android cannot promote the started
+             service to a location-type foreground service. -->
         <service
-            android:name=".ForegroundTrackingService"
+            android:name=".LocationTrackingService"
             android:exported="false"
             android:stopWithTask="true"
             android:foregroundServiceType="location"/>

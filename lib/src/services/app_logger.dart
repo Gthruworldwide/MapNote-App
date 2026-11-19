@@ -5,6 +5,8 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 
+import 'diagnostic_redaction.dart';
+
 enum LogLevel { info, warning, error }
 
 /// Local diagnostics logger for the Supervisor Agent workflow.
@@ -144,28 +146,10 @@ class AppLogger {
       value.length <= max ? value : '${value.substring(0, max - 3)}...';
 
   /// Defense-in-depth redaction applied to every written entry.
-  static final List<RegExp> _sensitivePatterns = <RegExp>[
-    // Google API keys (AIza...).
-    RegExp(r'AIza[0-9A-Za-z\-_]{20,}'),
-    // Bearer tokens.
-    RegExp(r'[Bb]earer\s+[A-Za-z0-9\-._~+/]+'),
-    // `x-goog-api-key:` / `api_key=` / `authorization=` / `token=` values.
-    RegExp(
-      r'(?:x-goog-api-key|api[_-]?key|authorization|token)\s*[:=]\s*\S+',
-      caseSensitive: false,
-    ),
-    // Emails.
-    RegExp(r'[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}'),
-    // Long base64-ish tokens (32+ chars).
-    RegExp(r'[A-Za-z0-9+/]{32,}={0,2}'),
-  ];
-
-  static String _redact(String value) {
-    for (final RegExp pattern in _sensitivePatterns) {
-      value = value.replaceAll(pattern, '[redacted]');
-    }
-    return value;
-  }
+  ///
+  /// The same rules protect Crashlytics and the Hive health log; keeping one
+  /// implementation means a regex added for one sink protects all of them.
+  static String _redact(String value) => redactCredentials(value);
 
   /// Reads the current log content (used by the supervisor agent).
   static Future<String> readLogs() async {

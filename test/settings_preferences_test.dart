@@ -54,6 +54,64 @@ void main() {
     expect(box.get('smart_insights_enabled'), isFalse);
   });
 
+  test('third-party cloud consents default off and persist independently',
+      () async {
+    final SettingsRepository repo = SettingsRepository(box);
+
+    expect(repo.isCloudAiEnabled, isFalse);
+    expect(repo.isCloudGeocodingEnabled, isFalse);
+
+    await repo.setCloudGeocodingEnabled(true);
+    expect(repo.isCloudGeocodingEnabled, isTrue);
+    expect(repo.isCloudAiEnabled, isFalse);
+
+    await repo.setCloudAiEnabled(true);
+    expect(repo.isCloudAiEnabled, isTrue);
+    expect(repo.isCloudGeocodingEnabled, isTrue);
+
+    await repo.setCloudGeocodingEnabled(false);
+    expect(repo.isCloudGeocodingEnabled, isFalse);
+    expect(repo.isCloudAiEnabled, isTrue);
+  });
+
+  test('geocoding gate follows its own provider, not the Gemini flag', () async {
+    final ProviderContainer container = ProviderContainer(
+      overrides: [hiveDatabaseProvider.overrideWithValue(database)],
+    );
+    addTearDown(container.dispose);
+
+    expect(container.read(cloudAiEnabledProvider), isFalse);
+    expect(container.read(cloudGeocodingEnabledProvider), isFalse);
+    expect(
+      container.read(geocodingServiceProvider).isCloudEnabled,
+      isFalse,
+    );
+
+    await container
+        .read(cloudAiEnabledProvider.notifier)
+        .setEnabled(true);
+    expect(
+      container.read(geocodingServiceProvider).isCloudEnabled,
+      isFalse,
+      reason: 'Gemini consent must never enable coordinate upload',
+    );
+
+    await container
+        .read(cloudGeocodingEnabledProvider.notifier)
+        .setEnabled(true);
+    expect(
+      container.read(geocodingServiceProvider).isCloudEnabled,
+      isTrue,
+    );
+
+    await container.read(cloudAiEnabledProvider.notifier).setEnabled(false);
+    expect(
+      container.read(geocodingServiceProvider).isCloudEnabled,
+      isTrue,
+      reason: 'revoking Gemini consent must not silently revoke Geoapify',
+    );
+  });
+
   test('SettingsRepository defaults AutoMotion to enabled', () async {
     final SettingsRepository repo = SettingsRepository(box);
 

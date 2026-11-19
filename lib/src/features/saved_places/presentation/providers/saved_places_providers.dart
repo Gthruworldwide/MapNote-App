@@ -19,6 +19,7 @@ import '../../domain/entities/trip_stop.dart';
 import '../../domain/repositories/vault_repository.dart';
 import '../../domain/services/place_link_suggester.dart';
 import '../../domain/services/vault_authenticator.dart';
+import '../../domain/services/vault_pin_change_guard.dart';
 import '../../domain/services/vault_pin_verifier.dart';
 import '../../domain/usecases/unlock_vault.dart';
 
@@ -67,6 +68,15 @@ final Provider<VaultPinVerifier> vaultPinVerifierProvider =
     Provider<VaultPinVerifier>(
       (Ref ref) => KeystoreVaultPinVerifier(
         store: ref.watch(vaultPinStoreProvider),
+      ),
+    );
+
+/// Guards PIN mutations with a fresh device step-up.
+final Provider<VaultPinChangeGuard> vaultPinChangeGuardProvider =
+    Provider<VaultPinChangeGuard>(
+      (Ref ref) => VaultPinChangeGuard(
+        ref.watch(vaultAuthenticatorProvider),
+        ref.watch(vaultPinVerifierProvider),
       ),
     );
 
@@ -149,6 +159,10 @@ class VaultPlacesNotifier extends AsyncNotifier<List<Place>?> {
   /// backgrounding, or an explicit lock), so every unlock path gets an expiry
   /// without any screen having to set one.
   Future<void> _openSession() async {
+    // A lock can land while `unlock()` is awaiting the keystore. The repository
+    // refuses to publish a stale open, so check before opening a session —
+    // otherwise a late result would silently re-arm the guard after a lock.
+    if (!ref.read(vaultRepositoryProvider).isUnlocked) return;
     await ref.read(sessionGuardProvider).beginSession();
     // With a session open there is now something to protect, so watch the
     // accelerometer for the hand-held / surface-idle verdict that decides
@@ -231,7 +245,11 @@ final Provider<List<PlaceLinkSuggestion>> placeLinkSuggestionsProvider =
     Provider<List<PlaceLinkSuggestion>>((Ref ref) {
       final List<TripStop> stops = ref.watch(tripStopsProvider);
       if (stops.isEmpty) return const <PlaceLinkSuggestion>[];
+      // Locked places are masked content: they must not be suggested by name,
+      // used as navigation targets, or become a search oracle here.
       final List<Place> places =
-          ref.watch(placesProvider).value ?? const <Place>[];
+          (ref.watch(placesProvider).value ?? const <Place>[])
+              .where((Place p) => !p.isLocked)
+              .toList(growable: false);
       return const PlaceLinkSuggester().suggest(stops: stops, places: places);
     });

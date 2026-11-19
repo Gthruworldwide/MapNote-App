@@ -803,6 +803,32 @@ void main() {
       await service.stop();
     });
 
+    test('power-mode changes never reopen a paused platform stream', () async {
+      overrideToAndroid();
+      final _RecordingLocationService scripted = _RecordingLocationService();
+      final GpsTrackerService service =
+          GpsTrackerService(dailyStore: await openStore('_paused_power_mode'));
+
+      expect(await service.start(locations: scripted), isTrue);
+      await service.applySampling(paused: true);
+      expect(scripted.openCount, 1, reason: 'the live stream was opened once');
+
+      await service.setPowerMode(backgrounded: true);
+      expect(
+        scripted.openCount,
+        1,
+        reason: 'backgrounding must not reopen an idleStandby stream',
+      );
+      await service.setPowerMode(backgrounded: false);
+      expect(
+        scripted.openCount,
+        1,
+        reason: 'returning to the foreground must not reopen it either',
+      );
+
+      await service.stop();
+    });
+
     test('with an injected stream the sampling knobs change nothing',
         () async {
       overrideToAndroid();

@@ -3,7 +3,6 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:geocoding/geocoding.dart';
 
 import 'package:routenote/l10n/generated/app_localizations.dart';
 import 'package:routenote/src/core/theme/app_theme.dart';
@@ -16,6 +15,7 @@ import 'package:routenote/src/features/automotion/widgets/run_segment_card.dart'
 import 'package:routenote/src/features/automotion/widgets/stopover_card.dart';
 import 'package:routenote/src/features/automotion/widgets/walk_segment_card.dart';
 import 'package:routenote/src/providers/app_providers.dart';
+import 'package:routenote/src/services/geoapify_client.dart';
 import 'package:routenote/src/services/geocoding_service.dart';
 import 'package:routenote/src/services/milestone_name_resolver.dart';
 import 'package:routenote/src/services/route_milestones.dart';
@@ -100,22 +100,35 @@ List<TrackPoint> _runDay() {
   ];
 }
 
-/// A geocoder that answers with [area] as the neighbourhood and records every
-/// call. The stopover-name path is the only network-shaped dependency in this
-/// screen, so tests script it instead of touching the platform geocoder.
+/// A current-API geocoder that answers with [area] as the neighbourhood and
+/// records every call. The stopover-name path is the only network-shaped
+/// dependency in this screen, so tests override [resolve] instead.
+class _FakeGeocodingService extends GeocodingService {
+  _FakeGeocodingService({this.area, this.calls, this.throwing = false})
+    : super(geoApifyClient: GeoapifyClient(apiKey: ''));
+
+  final String? area;
+  final List<List<double>>? calls;
+  final bool throwing;
+
+  @override
+  Future<PlaceSuggestion?> resolve({
+    required double latitude,
+    required double longitude,
+    String localeCode = 'en',
+  }) async {
+    calls?.add(<double>[latitude, longitude]);
+    if (throwing) throw const _GeocoderFailure();
+    if (area == null) return null;
+    return PlaceSuggestion(subLocality: area);
+  }
+}
+
 GeocodingService _geocoder({
   String? area,
   List<List<double>>? calls,
   bool throwing = false,
-}) => GeocodingService(
-  placemarkLookup: (double latitude, double longitude) async {
-    calls?.add(<double>[latitude, longitude]);
-    if (throwing) throw const _GeocoderFailure();
-    return <Placemark>[
-      if (area != null) Placemark(subLocality: area),
-    ];
-  },
-);
+}) => _FakeGeocodingService(area: area, calls: calls, throwing: throwing);
 
 class _GeocoderFailure implements Exception {
   const _GeocoderFailure();

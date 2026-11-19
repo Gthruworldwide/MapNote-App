@@ -587,6 +587,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get sharpTurn => 'انعطاف حاد';
 
   @override
+  String get smoothness => 'سلاسة';
+
+  @override
   String get speedBump => 'مطب صناعي';
 
   @override
@@ -742,6 +745,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get unlockToOpenVault => 'أكّد هويتك لفتح الخزنة المخفية';
 
   @override
+  String get verifyToChangeVaultPin =>
+      'أكّد هويتك لتغيير رقم التعريف الشخصي للخزنة';
+
+  @override
   String get authenticationFailed => 'فشل التحقق';
 
   @override
@@ -880,6 +887,20 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get smartInsightsCloudAiSubtitle =>
       'اسمح لجوجل Gemini بإضافة نصائح اختيارية. تُرسل أعداد مجهولة فقط — ولا تُرسل أماكنك أو ملاحظاتك أبدًا.';
+
+  @override
+  String get geocodingCloudUnavailable =>
+      'خدمة العناوين السحابية غير متاحة، تم استخدام البحث المحلي';
+
+  @override
+  String get geocodingNotFound => 'لم يتم العثور على عنوان لهذا الموقع';
+
+  @override
+  String get cloudGeocodingTitle => 'البحث المحسّن عن العناوين (Geoapify)';
+
+  @override
+  String get cloudGeocodingSubtitle =>
+      'استخدام الخدمة السحابية لجلب أسماء الأماكن بدقة عند توفر الإنترنت';
 
   @override
   String get insightWelcomeTitle => 'احفظ مكانك الأول';
@@ -1168,6 +1189,14 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get vaultPinSet => 'تم تعيين رمز PIN.';
+
+  @override
+  String get vaultPinUpdatedWithoutVerification =>
+      'تم تخطي التحقق؛ تم تحديث رمز PIN للخزنة.';
+
+  @override
+  String get vaultPinRemovedWithoutVerification =>
+      'تم تخطي التحقق؛ تمت إزالة رمز PIN للخزنة.';
 
   @override
   String get vaultPinChanged => 'تم تغيير رمز PIN.';

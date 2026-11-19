@@ -26,6 +26,25 @@ import 'widgets/place_card.dart';
 import 'widgets/qr_code_dialog.dart';
 import 'widgets/smart_insights_card.dart';
 
+/// Applies the Home search query without turning masked locked places into an
+/// oracle over their real name, notes or derived Plus Code.
+///
+/// Locked places stay in the unfiltered list (still masked) and are only
+/// revealed through the explicit vault unlock flow.
+List<Place> filterPlacesForQuery(List<Place> places, String query) {
+  final String normalized = query.trim().toLowerCase();
+  if (normalized.isEmpty) return places;
+  return places
+      .where(
+        (Place p) =>
+            !p.isLocked &&
+            (p.name.toLowerCase().contains(normalized) ||
+                p.notes.toLowerCase().contains(normalized) ||
+                p.plusCode.toLowerCase().contains(normalized)),
+      )
+      .toList();
+}
+
 /// The main screen: search, list, add-location menu, sync + settings actions.
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -463,16 +482,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ];
         }
 
-        final List<Place> filtered = _query.isEmpty
-            ? places
-            : places
-                  .where(
-                    (Place p) =>
-                        p.name.toLowerCase().contains(_query) ||
-                        p.notes.toLowerCase().contains(_query) ||
-                        p.plusCode.toLowerCase().contains(_query),
-                  )
-                  .toList();
+        final List<Place> filtered = filterPlacesForQuery(places, _query);
 
         // Pinned places first, then newest → oldest.
         filtered.sort((Place a, Place b) {

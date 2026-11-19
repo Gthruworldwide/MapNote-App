@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -574,6 +575,17 @@ void main() {
       );
     });
 
+    Future<void> reachMaximumLockout() async {
+      await verifier.check('0000'); // 1st failure: no delay.
+      await verifier.check('0000'); // 2nd failure: 30 s.
+      now = now.add(const Duration(seconds: 31));
+      await verifier.check('0000'); // 3rd failure: 1 m.
+      now = now.add(const Duration(seconds: 61));
+      await verifier.check('0000'); // 4th failure: 2 m.
+      now = now.add(const Duration(seconds: 121));
+      await verifier.check('0000'); // 5th failure: 15 m.
+    }
+
     test('reports no PIN before one is set', () async {
       expect(await verifier.hasPin(), isFalse);
       expect(await verifier.check('1234'), VaultPinCheck.notSet);
@@ -611,52 +623,79 @@ void main() {
       expect(second.salt, hasLength(VaultPinHasher.saltLength));
     });
 
-    test('a correct PIN clears the failed-attempt counter', () async {
+    test('a correct PIN clears the counter and any stale deadline', () async {
       await verifier.setPin('1234');
       await verifier.check('0000');
       await verifier.check('0001');
       expect((await store.read())!.failedAttempts, 2);
 
+      // The second failure opened a 30 s progressive lockout. Let it expire so
+      // the correct PIN has to clear the stale deadline as well as the counter.
+      now = now.add(const Duration(seconds: 31));
       expect(await verifier.check('1234'), VaultPinCheck.matched);
-      expect((await store.read())!.failedAttempts, 0);
+      final VaultPinRecord record = (await store.read())!;
+      expect(record.failedAttempts, 0);
+      expect(record.lockedUntil, isNull);
     });
 
-    test('the PIN locks out after the maximum number of wrong attempts', () async {
+    test('failures use a real progressive ladder capped at fifteen minutes',
+        () async {
       await verifier.setPin('1234');
 
-      for (int i = 0; i < 4; i++) {
-        expect(await verifier.check('0000'), VaultPinCheck.notMatched);
-      }
+      expect(await verifier.check('0000'), VaultPinCheck.notMatched);
+      VaultPinRecord record = (await store.read())!;
+      expect(record.failedAttempts, 1);
+      expect(record.lockedUntil, isNull);
+
+      expect(await verifier.check('0000'), VaultPinCheck.notMatched);
+      record = (await store.read())!;
+      expect(record.failedAttempts, 2);
+      expect(record.lockedUntil, now.add(const Duration(seconds: 30)));
+
+      now = now.add(const Duration(seconds: 31));
+      expect(await verifier.check('0000'), VaultPinCheck.notMatched);
+      record = (await store.read())!;
+      expect(record.failedAttempts, 3);
+      expect(record.lockedUntil, now.add(const Duration(minutes: 1)));
+
+      now = now.add(const Duration(seconds: 61));
+      expect(await verifier.check('0000'), VaultPinCheck.notMatched);
+      record = (await store.read())!;
+      expect(record.failedAttempts, 4);
+      expect(record.lockedUntil, now.add(const Duration(minutes: 2)));
+
+      now = now.add(const Duration(seconds: 121));
       expect(await verifier.check('0000'), VaultPinCheck.lockedOut);
+      record = (await store.read())!;
+      expect(record.failedAttempts, 5);
+      expect(record.lockedUntil, now.add(const Duration(minutes: 15)));
+      expect(await verifier.lockoutRemaining(), const Duration(minutes: 15));
     });
 
     test('a lockout rejects even the correct PIN', () async {
       await verifier.setPin('1234');
-      for (int i = 0; i < 5; i++) {
-        await verifier.check('0000');
-      }
+      await reachMaximumLockout();
 
       expect(await verifier.check('1234'), VaultPinCheck.lockedOut);
     });
 
-    test('the lockout expires', () async {
+    test('the lockout expires after fifteen minutes', () async {
       await verifier.setPin('1234');
-      for (int i = 0; i < 5; i++) {
-        await verifier.check('0000');
-      }
-      expect(await verifier.lockoutRemaining(), greaterThan(Duration.zero));
+      await reachMaximumLockout();
+      expect(await verifier.lockoutRemaining(), const Duration(minutes: 15));
 
-      now = now.add(const Duration(minutes: 6));
+      now = now.add(const Duration(minutes: 15, seconds: 1));
 
       expect(await verifier.lockoutRemaining(), Duration.zero);
       expect(await verifier.check('1234'), VaultPinCheck.matched);
+      final VaultPinRecord record = (await store.read())!;
+      expect(record.failedAttempts, 0);
+      expect(record.lockedUntil, isNull);
     });
 
     test('the lockout survives a restart', () async {
       await verifier.setPin('1234');
-      for (int i = 0; i < 5; i++) {
-        await verifier.check('0000');
-      }
+      await reachMaximumLockout();
 
       // A fresh verifier reads the same persisted record, so restarting the
       // app does not hand an attacker a fresh set of guesses.
@@ -668,19 +707,97 @@ void main() {
       );
 
       expect(await restarted.check('1234'), VaultPinCheck.lockedOut);
+      expect(
+        await restarted.lockoutRemaining(),
+        const Duration(minutes: 15),
+      );
+      now = now.add(const Duration(minutes: 15, seconds: 1));
+      expect(await restarted.check('1234'), VaultPinCheck.matched);
     });
 
-    test('setting a new PIN clears the lockout', () async {
+    test('setting a new PIN clears the lockout and the counter', () async {
       await verifier.setPin('1234');
-      for (int i = 0; i < 5; i++) {
-        await verifier.check('0000');
-      }
+      await reachMaximumLockout();
       expect(await verifier.check('1234'), VaultPinCheck.lockedOut);
 
       await verifier.setPin('5678');
 
       expect(await verifier.check('5678'), VaultPinCheck.matched);
-      expect((await store.read())!.lockedUntil, isNull);
+      final VaultPinRecord record = (await store.read())!;
+      expect(record.failedAttempts, 0);
+      expect(record.lockedUntil, isNull);
+    });
+
+    test('an expired progressive lockout keeps the failure counter', () async {
+      await verifier.setPin('1234');
+      await verifier.check('0000');
+      await verifier.check('0000');
+      expect((await store.read())!.failedAttempts, 2);
+
+      now = now.add(const Duration(seconds: 31));
+      expect(await verifier.check('0000'), VaultPinCheck.notMatched);
+      final VaultPinRecord record = (await store.read())!;
+      expect(record.failedAttempts, 3);
+      expect(record.lockedUntil, now.add(const Duration(minutes: 1)));
+    });
+
+    test('concurrent wrong checks cannot collapse into one failure', () async {
+      await verifier.setPin('1234');
+      final Completer<void> entered = Completer<void>();
+      final Completer<void> release = Completer<void>();
+      final KeystoreVaultPinVerifier blocking = KeystoreVaultPinVerifier(
+        store: store,
+        deriver: ({
+          required String pin,
+          required Uint8List salt,
+          required int iterations,
+        }) async {
+          if (!entered.isCompleted) {
+            entered.complete();
+            await release.future;
+          }
+          return inlineVaultPinDeriver(
+            pin: pin,
+            salt: salt,
+            iterations: iterations,
+          );
+        },
+        clock: () => now,
+        iterations: 2,
+      );
+
+      final Future<VaultPinCheck> first = blocking.check('0000');
+      await entered.future;
+      final Future<VaultPinCheck> second = blocking.check('0001');
+      release.complete();
+
+      expect(
+        await Future.wait<VaultPinCheck>(<Future<VaultPinCheck>>[first, second]),
+        <VaultPinCheck>[VaultPinCheck.notMatched, VaultPinCheck.notMatched],
+      );
+      expect((await store.read())!.failedAttempts, 2);
+    });
+
+    test('progressive delays are capped at fifteen minutes', () async {
+      await verifier.setPin('1234');
+      final KeystoreVaultPinVerifier aggressive = KeystoreVaultPinVerifier(
+        store: store,
+        deriver: inlineVaultPinDeriver,
+        clock: () => now,
+        iterations: 2,
+        baseLockoutDelay: const Duration(minutes: 10),
+        lockoutMultiplier: 10,
+      );
+
+      await aggressive.check('0000');
+      await aggressive.check('0000');
+      now = now.add(const Duration(minutes: 10, seconds: 1));
+      await aggressive.check('0000');
+
+      expect(
+        await aggressive.lockoutRemaining(),
+        KeystoreVaultPinVerifier.maximumLockout,
+      );
     });
 
     test('clearing the PIN removes it entirely', () async {
@@ -744,14 +861,17 @@ void main() {
     late VaultPinStore store;
     late _FakeVaultRepository repository;
     late KeystoreVaultPinVerifier verifier;
+    late DateTime now;
 
     setUp(() {
       secrets = _MemorySecretStore();
       store = VaultPinStore(secrets);
       repository = _FakeVaultRepository();
+      now = DateTime.fromMillisecondsSinceEpoch(1700000000000);
       verifier = KeystoreVaultPinVerifier(
         store: store,
         deriver: inlineVaultPinDeriver,
+        clock: () => now,
         iterations: 2,
       );
     });
@@ -787,9 +907,15 @@ void main() {
         repository,
         verifier,
       );
-      for (int i = 0; i < 5; i++) {
-        await unlock.unlockWithPin('0000');
-      }
+
+      await unlock.unlockWithPin('0000');
+      await unlock.unlockWithPin('0000');
+      now = now.add(const Duration(seconds: 31));
+      await unlock.unlockWithPin('0000');
+      now = now.add(const Duration(seconds: 61));
+      await unlock.unlockWithPin('0000');
+      now = now.add(const Duration(seconds: 121));
+      await unlock.unlockWithPin('0000');
 
       expect(await unlock.unlockWithPin('1234'), VaultUnlockResult.pinLockedOut);
       expect(repository.isUnlocked, isFalse);

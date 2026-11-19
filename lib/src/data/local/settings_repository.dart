@@ -18,6 +18,7 @@ class SettingsRepository {
   static const String _isLoggedInKey = 'is_logged_in';
   static const String _authUserKey = 'auth_user';
   static const String _cloudAiKey = 'cloud_ai_enabled';
+  static const String _cloudGeocodingKey = 'cloud_geocoding_enabled';
   static const String _dismissedInsightsKey = 'dismissed_insights';
   static const String _preferredNavAppKey = 'preferred_nav_app';
   static const String _smartInsightsEnabledKey = 'smart_insights_enabled';
@@ -55,7 +56,12 @@ class SettingsRepository {
   }
 
   Future<void> setLastSynced(DateTime time) async {
-    await _box.put(_lastSyncedKey, time.toUtc().toIso8601String());
+    final DateTime utc = time.toUtc();
+    final DateTime now = DateTime.now().toUtc();
+    // A future timestamp would make the auth trust window permanent. This is
+    // also defence in depth against a hand-edited settings box.
+    final DateTime evidence = utc.isAfter(now) ? now : utc;
+    await _box.put(_lastSyncedKey, evidence.toIso8601String());
   }
 
   /// Whether a Google session was active the last time the app ran.
@@ -84,12 +90,21 @@ class SettingsRepository {
 
   /// Whether optional cloud (Gemini) recommendations are allowed.
   ///
-  /// Defaults to true so the feature works once an API key is compiled in; the
-  /// user can switch it off in Settings to keep everything local.
-  bool get isCloudAiEnabled => (_box.get(_cloudAiKey) as bool?) ?? true;
+  /// Defaults to off. Opt-in is per third party: enabling this flag never
+  /// enables Geoapify coordinate upload, and vice versa.
+  bool get isCloudAiEnabled => _box.get(_cloudAiKey) == true;
 
   Future<void> setCloudAiEnabled(bool enabled) async {
     await _box.put(_cloudAiKey, enabled);
+  }
+
+  /// Whether optional cloud (Geoapify) reverse geocoding may receive a
+  /// coordinate. Defaults to off; only an explicit `true` is consent.
+  bool get isCloudGeocodingEnabled =>
+      _box.get(_cloudGeocodingKey) == true;
+
+  Future<void> setCloudGeocodingEnabled(bool enabled) async {
+    await _box.put(_cloudGeocodingKey, enabled);
   }
 
   /// Which app should open for turn-by-turn navigation.

@@ -13,6 +13,7 @@ import 'src/data/local/hive_database.dart';
 import 'src/providers/app_providers.dart';
 import 'src/services/app_logger.dart';
 import 'src/services/background_sync_scheduler.dart';
+import 'src/services/crash_reporter.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,6 +36,12 @@ Future<void> main() async {
     );
   }
 
+  final CrashReporter? crashReporter = crashlyticsReady
+      ? RedactedCrashReporter(
+          FirebaseCrashReportSink(FirebaseCrashlytics.instance),
+        )
+      : null;
+
   // --- Automatic Global Error Handling & App Logging ------------------------
   FlutterError.onError = (FlutterErrorDetails details) {
     FlutterError.presentError(details);
@@ -44,9 +51,7 @@ Future<void> main() async {
       error: details.exception,
       stackTrace: details.stack,
     );
-    if (crashlyticsReady) {
-      FirebaseCrashlytics.instance.recordFlutterFatalError(details);
-    }
+    crashReporter?.recordFlutterFatalError(details);
   };
 
   PlatformDispatcher.instance.onError = (Object error, StackTrace stack) {
@@ -56,9 +61,7 @@ Future<void> main() async {
       error: error,
       stackTrace: stack,
     );
-    if (crashlyticsReady) {
-      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
-    }
+    crashReporter?.recordError(error, stack, fatal: true);
     return true;
   };
 

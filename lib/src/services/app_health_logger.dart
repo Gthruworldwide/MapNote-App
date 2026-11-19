@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:hive_ce/hive.dart';
 
 import '../core/config/app_config.dart';
+import 'diagnostic_redaction.dart';
 
 /// The kinds of events the local health monitor records.
 enum HealthEventType {
@@ -35,6 +36,19 @@ enum HealthEventType {
   /// acceleration magnitude and a duration in `data` — never a location.
   drivingManeuver,
 }
+
+/// Health-log messages are short and local, but they are still a diagnostic
+/// sink: an exception string must never persist a credential verbatim.
+String _healthText(String value) =>
+    redactForDiagnostics(value, maxLength: 200);
+
+Map<String, Object?> _sanitizedHealthData(Map<String, Object?> data) =>
+    data.map(
+      (String key, Object? value) => MapEntry<String, Object?>(
+        key,
+        value is String ? _healthText(value) : value,
+      ),
+    );
 
 /// A single timestamped health/lifecycle event.
 @immutable
@@ -79,12 +93,15 @@ class HealthEvent {
     return HealthEvent(
       type: type,
       timestamp: timestamp,
-      message: raw['message']?.toString(),
+      // Legacy entries may predate this boundary; clean them on read too.
+      message: raw['message'] == null
+          ? null
+          : _healthText(raw['message']!.toString()),
       durationMs: raw['durationMs'] is num
           ? (raw['durationMs'] as num).toInt()
           : null,
       data: data is Map
-          ? Map<String, Object?>.from(data)
+          ? _sanitizedHealthData(Map<String, Object?>.from(data))
           : const <String, Object?>{},
     );
   }
@@ -205,9 +222,9 @@ class AppHealthLogger {
       HealthEvent(
         type: type,
         timestamp: _clock().toUtc(),
-        message: message,
+        message: message == null ? null : _healthText(message),
         durationMs: duration?.inMilliseconds,
-        data: data ?? const <String, Object?>{},
+        data: _sanitizedHealthData(data ?? const <String, Object?>{}),
       ),
     );
     _trim();

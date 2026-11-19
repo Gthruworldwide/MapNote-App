@@ -57,7 +57,11 @@ void main() {
     });
 
     test('the manifest declares the location foreground service', () {
-      expect(manifest, contains('.ForegroundTrackingService'));
+      expect(manifest, contains('.LocationTrackingService'));
+      expect(kotlin, contains('class LocationTrackingService : Service()'));
+      // Android resolves services by class name. A declared component that no
+      // Kotlin class implements cannot be promoted to a foreground service.
+      expect(manifest, isNot(contains('.ForegroundTrackingService')));
       expect(manifest, contains('android:foregroundServiceType="location"'));
       expect(manifest, contains('android.permission.FOREGROUND_SERVICE'));
       expect(

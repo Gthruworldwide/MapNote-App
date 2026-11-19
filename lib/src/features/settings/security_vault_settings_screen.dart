@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../core/security/session_guard.dart';
 import '../../providers/app_providers.dart';
-import '../saved_places/domain/services/vault_pin_verifier.dart';
+import '../saved_places/domain/services/vault_pin_change_guard.dart';
 import '../saved_places/presentation/providers/saved_places_providers.dart';
 import '../saved_places/presentation/widgets/vault_pin_dialog.dart';
 import 'settings_shared.dart';
@@ -135,13 +135,11 @@ class SecurityVaultSettingsScreen extends ConsumerWidget {
     WidgetRef ref,
     AppLocalizations l10n,
   ) async {
-    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
-    final VaultPinVerifier verifier = ref.read(vaultPinVerifierProvider);
-    final bool hasPin = await verifier.hasPin();
+    final bool hasPin = await ref.read(vaultPinVerifierProvider).hasPin();
     if (!context.mounted) return;
 
     if (!hasPin) {
-      await _setVaultPin(context, ref, l10n, verifier);
+      await _setVaultPin(context, ref, l10n);
       return;
     }
 
@@ -169,21 +167,28 @@ class SecurityVaultSettingsScreen extends ConsumerWidget {
     if (action == null || !context.mounted) return;
 
     if (action == 'remove') {
-      await verifier.clearPin();
-      ref.invalidate(vaultPinSetProvider);
-      messenger.showSnackBar(SnackBar(content: Text(l10n.vaultPinRemoved)));
+      final VaultPinChangeResult result = await ref
+          .read(vaultPinChangeGuardProvider)
+          .clearPin(reason: l10n.verifyToChangeVaultPin);
+      if (!context.mounted) return;
+      _handlePinChange(
+        context,
+        ref,
+        l10n,
+        result,
+        success: l10n.vaultPinRemoved,
+        unverifiedSuccess: l10n.vaultPinRemovedWithoutVerification,
+      );
       return;
     }
-    await _setVaultPin(context, ref, l10n, verifier);
+    await _setVaultPin(context, ref, l10n);
   }
 
   Future<void> _setVaultPin(
     BuildContext context,
     WidgetRef ref,
     AppLocalizations l10n,
-    VaultPinVerifier verifier,
   ) async {
-    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
     final String? pin = await showVaultPinDialog(
       context,
       l10n: l10n,
@@ -191,8 +196,52 @@ class SecurityVaultSettingsScreen extends ConsumerWidget {
       title: l10n.changeVaultPin,
     );
     if (pin == null || !context.mounted) return;
-    await verifier.setPin(pin);
-    ref.invalidate(vaultPinSetProvider);
-    messenger.showSnackBar(SnackBar(content: Text(l10n.vaultPinSet)));
+
+    final VaultPinChangeResult result = await ref
+        .read(vaultPinChangeGuardProvider)
+        .setPin(pin, reason: l10n.verifyToChangeVaultPin);
+    if (!context.mounted) return;
+    _handlePinChange(
+      context,
+      ref,
+      l10n,
+      result,
+      success: l10n.vaultPinSet,
+      unverifiedSuccess: l10n.vaultPinUpdatedWithoutVerification,
+    );
+  }
+
+  /// Turns the guard's result into a localized outcome without ever mutating
+  /// the PIN itself: the guard is the only writer.
+  void _handlePinChange(
+    BuildContext context,
+    WidgetRef ref,
+    AppLocalizations l10n,
+    VaultPinChangeResult result, {
+    required String success,
+    required String unverifiedSuccess,
+  }) {
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    final String message;
+    switch (result) {
+      case VaultPinChangeResult.updated:
+      case VaultPinChangeResult.removed:
+        message = success;
+      case VaultPinChangeResult.updatedWithoutVerification:
+      case VaultPinChangeResult.removedWithoutVerification:
+        message = unverifiedSuccess;
+      case VaultPinChangeResult.denied:
+        message = l10n.authenticationFailed;
+      case VaultPinChangeResult.invalid:
+        message = l10n.vaultPinTooShort;
+    }
+
+    if (result == VaultPinChangeResult.updated ||
+        result == VaultPinChangeResult.removed ||
+        result == VaultPinChangeResult.updatedWithoutVerification ||
+        result == VaultPinChangeResult.removedWithoutVerification) {
+      ref.invalidate(vaultPinSetProvider);
+    }
+    messenger.showSnackBar(SnackBar(content: Text(message)));
   }
 }

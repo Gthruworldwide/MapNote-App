@@ -1,0 +1,77 @@
+rules_version = '2';
+
+/*
+  MapNote Firestore Security Rules
+
+  Canonical access matrix (both candidate rulesets are kept byte-identical):
+
+    unauthenticated        -> DENY everywhere
+    normal user / own data -> ALLOW
+    normal user / others   -> DENY
+    normal user / master stations or admin actions -> DENY
+    admin / admin actions  -> ALLOW
+
+  Firestore grants are OR'd, so there is deliberately no root-wide
+  authenticated grant. Every collection declares its own explicit grants and
+  the terminal wildcard denies everything unmatched for both reads and writes.
+*/
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null && request.auth.uid != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && request.auth.token.admin == true;
+    }
+
+    function isOwner(ownerUid) {
+      return isSignedIn() && request.auth.uid == ownerUid;
+    }
+
+    // System-owned master station catalogue: admin-only, including reads.
+    match /master_stations/{stationId} {
+      allow read: if isAdmin();
+      allow create, update, delete: if isAdmin();
+    }
+
+    // User proposals: a normal user may own a proposal, but only an admin may
+    // approve, reject or otherwise mutate someone else's proposal.
+    match /pending_updates/{updateId} {
+      allow read: if isAdmin() || isOwner(resource.data.ownerUid);
+      allow create: if isOwner(request.resource.data.ownerUid);
+      allow update, delete: if isAdmin();
+    }
+
+    match /proposals/{proposalId} {
+      allow read: if isAdmin() || isOwner(resource.data.ownerUid);
+      allow create: if isOwner(request.resource.data.ownerUid);
+      allow update, delete: if isAdmin();
+    }
+
+    // Admin audit log: admin-only.
+    match /admin_operations/{operationId} {
+      allow read, create, update, delete: if isAdmin();
+    }
+
+    // Shared station data: ownership only. No public or cross-user bypass.
+    match /shared_stations/{stationId} {
+      allow read, update, delete: if isOwner(resource.data.ownerUid);
+      allow create: if isOwner(request.resource.data.ownerUid);
+    }
+
+    // Per-user data.
+    match /user_settings/{userId} {
+      allow read, create, update, delete: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    match /user_profiles/{profileId} {
+      allow read, create, update, delete: if isSignedIn() && request.auth.uid == profileId;
+    }
+
+    // Everything not explicitly granted above is denied for reads and writes.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

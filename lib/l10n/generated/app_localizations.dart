@@ -1184,6 +1184,12 @@ abstract class AppLocalizations {
   /// **'Sharp turn'**
   String get sharpTurn;
 
+  /// No description provided for @smoothness.
+  ///
+  /// In en, this message translates to:
+  /// **'Smoothness'**
+  String get smoothness;
+
   /// No description provided for @speedBump.
   ///
   /// In en, this message translates to:
@@ -1484,6 +1490,12 @@ abstract class AppLocalizations {
   /// **'Verify your identity to open the Hidden Vault'**
   String get unlockToOpenVault;
 
+  /// No description provided for @verifyToChangeVaultPin.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify your identity to change the vault PIN'**
+  String get verifyToChangeVaultPin;
+
   /// No description provided for @authenticationFailed.
   ///
   /// In en, this message translates to:
@@ -1699,6 +1711,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Let Google Gemini add optional tips. Only anonymous counts are sent — never your places, notes or coordinates.'**
   String get smartInsightsCloudAiSubtitle;
+
+  /// No description provided for @geocodingCloudUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud address service unavailable, using local lookup'**
+  String get geocodingCloudUnavailable;
+
+  /// No description provided for @geocodingNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No address found for this location'**
+  String get geocodingNotFound;
+
+  /// No description provided for @cloudGeocodingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enhanced Address Lookup (Geoapify)'**
+  String get cloudGeocodingTitle;
+
+  /// No description provided for @cloudGeocodingSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Use cloud geocoding for richer place names when online'**
+  String get cloudGeocodingSubtitle;
 
   /// No description provided for @insightWelcomeTitle.
   ///
@@ -2200,6 +2236,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Vault PIN set.'**
   String get vaultPinSet;
+
+  /// No description provided for @vaultPinUpdatedWithoutVerification.
+  ///
+  /// In en, this message translates to:
+  /// **'Verification was skipped; the vault PIN was updated.'**
+  String get vaultPinUpdatedWithoutVerification;
+
+  /// No description provided for @vaultPinRemovedWithoutVerification.
+  ///
+  /// In en, this message translates to:
+  /// **'Verification was skipped; the vault PIN was removed.'**
+  String get vaultPinRemovedWithoutVerification;
 
   /// No description provided for @vaultPinChanged.
   ///

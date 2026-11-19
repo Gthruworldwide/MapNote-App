@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import '../../../../data/models/place.dart';
@@ -23,22 +24,36 @@ class HiveVaultRepository implements VaultRepository {
 
   SecurePlacesLocalDataSource? _dataSource;
 
+  /// Bumped synchronously by [lock] so an in-flight [unlock] can recognise that
+  /// its result is stale even though the box close is queued behind it.
+  int _epoch = 0;
+
+  /// Box operations are serialized so two unlocks cannot both hold the same
+  /// Hive box name open with different cipher instances.
+  Future<void> _operationChain = Future<void>.value();
+
+  Future<T> _serialize<T>(Future<T> Function() operation) {
+    final Completer<T> completer = Completer<T>();
+    _operationChain = _operationChain.then((_) async {
+      try {
+        completer.complete(await operation());
+      } catch (error, stackTrace) {
+        completer.completeError(error, stackTrace);
+      }
+    });
+    return completer.future;
+  }
+
   @override
   bool get isUnlocked => _dataSource?.isOpen ?? false;
 
-  /// Opens the encrypted box with the keystore key, creating the key on first
-  /// use.
-  Future<SecurePlacesLocalDataSource> _openBox() async {
-    final Uint8List key = await keyStore.loadOrCreateKey();
-    final SecurePlacesLocalDataSource source = SecurePlacesLocalDataSource(
-      boxName: boxName,
-      key: key,
-    );
-    _dataSource = source;
-    // Reading forces the box open, so a wrong/corrupt key surfaces here rather
-    // than on the first user action.
-    await source.getAll();
-    return source;
+  /// A stale open must not leave a second datasource holding the box handle.
+  Future<void> _closeQuietly(SecurePlacesLocalDataSource source) async {
+    try {
+      await source.close();
+    } catch (_) {
+      // Best effort: the box was never published, so nothing can read it.
+    }
   }
 
   /// The open datasource, or a [StateError] while the vault is locked.
@@ -54,15 +69,47 @@ class HiveVaultRepository implements VaultRepository {
   }
 
   @override
-  Future<void> unlock() async {
-    await _openBox();
+  Future<void> unlock() {
+    // Captured at call time: a `lock()` that arrives while this is waiting on
+    // the keystore increments the epoch and makes this attempt stale.
+    final int expectedEpoch = _epoch;
+    return _serialize(() async {
+      if (_dataSource?.isOpen ?? false) return;
+
+      final Uint8List key = await keyStore.loadOrCreateKey();
+      if (expectedEpoch != _epoch) return;
+
+      final SecurePlacesLocalDataSource source = SecurePlacesLocalDataSource(
+        boxName: boxName,
+        key: key,
+      );
+      try {
+        // Reading forces the box open, so a wrong/corrupt key surfaces here
+        // rather than on the first user action.
+        await source.getAll();
+      } catch (_) {
+        await _closeQuietly(source);
+        rethrow;
+      }
+
+      // The box was opened without publishing it. If a lock landed while we
+      // waited, close it again and leave the repository locked.
+      if (expectedEpoch != _epoch || (_dataSource?.isOpen ?? false)) {
+        await _closeQuietly(source);
+        return;
+      }
+      _dataSource = source;
+    });
   }
 
   @override
-  Future<void> lock() async {
+  Future<void> lock() {
+    // Order is load-bearing: invalidate first (synchronously), then clear the
+    // published handle, then queue the actual close behind any open in flight.
+    _epoch++;
     final SecurePlacesLocalDataSource? current = _dataSource;
     _dataSource = null;
-    await current?.close();
+    return _serialize(() async => current?.close());
   }
 
   @override
